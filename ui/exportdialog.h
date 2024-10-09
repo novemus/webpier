@@ -20,8 +20,8 @@ class CExportDialog : public wxDialog
     wxCheckListBox* m_serviceList;
     wxStaticText* m_idLabel;
     wxStaticText* m_idValue;
-    wxStaticText* m_serviceLabel;
-    wxStaticText* m_serviceValue;
+    wxStaticText* m_mappingLabel;
+    wxStaticText* m_mappingValue;
     wxStaticText* m_gateLabel;
     wxStaticText* m_gateValue;
     wxStaticText* m_startLabel;

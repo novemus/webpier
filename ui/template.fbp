@@ -637,7 +637,7 @@
               <property name="align">wxALIGN_LEFT</property>
               <property name="ellipsize"></property>
               <property name="flags">wxDATAVIEW_COL_RESIZABLE</property>
-              <property name="label">Id</property>
+              <property name="label">Service</property>
               <property name="mode">wxDATAVIEW_CELL_INERT</property>
               <property name="name">idColumn</property>
               <property name="permission">none</property>
@@ -659,9 +659,9 @@
               <property name="align">wxALIGN_LEFT</property>
               <property name="ellipsize"></property>
               <property name="flags">wxDATAVIEW_COL_RESIZABLE</property>
-              <property name="label">Service</property>
+              <property name="label">Mapping</property>
               <property name="mode">wxDATAVIEW_CELL_INERT</property>
-              <property name="name">serviceColumn</property>
+              <property name="name">mappingColumn</property>
               <property name="permission">none</property>
               <property name="type">Text</property>
               <property name="width">150</property>
@@ -3441,7 +3441,7 @@
         </object>
       </object>
     </object>
-    <object class="Dialog" expanded="true">
+    <object class="Dialog" expanded="false">
       <property name="aui_managed">0</property>
       <property name="aui_manager_style">wxAUI_MGR_DEFAULT</property>
       <property name="bg">wxSYS_COLOUR_MENU</property>
@@ -3469,16 +3469,16 @@
       <property name="window_extra_style"></property>
       <property name="window_name"></property>
       <property name="window_style"></property>
-      <object class="wxBoxSizer" expanded="true">
+      <object class="wxBoxSizer" expanded="false">
         <property name="minimum_size"></property>
         <property name="name">mainSizer</property>
         <property name="orient">wxVERTICAL</property>
         <property name="permission">none</property>
-        <object class="sizeritem" expanded="true">
+        <object class="sizeritem" expanded="false">
           <property name="border">5</property>
           <property name="flag">wxEXPAND | wxALL</property>
           <property name="proportion">1</property>
-          <object class="wxPanel" expanded="true">
+          <object class="wxPanel" expanded="false">
             <property name="BottomDockable">1</property>
             <property name="LeftDockable">1</property>
             <property name="RightDockable">1</property>
@@ -3530,7 +3530,7 @@
             <property name="window_extra_style"></property>
             <property name="window_name"></property>
             <property name="window_style">wxBORDER_SUNKEN|wxTAB_TRAVERSAL</property>
-            <object class="wxBoxSizer" expanded="true">
+            <object class="wxBoxSizer" expanded="false">
               <property name="minimum_size"></property>
               <property name="name">panelSizer</property>
               <property name="orient">wxVERTICAL</property>
@@ -4159,7 +4159,7 @@
             <event name="OnPropertyGridChanged">onPropertyChanged</event>
             <object class="propGridItem" expanded="false">
               <property name="help"></property>
-              <property name="label">Id</property>
+              <property name="label">Service</property>
               <property name="name">m_idItem</property>
               <property name="permission">protected</property>
               <property name="prop_name"></property>
@@ -4175,8 +4175,8 @@
             </object>
             <object class="propGridItem" expanded="false">
               <property name="help">Local endpoint to map remote service</property>
-              <property name="label">Service</property>
-              <property name="name">m_servItem</property>
+              <property name="label">Mapping</property>
+              <property name="name">m_mapItem</property>
               <property name="permission">protected</property>
               <property name="prop_name"></property>
               <property name="type">String</property>
@@ -4428,7 +4428,7 @@
                             <property name="gripper">0</property>
                             <property name="hidden">0</property>
                             <property name="id">wxID_ANY</property>
-                            <property name="label">Id</property>
+                            <property name="label">Service</property>
                             <property name="markup">0</property>
                             <property name="max_size"></property>
                             <property name="maximize_button">0</property>
@@ -4552,7 +4552,7 @@
                             <property name="gripper">0</property>
                             <property name="hidden">0</property>
                             <property name="id">wxID_ANY</property>
-                            <property name="label">Service</property>
+                            <property name="label">Mapping</property>
                             <property name="markup">0</property>
                             <property name="max_size"></property>
                             <property name="maximize_button">0</property>
@@ -4561,7 +4561,7 @@
                             <property name="minimize_button">0</property>
                             <property name="minimum_size"></property>
                             <property name="moveable">1</property>
-                            <property name="name">m_serviceLabel</property>
+                            <property name="name">m_mappingLabel</property>
                             <property name="pane_border">1</property>
                             <property name="pane_position"></property>
                             <property name="pane_size"></property>
@@ -4622,7 +4622,7 @@
                             <property name="minimize_button">0</property>
                             <property name="minimum_size"></property>
                             <property name="moveable">1</property>
-                            <property name="name">m_serviceCtrl</property>
+                            <property name="name">m_mappingCtrl</property>
                             <property name="pane_border">1</property>
                             <property name="pane_position"></property>
                             <property name="pane_size"></property>
@@ -5585,7 +5585,7 @@
                             <property name="gripper">0</property>
                             <property name="hidden">0</property>
                             <property name="id">wxID_ANY</property>
-                            <property name="label">Id</property>
+                            <property name="label">Service</property>
                             <property name="markup">0</property>
                             <property name="max_size"></property>
                             <property name="maximize_button">0</property>
@@ -5709,7 +5709,7 @@
                             <property name="gripper">0</property>
                             <property name="hidden">0</property>
                             <property name="id">wxID_ANY</property>
-                            <property name="label">Service</property>
+                            <property name="label">Mapping</property>
                             <property name="markup">0</property>
                             <property name="max_size"></property>
                             <property name="maximize_button">0</property>
@@ -5718,7 +5718,7 @@
                             <property name="minimize_button">0</property>
                             <property name="minimum_size"></property>
                             <property name="moveable">1</property>
-                            <property name="name">m_serviceLabel</property>
+                            <property name="name">m_mappingLabel</property>
                             <property name="pane_border">1</property>
                             <property name="pane_position"></property>
                             <property name="pane_size"></property>
@@ -5780,7 +5780,7 @@
                             <property name="minimize_button">0</property>
                             <property name="minimum_size"></property>
                             <property name="moveable">1</property>
-                            <property name="name">m_serviceValue</property>
+                            <property name="name">m_mappingValue</property>
                             <property name="pane_border">1</property>
                             <property name="pane_position"></property>
                             <property name="pane_size"></property>

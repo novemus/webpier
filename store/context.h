@@ -7,9 +7,10 @@
 
 namespace webpier
 {
-    struct save_error : public std::runtime_error { save_error() : std::runtime_error("save error") {} };
-    struct file_error : public std::runtime_error { file_error() : std::runtime_error("file error") {} };
-    struct lock_error : public std::runtime_error { lock_error() : std::runtime_error("lock error") {} };
+    struct stale_error : public std::runtime_error { stale_error(const std::string& what) : std::runtime_error(what) {} };
+    struct file_error : public std::runtime_error { file_error(const std::string& what) : std::runtime_error(what) {} };
+    struct lock_error : public std::runtime_error { lock_error(const std::string& what) : std::runtime_error(what) {} };
+    struct unique_error : public std::runtime_error { unique_error(const std::string& what) : std::runtime_error(what) {} };
 
     enum log
     {
@@ -21,9 +22,12 @@ namespace webpier
         trace
     };
 
-    struct stun
+    std::ostream& operator<<(std::ostream& out, log level);
+    std::istream& operator>>(std::istream& in, log& level);
+
+    struct nat
     {
-        std::string server;
+        std::string stun;
         uint8_t hops;
     };
 
@@ -44,14 +48,13 @@ namespace webpier
         std::string ca;
     };
 
-    struct options
+    struct basic
     {
-        std::string owner;
-        std::string pier;
-        bool autostart;
-        bool autotray;
-        log logging;
-        stun traverse;
+        std::string host;
+        log report;
+        bool daemon;
+        bool tray;
+        nat traverse;
         dht rendezvous;
         email emailer;
     };
@@ -60,7 +63,7 @@ namespace webpier
     {
         std::string id;
         std::string peer;
-        std::string service;
+        std::string mapping;
         std::string gateway;
         dht rendezvous;
         bool autostart;
@@ -71,24 +74,25 @@ namespace webpier
     {
         virtual ~context() {}
 
-        virtual void renew() noexcept(false) = 0;
-        virtual void flush(bool force = false) const noexcept(false) = 0;
+        virtual void reload() noexcept(false) = 0;
 
-        virtual void get_options(options& data) const noexcept(true) = 0;
-        virtual void set_options(const options& data) noexcept(true) = 0;
+        virtual void get_basic(basic& out) const noexcept(true) = 0;
+        virtual void set_basic(const basic& info) noexcept(false) = 0;
 
-        virtual void get_local_services(std::vector<service>& data) const noexcept(true) = 0;
-        virtual void set_local_services(const std::vector<service>& data) noexcept(true) = 0;
+        virtual void get_local_services(std::vector<service>& out) const noexcept(true) = 0;
+        virtual void add_local_service(const service& info) noexcept(false) = 0;
+        virtual void del_local_service(const std::string& id) noexcept(false) = 0;
 
-        virtual void del_local_service(const service& data) noexcept(true) = 0;
-        virtual void set_local_service(const service& data) noexcept(true) = 0;
+        virtual void get_remote_services(std::vector<service>& out) const noexcept(true) = 0;
+        virtual void add_remote_service(const service& info) noexcept(false) = 0;
+        virtual void del_remote_service(const std::string& peer, const std::string& id) noexcept(false) = 0;
 
-        virtual void get_remote_services(std::vector<service>& data) const noexcept(true) = 0;
-        virtual void set_remote_services(const std::vector<service>& data) noexcept(true) = 0;
+        virtual void get_peers(std::vector<std::string>& out) const noexcept(true) = 0;
+        virtual void add_peer(const std::string& peer, const std::string& cert) noexcept(false) = 0;
+        virtual void del_peer(const std::string& peer) noexcept(false) = 0;
 
-        virtual void del_remote_service(const service& data) noexcept(true) = 0;
-        virtual void set_remote_service(const service& data) noexcept(true) = 0;
+        virtual std::string get_cert(const std::string& identity) noexcept(false) = 0;
     };
 
-    std::shared_ptr<context> open_context(const std::string& config) noexcept(false);
+    std::shared_ptr<context> open_context(const std::string& dir) noexcept(false);
 }

@@ -90,9 +90,9 @@ CSettingsDialog::CSettingsDialog(wxWindow* parent, wxWindowID id, const wxString
     basicPanel->Layout();
     basicSizer->Fit( basicPanel );
     m_notebook->AddPage( basicPanel, _("Basic"), true );
-    wxPanel* stunPanel;
-    stunPanel = new wxPanel( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-    stunPanel->SetToolTip( _("NAT traverse settings") );
+    wxPanel* natPanel;
+    natPanel = new wxPanel( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    natPanel->SetToolTip( _("NAT traverse settings") );
 
     wxBoxSizer* stunSizer;
     stunSizer = new wxBoxSizer( wxVERTICAL );
@@ -104,29 +104,29 @@ CSettingsDialog::CSettingsDialog(wxWindow* parent, wxWindowID id, const wxString
     stunGridSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
     wxStaticText* stunLabel;
-    stunLabel = new wxStaticText( stunPanel, wxID_ANY, _("STUN server"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
+    stunLabel = new wxStaticText( natPanel, wxID_ANY, _("STUN server"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
     stunLabel->Wrap( -1 );
     stunGridSizer->Add( stunLabel, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
 
-    m_stunCtrl = new wxTextCtrl( stunPanel, wxID_ANY, _("stun.ekiga.net"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_stunCtrl = new wxTextCtrl( natPanel, wxID_ANY, _("stun.ekiga.net"), wxDefaultPosition, wxDefaultSize, 0 );
     stunGridSizer->Add( m_stunCtrl, 0, wxALIGN_CENTER_VERTICAL|wxEXPAND|wxTOP|wxRIGHT|wxLEFT, 5 );
 
     wxStaticText* punchLabel;
-    punchLabel = new wxStaticText( stunPanel, wxID_ANY, _("Punch hops"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
+    punchLabel = new wxStaticText( natPanel, wxID_ANY, _("Punch hops"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
     punchLabel->Wrap( -1 );
     stunGridSizer->Add( punchLabel, 0, wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
 
-    m_punchCtrl = new wxTextCtrl( stunPanel, wxID_ANY, _("7"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_punchCtrl = new wxTextCtrl( natPanel, wxID_ANY, _("7"), wxDefaultPosition, wxDefaultSize, 0 );
     m_punchCtrl->SetValidator( wxIntegerValidator<unsigned char>() );
 
     stunGridSizer->Add( m_punchCtrl, 0, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT|wxALIGN_CENTER_VERTICAL, 5 );
 
     stunSizer->Add( stunGridSizer, 0, wxEXPAND|wxALL, 5 );
 
-    stunPanel->SetSizer( stunSizer );
-    stunPanel->Layout();
-    stunSizer->Fit( stunPanel );
-    m_notebook->AddPage( stunPanel, _("STUN"), false );
+    natPanel->SetSizer( stunSizer );
+    natPanel->Layout();
+    stunSizer->Fit( natPanel );
+    m_notebook->AddPage( natPanel, _("NAT"), false );
     wxPanel* dhtPanel;
     dhtPanel = new wxPanel( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
     dhtPanel->SetToolTip( _("DHT rendezvous settings") );
@@ -165,7 +165,7 @@ CSettingsDialog::CSettingsDialog(wxWindow* parent, wxWindowID id, const wxString
     m_notebook->AddPage( dhtPanel, _("DHT"), false );
     wxPanel* emailPanel;
     emailPanel = new wxPanel( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-    emailPanel->SetToolTip( _("Email rendezvous settings") );
+    emailPanel->SetToolTip( _("Email settings") );
 
     wxBoxSizer* emailSizer;
     emailSizer = new wxBoxSizer( wxVERTICAL );

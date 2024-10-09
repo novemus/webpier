@@ -447,13 +447,13 @@ public:
     virtual wxMenu* CreatePopupMenu() wxOVERRIDE
     {
         wxMenu *menu = new wxMenu();
-        wxMenuItem* confItem = menu->Append(PU_CONFIGURE, _("&Configure..."));
+        menu->Append(PU_CONFIGURE, _("&Configure..."));
         wxMenu* submenu = new wxMenu();
         submenu->Append(PU_START, _("&Start"));
         submenu->Append(PU_HARD_RESTART, _("&Hard Restart"));
         submenu->Append(PU_SOFT_RESTART, _("S&oft Restart"));
         submenu->Append(PU_STOP, _("S&top"));
-        menu->Append(wxID_ANY, "Service", submenu);
+        menu->Append(wxID_ANY, "Daemon", submenu);
 
     #ifdef __WXOSX__
         if ( OSXIsStatusItem() )
@@ -495,6 +495,8 @@ public:
         }
 
         CTaskBarIcon* icon = new CTaskBarIcon();
+        (void)icon;
+
         return true;
     }
 };
