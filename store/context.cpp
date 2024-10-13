@@ -401,9 +401,9 @@ namespace webpier
             }
         }
 
-        std::string get_cert_hash(const std::string& identity) const noexcept(false) override
+        std::string get_fingerprint(const std::string& identity) const noexcept(false) override
         {
-            return get_x509_public_hash(std::filesystem::path(m_dir) / "repo" / identity);
+            return get_x509_public_sha1(std::filesystem::path(m_dir) / "repo" / identity);
         }
     };
 

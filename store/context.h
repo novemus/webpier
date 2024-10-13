@@ -91,7 +91,7 @@ namespace webpier
         virtual void add_peer(const std::string& peer, const std::string& cert) noexcept(false) = 0;
         virtual void del_peer(const std::string& peer) noexcept(false) = 0;
 
-        virtual std::string get_cert_hash(const std::string& identity) const noexcept(false) = 0;
+        virtual std::string get_fingerprint(const std::string& identity) const noexcept(false) = 0;
     };
 
     std::shared_ptr<context> open_context(const std::string& dir) noexcept(false);
