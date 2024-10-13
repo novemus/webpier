@@ -1,5 +1,11 @@
 #include "context.h"
+#include "utils.h"
 #include <filesystem>
+#include <openssl/x509v3.h>
+#include <openssl/evp.h>
+#include <openssl/pem.h>
+#include <openssl/rand.h>
+#include <openssl/err.h>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
@@ -173,7 +179,7 @@ namespace webpier
                 boost::interprocess::scoped_lock<boost::interprocess::file_lock> scope(lock);
 
                 boost::property_tree::ptree info;
-                boost::property_tree::read_json(m_dir + "/webpier.json", info);
+                boost::property_tree::read_json(m_dir + "/basic.json", info);
 
                 m_basic.host = info.get<std::string>("host", "");
                 m_basic.report = info.get<log>("report", log::info);
@@ -240,11 +246,26 @@ namespace webpier
             out = m_basic; 
         }
 
-        void set_basic(const basic& info) noexcept(true) override
+        void set_basic(const basic& info) noexcept(false) override
         {
             int mode = flush_basic;
-            if (m_basic.host != info.host)
+            
+            auto prev_host = std::filesystem::path(m_dir) / "repo" / m_basic.host;
+            auto next_host = std::filesystem::path(m_dir) / "repo" / info.host;
+
+            if (prev_host != next_host)
             {
+                try
+                {
+                    std::filesystem::create_directories(next_host);
+                }
+                catch(const std::exception& e)
+                {
+                    throw file_error(e.what());
+                }
+
+                generate_x509_pair(next_host / "cert.crt", next_host / "private.key", info.host);
+
                 m_remotes.clear();
                 m_locals.clear();
 
@@ -253,6 +274,18 @@ namespace webpier
 
             m_basic = info;
             flush(mode);
+
+            if (prev_host != next_host)
+            {
+                try
+                {
+                    std::filesystem::remove_all(prev_host);
+                }
+                catch(const std::exception& e)
+                {
+                    throw file_error(e.what());
+                }
+            }
         }
 
         void get_local_services(std::vector<service>& out) const noexcept(true) override
@@ -317,9 +350,64 @@ namespace webpier
                 m_remotes.erase(iter, m_remotes.end());
             flush(flush_remote);
         }
+
+        void get_peers(std::vector<std::string>& out) const noexcept(true) override
+        {
+            for (auto const& owner : std::filesystem::directory_iterator(std::filesystem::path(m_dir) / "repo"))
+            {
+                if (!owner.is_directory())
+                    continue;
+
+                for (auto const& pier : std::filesystem::directory_iterator(owner.path()))
+                {
+                    if (!pier.is_directory())
+                        continue;
+
+                    if (!std::filesystem::exists(pier.path() / "cert.crt"))
+                        continue;
+
+                    auto identity = owner.path().filename().string() + "/" + pier.path().filename().string();
+
+                    if (identity != m_basic.host)
+                        out.push_back(owner.path().filename().string() + "/" + pier.path().filename().string());
+                }
+            }
+        }
+
+        void add_peer(const std::string& peer, const std::string& cert) noexcept(false) override
+        {
+            auto home = std::filesystem::path(m_dir) / "repo" / peer;
+            try
+            {
+                std::filesystem::create_directories(home);
+            }
+            catch(const std::exception& e)
+            {
+                throw file_error(e.what());
+            }
+
+            save_x509_cert(home / "cert.crt", cert);
+        }
+
+        void del_peer(const std::string& peer) noexcept(false) override
+        {
+            try
+            {
+                std::filesystem::remove_all(std::filesystem::path(m_dir) / "repo" / peer);
+            }
+            catch(const std::exception& e)
+            {
+                throw file_error(e.what());
+            }
+        }
+
+        std::string get_cert_hash(const std::string& identity) const noexcept(false) override
+        {
+            return get_x509_public_hash(std::filesystem::path(m_dir) / "repo" / identity);
+        }
     };
 
-    std::shared_ptr<context> open_context(const std::string& dir)
+    std::shared_ptr<context> open_context(const std::string& dir) noexcept(false)
     {
         return std::make_shared<context_impl>(dir);
     }

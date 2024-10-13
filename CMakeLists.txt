@@ -15,8 +15,14 @@ if(wxWidgets_USE_FILE)
     include(${wxWidgets_USE_FILE})
 endif()
 
-message("*** wxWidgets includes: ${wxWidgets_INCLUDE_DIRS}")
-message("*** wxWidgets libraries: ${wxWidgets_LIBRARIES}")
+message("*** wxWidgets Includes: ${wxWidgets_INCLUDE_DIRS}")
+message("*** wxWidgets Libraries: ${wxWidgets_LIBRARIES}")
+
+find_package(OpenSSL REQUIRED)
+
+message("*** OpenSSL Version: ${OPENSSL_VERSION}")
+message("*** OpenSSL Include: ${OPENSSL_INCLUDE_DIR}")
+message("*** OpenSSL Libraries: ${OPENSSL_LIBRARIES}")
 
 add_executable(webpier WIN32 
     ui/main.cpp
@@ -28,7 +34,8 @@ add_executable(webpier WIN32
     ui/aboutdialog.cpp
     ui/messagedialog.cpp
     store/context.cpp
+    store/utils.cpp
     )
 
 target_include_directories(webpier PRIVATE ${wxWidgets_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
-target_link_libraries(webpier PRIVATE ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(webpier PRIVATE ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES} OpenSSL::SSL OpenSSL::Crypto)
