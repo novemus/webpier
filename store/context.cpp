@@ -1,14 +1,16 @@
 #include "context.h"
 #include "utils.h"
 #include <filesystem>
+#include <regex>
 #include <openssl/x509v3.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <openssl/rand.h>
 #include <openssl/err.h>
 #include <boost/property_tree/json_parser.hpp>
-#include <boost/interprocess/sync/file_lock.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
+#include <boost/interprocess/sync/named_mutex.hpp>
+#include <boost/scope_exit.hpp>
 
 namespace webpier
 {
@@ -59,6 +61,7 @@ namespace webpier
 
     class context_impl : public context
     {
+        std::string m_id;
         std::string m_dir;
         basic m_basic;
         std::vector<service> m_locals;
@@ -71,8 +74,8 @@ namespace webpier
         {
             try
             {
-                boost::interprocess::file_lock lock(m_dir.c_str());
-                boost::interprocess::scoped_lock<boost::interprocess::file_lock> scope(lock);
+                boost::interprocess::named_mutex mutex(boost::interprocess::open_or_create, m_id.c_str());
+                boost::interprocess::scoped_lock<boost::interprocess::named_mutex> lock(mutex, boost::interprocess::try_to_lock_type());
 
                 if (std::filesystem::last_write_time(m_dir) == m_timestamp)
                 {
@@ -84,10 +87,10 @@ namespace webpier
                         info.put("report", m_basic.report);
                         info.put("daemon", m_basic.daemon);
                         info.put("tray", m_basic.tray);
-                        info.put("traverse.stun", m_basic.traverse.stun);
-                        info.put("traverse.hops", m_basic.traverse.hops);
-                        info.put("dht.bootstrap", m_basic.rendezvous.bootstrap);
-                        info.put("dht.network", m_basic.rendezvous.network);
+                        info.put("nat.traverse.stun", m_basic.traverse.stun);
+                        info.put("nat.traverse.hops", m_basic.traverse.hops);
+                        info.put("rendezvous.dht.bootstrap", m_basic.rendezvous.bootstrap);
+                        info.put("rendezvous.dht.network", m_basic.rendezvous.network);
                         info.put("emailer.smtp", m_basic.emailer.smtp);
                         info.put("emailer.imap", m_basic.emailer.imap);
                         info.put("emailer.login", m_basic.emailer.login);
@@ -96,7 +99,7 @@ namespace webpier
                         info.put("emailer.key", m_basic.emailer.key);
                         info.put("emailer.ca", m_basic.emailer.ca);
 
-                        boost::property_tree::write_json(m_dir + "/webpier.json", info);
+                        boost::property_tree::write_json(m_dir + "/basic.json", info);
                     }
 
                     if (mode & flush_local)
@@ -112,11 +115,8 @@ namespace webpier
                             item.put("gateway", info.gateway);
                             item.put("autostart", info.autostart);
                             item.put("obscure", info.obscure);
-                            if (!info.rendezvous.bootstrap.empty())
-                            {
-                                item.put("dht.bootstrap", info.rendezvous.bootstrap);
-                                item.put("dht.network", info.rendezvous.network);
-                            }
+                            item.put("rendezvous.dht.bootstrap", info.rendezvous.bootstrap);
+                            item.put("rendezvous.dht.network", info.rendezvous.network);
                             list.push_back(std::make_pair("", item));
                         }
 
@@ -136,11 +136,8 @@ namespace webpier
                             item.put("gateway", info.gateway);
                             item.put("autostart", info.autostart);
                             item.put("obscure", info.obscure);
-                            if (!info.rendezvous.bootstrap.empty())
-                            {
-                                item.put("dht.bootstrap", info.rendezvous.bootstrap);
-                                item.put("dht.network", info.rendezvous.network);
-                            }
+                            item.put("rendezvous.dht.bootstrap", info.rendezvous.bootstrap);
+                            item.put("rendezvous.dht.network", info.rendezvous.network);
                             list.push_back(std::make_pair("", item));
                         }
 
@@ -149,6 +146,8 @@ namespace webpier
 
                     m_timestamp = std::filesystem::file_time_type::clock::now();
                     std::filesystem::last_write_time(m_dir, m_timestamp);
+
+                    return;
                 }
             }
             catch(const boost::interprocess::interprocess_exception& e)
@@ -165,18 +164,28 @@ namespace webpier
 
     public:
 
-        context_impl(const std::string& dir)
-            : m_dir(dir)
+        context_impl(const std::string& dir, bool init)
+            : m_id(std::regex_replace(dir, std::regex("\\\\|\\/"), "_"))
+            , m_dir(dir)
+            , m_timestamp(std::filesystem::last_write_time(m_dir))
         {
-            reload();
+            if (init)
+                flush();
+            else
+                reload();
+        }
+
+        ~context_impl() override
+        {
+            boost::interprocess::named_mutex::remove(m_id.c_str());
         }
 
         void reload() noexcept(false) override
         {
             try
             {
-                boost::interprocess::file_lock lock(m_dir.c_str());
-                boost::interprocess::scoped_lock<boost::interprocess::file_lock> scope(lock);
+                boost::interprocess::named_mutex mutex(boost::interprocess::open_or_create, m_id.c_str());
+                boost::interprocess::scoped_lock<boost::interprocess::named_mutex> lock(mutex, boost::interprocess::try_to_lock_type());
 
                 boost::property_tree::ptree info;
                 boost::property_tree::read_json(m_dir + "/basic.json", info);
@@ -185,10 +194,10 @@ namespace webpier
                 m_basic.report = info.get<log>("report", log::info);
                 m_basic.daemon = info.get<bool>("daemon", false);
                 m_basic.tray = info.get<bool>("tray", true);
-                m_basic.traverse.stun = info.get<std::string>("traverse.stun", "stun.ekiga.net");
-                m_basic.traverse.hops = info.get<uint8_t>("traverse.hops", 7);
-                m_basic.rendezvous.bootstrap = info.get<std::string>("dht.bootstrap", "bootstrap.jami.net:4222");
-                m_basic.rendezvous.network = info.get<uint32_t>("dht.network", 0);
+                m_basic.traverse.stun = info.get<std::string>("nat.traverse.stun", default_stun_server);
+                m_basic.traverse.hops = info.get<uint8_t>("nat.traverse.hops", 7);
+                m_basic.rendezvous.bootstrap = info.get<std::string>("rendezvous.dht.bootstrap", default_dht_bootstrap);
+                m_basic.rendezvous.network = info.get<uint32_t>("rendezvous.dht.network", 0);
                 m_basic.emailer.smtp = info.get<std::string>("emailer.smtp", "");
                 m_basic.emailer.imap = info.get<std::string>("emailer.imap", "");
                 m_basic.emailer.login = info.get<std::string>("emailer.login", "");
@@ -208,8 +217,8 @@ namespace webpier
                     loc.gateway = item.second.get<std::string>("gateway", "");
                     loc.autostart = item.second.get<bool>("autostart", false);
                     loc.obscure = item.second.get<bool>("obscure", true);
-                    loc.rendezvous.bootstrap = item.second.get<std::string>("dht.bootstrap", "bootstrap.jami.net:4222");
-                    loc.rendezvous.network = item.second.get<uint32_t>("dht.network", 0);
+                    loc.rendezvous.bootstrap = item.second.get<std::string>("rendezvous.dht.bootstrap", "");
+                    loc.rendezvous.network = item.second.get<uint32_t>("rendezvous.dht.network", 0);
                     m_locals.emplace_back(std::move(loc));
                 }
 
@@ -224,8 +233,8 @@ namespace webpier
                     rem.gateway = item.second.get<std::string>("gateway", "");
                     rem.autostart = item.second.get<bool>("autostart", false);
                     rem.obscure = item.second.get<bool>("obscure", true);
-                    rem.rendezvous.bootstrap = item.second.get<std::string>("dht.bootstrap", "bootstrap.jami.net:4222");
-                    rem.rendezvous.network = item.second.get<uint32_t>("dht.network", 0);
+                    rem.rendezvous.bootstrap = item.second.get<std::string>("rendezvous.dht.bootstrap", "");
+                    rem.rendezvous.network = item.second.get<uint32_t>("rendezvous.dht.network", 0);
                     m_remotes.emplace_back(std::move(rem));
                 }
 
@@ -407,8 +416,8 @@ namespace webpier
         }
     };
 
-    std::shared_ptr<context> open_context(const std::string& dir) noexcept(false)
+    std::shared_ptr<context> open_context(const std::string& dir, bool init) noexcept(false)
     {
-        return std::make_shared<context_impl>(dir);
+        return std::make_shared<context_impl>(dir, init);
     }
 }

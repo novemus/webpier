@@ -7,6 +7,9 @@
 
 namespace webpier
 {
+    constexpr const char* default_stun_server = "stun.ekiga.net";
+    constexpr const char* default_dht_bootstrap = "bootstrap.jami.net:4222";
+
     struct stale_error : public std::runtime_error { stale_error(const std::string& what) : std::runtime_error(what) {} };
     struct file_error : public std::runtime_error { file_error(const std::string& what) : std::runtime_error(what) {} };
     struct lock_error : public std::runtime_error { lock_error(const std::string& what) : std::runtime_error(what) {} };
@@ -27,14 +30,14 @@ namespace webpier
 
     struct nat
     {
-        std::string stun;
-        uint8_t hops;
+        std::string stun = default_stun_server;
+        uint8_t hops = 7;
     };
 
     struct dht
     {
-        std::string bootstrap;
-        uint32_t network;
+        std::string bootstrap = default_dht_bootstrap;
+        uint32_t network = 0;
     };
 
     struct email
@@ -51,9 +54,9 @@ namespace webpier
     struct basic
     {
         std::string host;
-        log report;
-        bool daemon;
-        bool tray;
+        log report = log::info;
+        bool daemon = false;
+        bool tray = true;
         nat traverse;
         dht rendezvous;
         email emailer;
@@ -66,8 +69,8 @@ namespace webpier
         std::string mapping;
         std::string gateway;
         dht rendezvous;
-        bool autostart;
-        bool obscure;
+        bool autostart = false;
+        bool obscure = true;
     };
 
     struct context
@@ -94,5 +97,5 @@ namespace webpier
         virtual std::string get_fingerprint(const std::string& identity) const noexcept(false) = 0;
     };
 
-    std::shared_ptr<context> open_context(const std::string& dir) noexcept(false);
+    std::shared_ptr<context> open_context(const std::string& dir, bool init = false) noexcept(false);
 }
