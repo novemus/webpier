@@ -28,7 +28,7 @@ CImportDialog::CImportDialog( wxWindow* parent, wxWindowID id, const wxString& t
     serviceSizer->SetFlexibleDirection( wxHORIZONTAL );
     serviceSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-    m_idLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Service"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_idLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Id"), wxDefaultPosition, wxDefaultSize, 0 );
     m_idLabel->Wrap( -1 );
     serviceSizer->Add( m_idLabel, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 
@@ -36,16 +36,16 @@ CImportDialog::CImportDialog( wxWindow* parent, wxWindowID id, const wxString& t
     m_idValue->Wrap( -1 );
     serviceSizer->Add( m_idValue, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 
-    m_mappingLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Mapping"), wxDefaultPosition, wxDefaultSize, 0 );
-    m_mappingLabel->Wrap( -1 );
-    m_mappingLabel->SetToolTip( _("Local endpoint to map remote service") );
+    m_serviceLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Service"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_serviceLabel->Wrap( -1 );
+    m_serviceLabel->SetToolTip( _("Local endpoint to map remote service") );
 
-    serviceSizer->Add( m_mappingLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
+    serviceSizer->Add( m_serviceLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
-    m_mappingCtrl = new wxTextCtrl( peerSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-    m_mappingCtrl->SetToolTip( _("Local endpoint to map remote service") );
+    m_serviceCtrl = new wxTextCtrl( peerSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+    m_serviceCtrl->SetToolTip( _("Local endpoint to map remote service") );
 
-    serviceSizer->Add( m_mappingCtrl, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
+    serviceSizer->Add( m_serviceCtrl, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
     m_gateLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Gateway"), wxDefaultPosition, wxDefaultSize, 0 );
     m_gateLabel->Wrap( -1 );
@@ -139,8 +139,8 @@ CImportDialog::~CImportDialog()
     delete m_serviceList;
     delete m_idLabel;
     delete m_idValue;
-    delete m_mappingLabel;
-    delete m_mappingCtrl;
+    delete m_serviceLabel;
+    delete m_serviceCtrl;
     delete m_gateLabel;
     delete m_gateCtrl;
     delete m_startLabel;

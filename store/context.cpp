@@ -11,6 +11,7 @@
 #include <boost/interprocess/sync/scoped_lock.hpp>
 #include <boost/interprocess/sync/named_mutex.hpp>
 #include <boost/scope_exit.hpp>
+#include <iostream>
 
 namespace webpier
 {
@@ -62,7 +63,7 @@ namespace webpier
     class context_impl : public context
     {
         std::string m_id;
-        std::string m_dir;
+        std::filesystem::path m_dir;
         basic m_basic;
         std::vector<service> m_locals;
         std::vector<service> m_remotes;
@@ -70,14 +71,14 @@ namespace webpier
 
         enum flush_mode { flush_basic = 0x1, flush_local = 0x2, flush_remote = 0x4, flush_all = flush_basic|flush_local|flush_remote };
 
-        void flush(int mode = flush_all)
+        void flush(int mode = flush_all, bool force = false)
         {
             try
             {
                 boost::interprocess::named_mutex mutex(boost::interprocess::open_or_create, m_id.c_str());
                 boost::interprocess::scoped_lock<boost::interprocess::named_mutex> lock(mutex, boost::interprocess::try_to_lock_type());
 
-                if (std::filesystem::last_write_time(m_dir) == m_timestamp)
+                if (force || std::filesystem::last_write_time(m_dir / "webpier.json") == m_timestamp)
                 {
                     if (mode & flush_basic)
                     {
@@ -99,7 +100,7 @@ namespace webpier
                         info.put("emailer.key", m_basic.emailer.key);
                         info.put("emailer.ca", m_basic.emailer.ca);
 
-                        boost::property_tree::write_json(m_dir + "/basic.json", info);
+                        boost::property_tree::write_json(m_dir / "webpier.json", info);
                     }
 
                     if (mode & flush_local)
@@ -111,7 +112,7 @@ namespace webpier
                             boost::property_tree::ptree item;
                             item.put("id", info.id);
                             item.put("peer", info.peer);
-                            item.put("service", info.mapping);
+                            item.put("service", info.service);
                             item.put("gateway", info.gateway);
                             item.put("autostart", info.autostart);
                             item.put("obscure", info.obscure);
@@ -120,7 +121,7 @@ namespace webpier
                             list.push_back(std::make_pair("", item));
                         }
 
-                        boost::property_tree::write_json(m_dir + "/local.json", list);
+                        boost::property_tree::write_json(m_dir / "internal.json", list);
                     }
 
                     if (mode & flush_remote)
@@ -132,7 +133,7 @@ namespace webpier
                             boost::property_tree::ptree item;
                             item.put("id", info.id);
                             item.put("peer", info.peer);
-                            item.put("service", info.mapping);
+                            item.put("service", info.service);
                             item.put("gateway", info.gateway);
                             item.put("autostart", info.autostart);
                             item.put("obscure", info.obscure);
@@ -141,11 +142,11 @@ namespace webpier
                             list.push_back(std::make_pair("", item));
                         }
 
-                        boost::property_tree::write_json(m_dir + "/remote.json", list);
+                        boost::property_tree::write_json(m_dir / "external.json", list);
                     }
 
                     m_timestamp = std::filesystem::file_time_type::clock::now();
-                    std::filesystem::last_write_time(m_dir, m_timestamp);
+                    std::filesystem::last_write_time(m_dir / "webpier.json", m_timestamp);
 
                     return;
                 }
@@ -167,10 +168,9 @@ namespace webpier
         context_impl(const std::string& dir, bool init)
             : m_id(std::regex_replace(dir, std::regex("\\\\|\\/"), "_"))
             , m_dir(dir)
-            , m_timestamp(std::filesystem::last_write_time(m_dir))
         {
             if (init)
-                flush();
+                flush(flush_all, true);
             else
                 reload();
         }
@@ -188,7 +188,7 @@ namespace webpier
                 boost::interprocess::scoped_lock<boost::interprocess::named_mutex> lock(mutex, boost::interprocess::try_to_lock_type());
 
                 boost::property_tree::ptree info;
-                boost::property_tree::read_json(m_dir + "/basic.json", info);
+                boost::property_tree::read_json(m_dir / "webpier.json", info);
 
                 m_basic.host = info.get<std::string>("host", "");
                 m_basic.report = info.get<log>("report", log::info);
@@ -207,13 +207,13 @@ namespace webpier
                 m_basic.emailer.ca = info.get<std::string>("emailer.ca", "");
 
                 boost::property_tree::ptree local;
-                boost::property_tree::read_json(m_dir + "/local.json", info);
+                boost::property_tree::read_json(m_dir / "internal.json", info);
                 for (auto& item : local)
                 {
                     service loc;
                     loc.id = item.second.get<std::string>("id", "");
                     loc.peer = item.second.get<std::string>("peer", "");
-                    loc.mapping = item.second.get<std::string>("mapping", "");
+                    loc.service = item.second.get<std::string>("service", "");
                     loc.gateway = item.second.get<std::string>("gateway", "");
                     loc.autostart = item.second.get<bool>("autostart", false);
                     loc.obscure = item.second.get<bool>("obscure", true);
@@ -223,13 +223,13 @@ namespace webpier
                 }
 
                 boost::property_tree::ptree remote;
-                boost::property_tree::read_json(m_dir + "/remote.json", info);
+                boost::property_tree::read_json(m_dir / "external.json", info);
                 for (auto& item : remote)
                 {
                     service rem;
                     rem.id = item.second.get<std::string>("id", "");
                     rem.peer = item.second.get<std::string>("peer", "");
-                    rem.mapping = item.second.get<std::string>("service", "");
+                    rem.service = item.second.get<std::string>("service", "");
                     rem.gateway = item.second.get<std::string>("gateway", "");
                     rem.autostart = item.second.get<bool>("autostart", false);
                     rem.obscure = item.second.get<bool>("obscure", true);
@@ -258,11 +258,11 @@ namespace webpier
         void set_basic(const basic& info) noexcept(false) override
         {
             int mode = flush_basic;
-            
-            auto prev_host = std::filesystem::path(m_dir) / "repo" / m_basic.host;
-            auto next_host = std::filesystem::path(m_dir) / "repo" / info.host;
 
-            if (prev_host != next_host)
+            auto prev_host = m_basic.host.empty() ? std::filesystem::path() : m_dir / "repo" / m_basic.host;
+            auto next_host = info.host.empty() ? std::filesystem::path() : m_dir / "repo" / info.host;
+
+            if (prev_host != next_host && !next_host.empty())
             {
                 try
                 {
@@ -274,7 +274,10 @@ namespace webpier
                 }
 
                 generate_x509_pair(next_host / "cert.crt", next_host / "private.key", info.host);
+            }
 
+            if (prev_host != next_host)
+            {
                 m_remotes.clear();
                 m_locals.clear();
 
@@ -284,7 +287,7 @@ namespace webpier
             m_basic = info;
             flush(mode);
 
-            if (prev_host != next_host)
+            if (prev_host != next_host && !prev_host.empty())
             {
                 try
                 {
@@ -310,7 +313,7 @@ namespace webpier
             });
 
             if (iter != m_locals.end())
-                throw unique_error("such local service is already exist");
+                throw usage_error("such local service is already exist");
 
             m_locals.push_back(info);
             flush(flush_local);
@@ -324,9 +327,10 @@ namespace webpier
             });
 
             if (iter != m_locals.end())
+            {
                 m_locals.erase(iter, m_locals.end());
-
-            flush(flush_local);
+                flush(flush_local);
+            }
         }
 
         void get_remote_services(std::vector<service>& out) const noexcept(true) override
@@ -342,7 +346,7 @@ namespace webpier
             });
 
             if (iter != m_remotes.end())
-                throw unique_error("such remote service is already exist");
+                throw usage_error("such remote service is already exist");
 
             m_remotes.push_back(info);
             flush(flush_remote);
@@ -356,13 +360,15 @@ namespace webpier
             });
 
             if (iter != m_remotes.end())
+            {
                 m_remotes.erase(iter, m_remotes.end());
-            flush(flush_remote);
+                flush(flush_remote);
+            }
         }
 
-        void get_peers(std::vector<std::string>& out) const noexcept(true) override
+        void get_subjects(std::vector<std::string>& out) const noexcept(true) override
         {
-            for (auto const& owner : std::filesystem::directory_iterator(std::filesystem::path(m_dir) / "repo"))
+            for (auto const& owner : std::filesystem::directory_iterator(m_dir / "repo"))
             {
                 if (!owner.is_directory())
                     continue;
@@ -375,17 +381,18 @@ namespace webpier
                     if (!std::filesystem::exists(pier.path() / "cert.crt"))
                         continue;
 
-                    auto identity = owner.path().filename().string() + "/" + pier.path().filename().string();
-
-                    if (identity != m_basic.host)
-                        out.push_back(owner.path().filename().string() + "/" + pier.path().filename().string());
+                    out.push_back(owner.path().filename().string() + "/" + pier.path().filename().string());
                 }
             }
         }
 
-        void add_peer(const std::string& peer, const std::string& cert) noexcept(false) override
+        void add_certificate(const std::string& subject, const std::string& cert) noexcept(false) override
         {
-            auto home = std::filesystem::path(m_dir) / "repo" / peer;
+            auto home = m_dir / "repo" / subject;
+
+            if (std::filesystem::exists(home / "cert.crt"))
+                throw usage_error("such certificate is already exist");
+
             try
             {
                 std::filesystem::create_directories(home);
@@ -398,11 +405,14 @@ namespace webpier
             save_x509_cert(home / "cert.crt", cert);
         }
 
-        void del_peer(const std::string& peer) noexcept(false) override
+        void del_certificate(const std::string& subject) noexcept(false) override
         {
+            if (subject == m_basic.host)
+                throw usage_error("can't delete host certificate");
+
             try
             {
-                std::filesystem::remove_all(std::filesystem::path(m_dir) / "repo" / peer);
+                std::filesystem::remove_all(m_dir / "repo" / subject);
             }
             catch(const std::exception& e)
             {
@@ -410,9 +420,15 @@ namespace webpier
             }
         }
 
-        std::string get_fingerprint(const std::string& identity) const noexcept(false) override
+        std::string get_fingerprint(const std::string& subject) const noexcept(false) override
         {
-            return get_x509_public_sha1(std::filesystem::path(m_dir) / "repo" / identity);
+            return get_x509_public_sha1(m_dir / "repo" / subject / "cert.crt");
+        }
+
+        std::string get_certificate(const std::string& subject) const noexcept(false) override
+        {    
+            std::ifstream file(std::filesystem::path(m_dir/ "repo" / subject / "cert.crt").string());
+            return std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
         }
     };
 

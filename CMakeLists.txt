@@ -59,7 +59,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "d")
 
 if(BUILD_TESTING)
     set(WEBPIER_UT webpier_ut)
-    add_executable(${WEBPIER_UT} store/tests/utils.cpp store/context.cpp store/utils.cpp)
+    add_executable(${WEBPIER_UT} store/tests/utils.cpp store/tests/context.cpp store/context.cpp store/utils.cpp)
     target_compile_definitions(${WEBPIER_UT} PRIVATE BOOST_BIND_GLOBAL_PLACEHOLDERS)
     target_include_directories(${WEBPIER_UT} PRIVATE ${Boost_INCLUDE_DIRS})
     target_link_libraries(${WEBPIER_UT} PRIVATE OpenSSL::SSL OpenSSL::Crypto Boost::unit_test_framework)

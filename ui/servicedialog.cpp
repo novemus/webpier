@@ -12,9 +12,9 @@ CServiceDialog::CServiceDialog(wxWindow* parent, wxWindowID id, const wxString& 
 
     mainSizer->SetMinSize( wxSize( 400,-1 ) );
     m_propGrid = new wxPropertyGrid(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPG_BOLD_MODIFIED|wxPG_HIDE_MARGIN);
-    m_idItem = m_propGrid->Append( new wxStringProperty( _("Service") ) );
+    m_idItem = m_propGrid->Append( new wxStringProperty( _("Id") ) );
     m_peerItem = m_propGrid->Append( new wxMultiChoiceProperty( _("Peer"), wxPG_LABEL));
-    m_mapItem = m_propGrid->Append( new wxStringProperty( _("Mapping") ) );
+    m_servItem = m_propGrid->Append( new wxStringProperty( _("Service") ) );
     m_gateItem = m_propGrid->Append( new wxStringProperty( _("Gateway"), wxPG_LABEL, _("0.0.0.0:0") ) );
     m_startItem = m_propGrid->Append( new wxBoolProperty( _("Autostart") ) );
     m_obsItem = m_propGrid->Append( new wxBoolProperty( _("Obscure"), wxPG_LABEL, true ) );

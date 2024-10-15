@@ -22,8 +22,8 @@ class CImportDialog : public wxDialog
     wxCheckListBox* m_serviceList;
     wxStaticText* m_idLabel;
     wxStaticText* m_idValue;
-    wxStaticText* m_mappingLabel;
-    wxTextCtrl* m_mappingCtrl;
+    wxStaticText* m_serviceLabel;
+    wxTextCtrl* m_serviceCtrl;
     wxStaticText* m_gateLabel;
     wxTextCtrl* m_gateCtrl;
     wxStaticText* m_startLabel;

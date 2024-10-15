@@ -22,7 +22,7 @@ class CServiceDialog : public wxDialog
     wxPropertyGrid* m_propGrid;
     wxPGProperty* m_idItem;
     wxPGProperty* m_peerItem;
-    wxPGProperty* m_mapItem;
+    wxPGProperty* m_servItem;
     wxPGProperty* m_gateItem;
     wxPGProperty* m_obsItem;
     wxPGProperty* m_startItem;

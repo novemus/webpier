@@ -28,7 +28,7 @@ CExportDialog::CExportDialog( wxWindow* parent, wxWindowID id, const wxString& t
     serviceSizer->SetFlexibleDirection( wxHORIZONTAL );
     serviceSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-    m_idLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Service"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_idLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Id"), wxDefaultPosition, wxDefaultSize, 0 );
     m_idLabel->Wrap( -1 );
     serviceSizer->Add( m_idLabel, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
 
@@ -36,15 +36,15 @@ CExportDialog::CExportDialog( wxWindow* parent, wxWindowID id, const wxString& t
     m_idValue->Wrap( -1 );
     serviceSizer->Add( m_idValue, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
 
-    m_mappingLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Mapping"), wxDefaultPosition, wxDefaultSize, 0 );
-    m_mappingLabel->Wrap( -1 );
-    m_mappingLabel->SetToolTip( _("Local endpoint to map remote service") );
+    m_serviceLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Service"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_serviceLabel->Wrap( -1 );
+    m_serviceLabel->SetToolTip( _("Endpoint of the local service") );
 
-    serviceSizer->Add( m_mappingLabel, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
+    serviceSizer->Add( m_serviceLabel, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
 
-    m_mappingValue = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("127.0.0.1:22"), wxDefaultPosition, wxDefaultSize, 0 );
-    m_mappingValue->Wrap( -1 );
-    serviceSizer->Add( m_mappingValue, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
+    m_serviceValue = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("127.0.0.1:22"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_serviceValue->Wrap( -1 );
+    serviceSizer->Add( m_serviceValue, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
 
     m_gateLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Gateway"), wxDefaultPosition, wxDefaultSize, 0 );
     m_gateLabel->Wrap( -1 );
@@ -130,8 +130,8 @@ CExportDialog::~CExportDialog()
     delete m_serviceList;
     delete m_idLabel;
     delete m_idValue;
-    delete m_mappingLabel;
-    delete m_mappingValue;
+    delete m_serviceLabel;
+    delete m_serviceValue;
     delete m_gateLabel;
     delete m_gateValue;
     delete m_startLabel;

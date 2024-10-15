@@ -9,11 +9,12 @@ namespace webpier
 {
     constexpr const char* default_stun_server = "stun.ekiga.net";
     constexpr const char* default_dht_bootstrap = "bootstrap.jami.net:4222";
+    constexpr const char* default_gateway = "0.0.0.0:0";
 
     struct stale_error : public std::runtime_error { stale_error(const std::string& what) : std::runtime_error(what) {} };
+    struct usage_error : public std::runtime_error { usage_error(const std::string& what) : std::runtime_error(what) {} };
     struct file_error : public std::runtime_error { file_error(const std::string& what) : std::runtime_error(what) {} };
     struct lock_error : public std::runtime_error { lock_error(const std::string& what) : std::runtime_error(what) {} };
-    struct unique_error : public std::runtime_error { unique_error(const std::string& what) : std::runtime_error(what) {} };
 
     enum log
     {
@@ -66,8 +67,8 @@ namespace webpier
     {
         std::string id;
         std::string peer;
-        std::string mapping;
-        std::string gateway;
+        std::string service;
+        std::string gateway = default_gateway;
         dht rendezvous;
         bool autostart = false;
         bool obscure = true;
@@ -90,11 +91,12 @@ namespace webpier
         virtual void add_remote_service(const service& info) noexcept(false) = 0;
         virtual void del_remote_service(const std::string& peer, const std::string& id) noexcept(false) = 0;
 
-        virtual void get_peers(std::vector<std::string>& out) const noexcept(true) = 0;
-        virtual void add_peer(const std::string& peer, const std::string& cert) noexcept(false) = 0;
-        virtual void del_peer(const std::string& peer) noexcept(false) = 0;
+        virtual void get_subjects(std::vector<std::string>& out) const noexcept(true) = 0;
+        virtual void add_certificate(const std::string& subject, const std::string& cert) noexcept(false) = 0;
+        virtual void del_certificate(const std::string& subject) noexcept(false) = 0;
 
-        virtual std::string get_fingerprint(const std::string& identity) const noexcept(false) = 0;
+        virtual std::string get_certificate(const std::string& subject) const noexcept(false) = 0;
+        virtual std::string get_fingerprint(const std::string& subject) const noexcept(false) = 0;
     };
 
     std::shared_ptr<context> open_context(const std::string& dir, bool init = false) noexcept(false);
