@@ -1,4 +1,5 @@
 #include "../context.h"
+#include "../utils.h"
 #include <boost/test/unit_test.hpp>
 #include <boost/scope_exit.hpp>
 #include <filesystem>
@@ -13,16 +14,16 @@ BOOST_AUTO_TEST_CASE(context)
     } 
     BOOST_SCOPE_EXIT_END
 
-    BOOST_REQUIRE(std::filesystem::create_directory(dest));
+    std::string host = "host@mail.box/test";
+    std::string peer = "peer@mail.box/test";
 
-    auto context = webpier::open_context(dest, true);
-    
-    BOOST_REQUIRE(std::filesystem::exists(dest / "webpier.json"));
-    BOOST_REQUIRE(std::filesystem::exists(dest / "internal.json"));
-    BOOST_REQUIRE(std::filesystem::exists(dest / "external.json"));
+    BOOST_REQUIRE_NO_THROW(webpier::make_context(dest / "context", host));
+    BOOST_REQUIRE_THROW(webpier::make_context(dest / "context", peer), webpier::usage_error);
 
-    webpier::basic basic {
-        "someone@mail.box/test",
+    auto context = webpier::open_context(dest / "context");
+
+    webpier::config in {
+        peer,
         webpier::debug,
         true,
         false,
@@ -31,46 +32,80 @@ BOOST_AUTO_TEST_CASE(context)
         {
             "smtp.some.com",
             "imap.some.com",
-            "someone@mail.box",
+            "host@mail.box",
             "qwerty",
             "/some/path/cert.pem",
             "/some/path/private.pem",
             "/some/path/ca.pem"
         }};
 
-    BOOST_REQUIRE_NO_THROW(context->set_basic(basic));
+    BOOST_REQUIRE_THROW(context->set_config(in), webpier::usage_error);
 
-    webpier::basic config;
-    context->get_basic(config);
+    in.host = host;
 
-    BOOST_CHECK_EQUAL(config.host, basic.host);
-    BOOST_CHECK_EQUAL(config.report, basic.report);
-    BOOST_CHECK_EQUAL(config.daemon, basic.daemon);
-    BOOST_CHECK_EQUAL(config.tray, basic.tray);
-    BOOST_CHECK_EQUAL(config.traverse.stun, basic.traverse.stun);
-    BOOST_CHECK_EQUAL(config.traverse.hops, basic.traverse.hops);
-    BOOST_CHECK_EQUAL(config.rendezvous.bootstrap, basic.rendezvous.bootstrap);
-    BOOST_CHECK_EQUAL(config.rendezvous.network, basic.rendezvous.network);
-    BOOST_CHECK_EQUAL(config.emailer.smtp, basic.emailer.smtp);
-    BOOST_CHECK_EQUAL(config.emailer.imap, basic.emailer.imap);
-    BOOST_CHECK_EQUAL(config.emailer.login, basic.emailer.login);
-    BOOST_CHECK_EQUAL(config.emailer.password, basic.emailer.password);
-    BOOST_CHECK_EQUAL(config.emailer.password, basic.emailer.password);
-    BOOST_CHECK_EQUAL(config.emailer.password, basic.emailer.password);
-    BOOST_CHECK_EQUAL(config.emailer.password, basic.emailer.password);
+    BOOST_REQUIRE_NO_THROW(context->set_config(in));
+
+    webpier::config out;
+    context->get_config(out);
+
+    BOOST_CHECK_EQUAL(out.host, in.host);
+    BOOST_CHECK_EQUAL(out.report, in.report);
+    BOOST_CHECK_EQUAL(out.daemon, in.daemon);
+    BOOST_CHECK_EQUAL(out.tray, in.tray);
+    BOOST_CHECK_EQUAL(out.traverse.stun, in.traverse.stun);
+    BOOST_CHECK_EQUAL(out.traverse.hops, in.traverse.hops);
+    BOOST_CHECK_EQUAL(out.rendezvous.bootstrap, in.rendezvous.bootstrap);
+    BOOST_CHECK_EQUAL(out.rendezvous.network, in.rendezvous.network);
+    BOOST_CHECK_EQUAL(out.emailer.smtp, in.emailer.smtp);
+    BOOST_CHECK_EQUAL(out.emailer.imap, in.emailer.imap);
+    BOOST_CHECK_EQUAL(out.emailer.login, in.emailer.login);
+    BOOST_CHECK_EQUAL(out.emailer.password, in.emailer.password);
+    BOOST_CHECK_EQUAL(out.emailer.cert, in.emailer.cert);
+    BOOST_CHECK_EQUAL(out.emailer.key, in.emailer.key);
+    BOOST_CHECK_EQUAL(out.emailer.ca, in.emailer.ca);
 
     webpier::service service {
-        "foo"
-        "someone@mail.box/test",
+        "foo",
+        peer,
         "127.0.0.1:1234",
         "127.0.0.1:5678",
-        "someone@mail.box",
         {},
         true,
         false
         };
 
+    webpier::generate_x509_pair(dest / "cert.crt", dest / "private.key", peer);
+    auto peer_certificate = webpier::load_x509_cert(dest / "cert.crt");
+    auto peer_fingerprint = webpier::get_x509_public_sha1(dest / "cert.crt");
+
+    BOOST_REQUIRE_NO_THROW(context->add_peer(peer, peer_certificate));
+    BOOST_REQUIRE_THROW(context->add_peer(peer, peer_certificate), webpier::usage_error);
+
+    std::vector<std::string> list;
+    context->get_peers(list);
+
+    BOOST_REQUIRE_EQUAL(list.size(), 1);
+    BOOST_REQUIRE_EQUAL(list[0], peer);
+
+    BOOST_REQUIRE_NO_THROW(BOOST_CHECK_EQUAL(context->get_certificate(peer), peer_certificate));
+    BOOST_REQUIRE_NO_THROW(BOOST_CHECK_EQUAL(context->get_fingerprint(peer), peer_fingerprint));
+
     BOOST_REQUIRE_NO_THROW(context->add_local_service(service));
+    BOOST_REQUIRE_THROW(context->add_local_service(service), webpier::usage_error);
+
+    BOOST_REQUIRE_NO_THROW(context->add_remote_service(service));
+    BOOST_REQUIRE_THROW(context->add_remote_service(service), webpier::usage_error);
+
+    service.id = "bar";
+
+    BOOST_REQUIRE_NO_THROW(context->add_local_service(service));
+    BOOST_REQUIRE_THROW(context->add_local_service(service), webpier::usage_error);
+    
+    BOOST_REQUIRE_NO_THROW(context->add_remote_service(service));
+    BOOST_REQUIRE_THROW(context->add_remote_service(service), webpier::usage_error);
+
+    BOOST_REQUIRE_NO_THROW(context->del_local_service("foo"));
+    BOOST_REQUIRE_NO_THROW(context->del_remote_service(service.peer, "foo"));
 
     std::vector<webpier::service> locals;
     context->get_local_services(locals);
@@ -85,8 +120,6 @@ BOOST_AUTO_TEST_CASE(context)
     BOOST_CHECK_EQUAL(service.autostart, locals[0].autostart);
     BOOST_CHECK_EQUAL(service.obscure, locals[0].obscure);
 
-    BOOST_REQUIRE_NO_THROW(context->add_remote_service(service));
-
     std::vector<webpier::service> remotes;
     context->get_remote_services(remotes);
 
@@ -100,12 +133,7 @@ BOOST_AUTO_TEST_CASE(context)
     BOOST_CHECK_EQUAL(service.autostart, remotes[0].autostart);
     BOOST_CHECK_EQUAL(service.obscure, remotes[0].obscure);
 
-    BOOST_REQUIRE_NO_THROW(context->del_local_service(service.id));
-    BOOST_REQUIRE_NO_THROW(context->del_remote_service(service.peer, service.id));
-
-    locals.clear();
-    context->get_local_services(locals);
-    BOOST_REQUIRE(locals.empty());
+    BOOST_REQUIRE_NO_THROW(context->del_peer(peer));
 
     remotes.clear();
     context->get_remote_services(remotes);

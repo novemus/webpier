@@ -1,6 +1,7 @@
 #include "utils.h"
 #include <memory>
 #include <vector>
+#include <fstream>
 #include <openssl/x509v3.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
@@ -120,6 +121,25 @@ namespace webpier
             out << std::setw(2) << std::setfill('0') << std::hex << (int)hash[i];
 
         return out.str();
+    }
+
+    std::string load_x509_cert(const std::filesystem::path& cert_path) noexcept(false)
+    {
+        std::ifstream file(cert_path.string());
+        std::string buffer((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+
+        std::unique_ptr<BIO, void (*)(BIO*)> cert_bio(BIO_new_mem_buf(buffer.data(), (int)buffer.size()), BIO_free_all);
+        if (!cert_bio)
+            throw x509_error(get_openssl_error());
+
+        std::unique_ptr<X509, void (*)(X509*)> cert(PEM_read_bio_X509(cert_bio.get(), NULL, 0, NULL), X509_free);
+        if (!cert)
+            throw x509_error(get_openssl_error());
+
+        if(!X509_verify(cert.get(), X509_get_pubkey(cert.get())))
+            throw x509_error(get_openssl_error());
+
+        return buffer;
     }
 
     void save_x509_cert(const std::filesystem::path& cert_path, const std::string& data) noexcept(false)

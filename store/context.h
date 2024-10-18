@@ -52,7 +52,7 @@ namespace webpier
         std::string ca;
     };
 
-    struct basic
+    struct config
     {
         std::string host;
         log report = log::info;
@@ -78,26 +78,25 @@ namespace webpier
     {
         virtual ~context() {}
 
-        virtual void reload() noexcept(false) = 0;
+        virtual void get_peers(std::vector<std::string>& list) const noexcept(true) = 0;
+        virtual void add_peer(const std::string& id, const std::string& cert) noexcept(false) = 0;
+        virtual void del_peer(const std::string& id) noexcept(false) = 0;
 
-        virtual void get_basic(basic& out) const noexcept(true) = 0;
-        virtual void set_basic(const basic& info) noexcept(false) = 0;
+        virtual void get_config(config& info) const noexcept(true) = 0;
+        virtual void set_config(const config& info) noexcept(false) = 0;
 
-        virtual void get_local_services(std::vector<service>& out) const noexcept(true) = 0;
+        virtual void get_local_services(std::vector<service>& list) const noexcept(true) = 0;
         virtual void add_local_service(const service& info) noexcept(false) = 0;
         virtual void del_local_service(const std::string& id) noexcept(false) = 0;
 
-        virtual void get_remote_services(std::vector<service>& out) const noexcept(true) = 0;
+        virtual void get_remote_services(std::vector<service>& list) const noexcept(true) = 0;
         virtual void add_remote_service(const service& info) noexcept(false) = 0;
         virtual void del_remote_service(const std::string& peer, const std::string& id) noexcept(false) = 0;
 
-        virtual void get_subjects(std::vector<std::string>& out) const noexcept(true) = 0;
-        virtual void add_certificate(const std::string& subject, const std::string& cert) noexcept(false) = 0;
-        virtual void del_certificate(const std::string& subject) noexcept(false) = 0;
-
-        virtual std::string get_certificate(const std::string& subject) const noexcept(false) = 0;
-        virtual std::string get_fingerprint(const std::string& subject) const noexcept(false) = 0;
+        virtual std::string get_certificate(const std::string& id) const noexcept(false) = 0;
+        virtual std::string get_fingerprint(const std::string& id) const noexcept(false) = 0;
     };
 
-    std::shared_ptr<context> open_context(const std::string& dir, bool init = false) noexcept(false);
+    std::shared_ptr<context> open_context(const std::string& dir) noexcept(false);
+    std::shared_ptr<context> make_context(const std::string& dir, const std::string& host) noexcept(false);
 }

@@ -62,6 +62,14 @@ CSettingsDialog::CSettingsDialog(wxWindow* parent, wxWindowID id, const wxString
 
     basicSizer->Add( idSizer, 0, wxEXPAND|wxALL, 10 );
 
+    m_startupCheckBox = new wxCheckBox( basicPanel, wxID_ANY, _("Launch daemon on system startup"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_startupCheckBox->SetValue(true);
+    basicSizer->Add( m_startupCheckBox, 0, wxALL, 5 );
+
+    m_trayCheckBox = new wxCheckBox( basicPanel, wxID_ANY, _("Show tray icon"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_trayCheckBox->SetValue(true);
+    basicSizer->Add( m_trayCheckBox, 0, wxALL, 5 );
+
     wxBoxSizer* logSizer;
     logSizer = new wxBoxSizer( wxHORIZONTAL );
 
@@ -77,14 +85,6 @@ CSettingsDialog::CSettingsDialog(wxWindow* parent, wxWindowID id, const wxString
     logSizer->Add( m_logChoice, 0, wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
 
     basicSizer->Add( logSizer, 0, wxTOP|wxRIGHT|wxLEFT|wxEXPAND, 5 );
-
-    m_startupCheckBox = new wxCheckBox( basicPanel, wxID_ANY, _("Launch daemon on system startup"), wxDefaultPosition, wxDefaultSize, 0 );
-    m_startupCheckBox->SetValue(true);
-    basicSizer->Add( m_startupCheckBox, 0, wxALL, 5 );
-
-    m_trayCheckBox = new wxCheckBox( basicPanel, wxID_ANY, _("Show tray icon"), wxDefaultPosition, wxDefaultSize, 0 );
-    m_trayCheckBox->SetValue(true);
-    basicSizer->Add( m_trayCheckBox, 0, wxALL, 5 );
 
     basicPanel->SetSizer( basicSizer );
     basicPanel->Layout();

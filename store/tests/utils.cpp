@@ -31,4 +31,5 @@ BOOST_AUTO_TEST_CASE(x509)
 
     BOOST_REQUIRE_NO_THROW(webpier::save_x509_cert(copy, data));
     BOOST_REQUIRE_NO_THROW(BOOST_CHECK_EQUAL(webpier::get_x509_public_sha1(cert), webpier::get_x509_public_sha1(copy)));
+    BOOST_REQUIRE_NO_THROW(BOOST_CHECK_EQUAL(webpier::load_x509_cert(cert), webpier::load_x509_cert(copy)));
 }
