@@ -79,7 +79,12 @@ protected:
         event.Skip();
     }
 
+    void populate();
+
 public:
+
     CMainFrame();
     ~CMainFrame();
+
+    bool Show(bool show = true) wxOVERRIDE;
 };

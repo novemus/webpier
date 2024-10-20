@@ -4,6 +4,10 @@
 #include "importdialog.h"
 #include "exportdialog.h"
 #include "aboutdialog.h"
+#include "startupdialog.h"
+#include "messagedialog.h"
+#include <wx/stdpaths.h>
+#include <wx/filename.h>
 
 CMainFrame::CMainFrame() : wxFrame(nullptr, wxID_ANY, _("WebPier"), wxDefaultPosition, wxSize(800, 500), wxDEFAULT_FRAME_STYLE | wxTAB_TRAVERSAL)
 {
@@ -59,7 +63,7 @@ CMainFrame::CMainFrame() : wxFrame(nullptr, wxID_ANY, _("WebPier"), wxDefaultPos
     m_localBtn = new wxRadioButton( this, wxID_ANY, _("Local"), wxDefaultPosition, wxDefaultSize, 0 );
     topSizer->Add( m_localBtn, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 
-	m_hostLabel = new wxStaticText( this, wxID_ANY, _("indefinite"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER_HORIZONTAL );
+	m_hostLabel = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER_HORIZONTAL );
 	m_hostLabel->Wrap( -1 );
 	topSizer->Add( m_hostLabel, 1, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 
@@ -115,6 +119,67 @@ CMainFrame::~CMainFrame()
     delete m_deleteBtn;
     delete m_serviceList;
     delete m_statusBar;
+}
+
+bool CMainFrame::Show(bool show)
+{
+    auto done = wxFrame::Show(show);
+
+    if (show && done && m_hostLabel->GetLabel().IsEmpty())
+    {
+        populate();
+    }
+
+    return done;
+}
+
+void CMainFrame::populate()
+{
+    wxString home;
+    if (!wxGetEnv("WEBPIER_HOME", &home))
+        home = wxStandardPaths::Get().GetUserLocalDataDir();
+
+    if (!wxFileName::Exists(home) && !wxFileName::Mkdir(home))
+    {
+        CMessageDialog dialog(this, _("Can't create home directory ") + home, wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
+        dialog.ShowModal();
+        return;
+    }
+
+    wxString host;
+    wxString route = home + "/webpier";
+    if (wxFileName::FileExists(route))
+    {
+        wxFile in(route, wxFile::read);
+        if (!in.ReadAll(&host))
+        {
+            CMessageDialog dialog(this, _("Can't read ") + route, wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
+            dialog.ShowModal();
+            return;
+        }
+        in.Close();
+    }
+
+    if (host.IsEmpty())
+    {
+        CStartupDialog dialog(this);
+        if (dialog.ShowModal() == wxID_OK)
+        {
+            host = dialog.GetIdentity();
+
+            if (!wxFileName::Exists(home))
+                wxFileName::Mkdir(home);
+
+            wxFile out(route, wxFile::write);
+            if (!out.Write(host))
+            {
+                CMessageDialog dialog(this, _("Can't write ") + route, wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
+                dialog.ShowModal();
+                return;
+            }
+            out.Close();
+        }
+    }
 }
 
 void CMainFrame::onSettingsMenuSelection(wxCommandEvent& event)

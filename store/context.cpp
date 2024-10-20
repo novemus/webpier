@@ -167,7 +167,7 @@ namespace webpier
         webpier(const std::filesystem::path& home, const std::string& host)
             : m_path(home / conf_file_name)
         {
-            if (std::filesystem::exists(home))
+            if (std::filesystem::exists(home) && !std::filesystem::is_empty(home))
                 throw usage_error("bad context directory");
 
             m_config.host = host;
@@ -307,8 +307,8 @@ namespace webpier
         {
             if (init)
             {
-                if (std::filesystem::exists(home))
-                    throw usage_error("subject already exists");
+                if (std::filesystem::exists(home) && !std::filesystem::is_empty(home))
+                    throw usage_error("bad subject directory");
 
                 try
                 {
@@ -333,7 +333,7 @@ namespace webpier
             }
             else
             {
-                if (!std::filesystem::exists(home))
+                if (!std::filesystem::exists(m_path))
                     throw usage_error("subject does not exist");
 
                 m_locker = boost::interprocess::file_lock(m_path.c_str());
@@ -345,8 +345,8 @@ namespace webpier
         subject(const std::filesystem::path& home, const std::string& cert)
             : m_path(home / conf_file_name)
         {
-            if (std::filesystem::exists(home))
-                throw usage_error("subject already exists");
+            if (std::filesystem::exists(home) && !std::filesystem::is_empty(home))
+                throw usage_error("bad subject directory");
 
             try
             {
@@ -552,13 +552,9 @@ namespace webpier
         }
     };
 
-    std::shared_ptr<context> open_context(const std::string& dir) noexcept(false)
+    std::shared_ptr<context> open_context(const std::string& dir, const std::string& host) noexcept(false)
     {
-        return std::make_shared<context_impl>(dir);
-    }
-
-    std::shared_ptr<context> make_context(const std::string& dir, const std::string& host) noexcept(false)
-    {
-        return std::make_shared<context_impl>(dir, host);
+        auto home = std::filesystem::path(dir) / to_hexadecimal(host.data(), host.size());
+        return std::filesystem::exists(home) ? std::make_shared<context_impl>(home) : std::make_shared<context_impl>(home, host);
     }
 }

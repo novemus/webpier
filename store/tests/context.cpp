@@ -17,10 +17,7 @@ BOOST_AUTO_TEST_CASE(context)
     std::string host = "host@mail.box/test";
     std::string peer = "peer@mail.box/test";
 
-    BOOST_REQUIRE_NO_THROW(webpier::make_context(dest / "context", host));
-    BOOST_REQUIRE_THROW(webpier::make_context(dest / "context", peer), webpier::usage_error);
-
-    auto context = webpier::open_context(dest / "context");
+    auto context = webpier::open_context(dest, host);
 
     webpier::config in {
         peer,

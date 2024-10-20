@@ -97,6 +97,5 @@ namespace webpier
         virtual std::string get_fingerprint(const std::string& id) const noexcept(false) = 0;
     };
 
-    std::shared_ptr<context> open_context(const std::string& dir) noexcept(false);
-    std::shared_ptr<context> make_context(const std::string& dir, const std::string& host) noexcept(false);
+    std::shared_ptr<context> open_context(const std::string& dir, const std::string& host) noexcept(false);
 }

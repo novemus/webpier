@@ -48,6 +48,7 @@ add_executable(${PROJECT_NAME} WIN32
     ui/exportdialog.cpp
     ui/aboutdialog.cpp
     ui/messagedialog.cpp
+    ui/startupdialog.cpp
     store/context.cpp
     store/utils.cpp
     )

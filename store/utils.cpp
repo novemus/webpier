@@ -165,4 +165,14 @@ namespace webpier
         if(!PEM_write_bio_X509(file_bio.get(), cert.get()))
             throw x509_error(get_openssl_error());
     }
+
+    std::string to_hexadecimal(const void* data, size_t len)
+    {
+        std::stringstream out;
+        for (size_t i = 0; i < len; ++i)
+        {
+            out << std::setw(2) << std::setfill('0') << std::hex << (int)((uint8_t*)data)[i];
+        }
+        return out.str();
+    }
 }
