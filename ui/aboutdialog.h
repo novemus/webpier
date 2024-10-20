@@ -22,20 +22,12 @@
 class CAboutDialog : public wxDialog
 {
     wxPanel* m_panel;
-    wxStaticBitmap* m_logo;
-    wxStaticText* m_appName;
-    wxStaticText* m_appVersion;
-    wxStaticText* m_appPurpose;
-    wxStaticText* m_copyLabel;
-    wxStaticText* m_copyright;
-    wxStaticText* m_homeLabel;
-    wxHyperlinkCtrl* m_homepage;
-    wxButton* m_oK;
+    wxButton* m_ok;
 
 public:
 
     CAboutDialog( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("About WebPier"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_DIALOG_STYLE );
-
     ~CAboutDialog();
 };
+
 

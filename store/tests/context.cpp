@@ -21,7 +21,6 @@ BOOST_AUTO_TEST_CASE(context)
 
     webpier::config in {
         peer,
-        webpier::debug,
         true,
         false,
         {},
@@ -46,7 +45,6 @@ BOOST_AUTO_TEST_CASE(context)
     context->get_config(out);
 
     BOOST_CHECK_EQUAL(out.host, in.host);
-    BOOST_CHECK_EQUAL(out.report, in.report);
     BOOST_CHECK_EQUAL(out.daemon, in.daemon);
     BOOST_CHECK_EQUAL(out.tray, in.tray);
     BOOST_CHECK_EQUAL(out.traverse.stun, in.traverse.stun);

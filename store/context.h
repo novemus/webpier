@@ -16,19 +16,6 @@ namespace webpier
     struct file_error : public std::runtime_error { file_error(const std::string& what) : std::runtime_error(what) {} };
     struct lock_error : public std::runtime_error { lock_error(const std::string& what) : std::runtime_error(what) {} };
 
-    enum log
-    {
-        fatal,
-        error,
-        warning,
-        info,
-        debug,
-        trace
-    };
-
-    std::ostream& operator<<(std::ostream& out, log level);
-    std::istream& operator>>(std::istream& in, log& level);
-
     struct nat
     {
         std::string stun = default_stun_server;
@@ -55,7 +42,6 @@ namespace webpier
     struct config
     {
         std::string host;
-        log report = log::info;
         bool daemon = false;
         bool tray = true;
         nat traverse;

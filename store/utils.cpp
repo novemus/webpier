@@ -166,7 +166,7 @@ namespace webpier
             throw x509_error(get_openssl_error());
     }
 
-    std::string to_hexadecimal(const void* data, size_t len)
+    std::string to_hexadecimal(const void* data, size_t len) noexcept(true)
     {
         std::stringstream out;
         for (size_t i = 0; i < len; ++i)

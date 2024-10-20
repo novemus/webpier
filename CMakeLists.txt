@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5.0)
-project(webpier VERSION 0.1.0 LANGUAGES C CXX)
+project(webpier VERSION 1.0.0 LANGUAGES C CXX)
 
 set(Boost_USE_STATIC_LIBS ON)
 set(wxWidgets_USE_STATIC ON)

@@ -9,7 +9,7 @@
 #include <wx/stdpaths.h>
 #include <wx/filename.h>
 
-CMainFrame::CMainFrame() : wxFrame(nullptr, wxID_ANY, _("WebPier"), wxDefaultPosition, wxSize(800, 500), wxDEFAULT_FRAME_STYLE | wxTAB_TRAVERSAL)
+CMainFrame::CMainFrame() : wxFrame(nullptr, wxID_ANY, wxT("WebPier"), wxDefaultPosition, wxSize(800, 500), wxDEFAULT_FRAME_STYLE | wxTAB_TRAVERSAL)
 {
     this->SetSizeHints( wxDefaultSize, wxDefaultSize );
     this->SetBackgroundColour( wxSystemSettings::GetColour( wxSYS_COLOUR_MENU ) );

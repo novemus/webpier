@@ -29,7 +29,6 @@ class CSettingsDialog : public wxDialog
     wxNotebook* m_notebook;
     wxTextCtrl* m_ownerCtrl;
     wxTextCtrl* m_pierCtrl;
-    wxChoice* m_logChoice;
     wxCheckBox* m_startupCheckBox;
     wxCheckBox* m_trayCheckBox;
     wxTextCtrl* m_stunCtrl;

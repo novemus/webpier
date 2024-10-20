@@ -18,51 +18,6 @@ namespace webpier
     constexpr const char* conf_file_name = "webpier.json";
     constexpr const char* repo_dir_name = "repo";
 
-    std::ostream& operator<<(std::ostream& out, log level)
-    {
-        switch(level)
-        {
-            case log::fatal:
-                return out << "FATAL";
-            case log::error:
-                return out << "ERROR";
-            case log::warning:
-                return out << "WARN";
-            case log::info:
-                return out << "INFO";
-            case log::debug:
-                return out << "DEBUG";
-            case log::trace:
-                return out << "TRACE";
-            default:
-                return out << "NONE";
-        }
-        return out;
-    }
-
-    std::istream& operator>>(std::istream& in, log& level)
-    {
-        std::string str;
-        in >> str;
-
-        if (str == "fatal" || str == "FATAL" || str == "1")
-            level = log::fatal;
-        else if (str == "error" || str == "ERROR" || str == "2")
-            level = log::error;
-        else if (str == "warning" || str == "WARN" || str == "3")
-            level = log::warning;
-        else if (str == "info" || str == "INFO" || str == "4")
-            level = log::info;
-        else if (str == "debug" || str == "DEBUG" || str == "5")
-            level = log::debug;
-        else if (str == "trace" || str == "TRACE" || str == "6")
-            level = log::trace;
-        else
-            level = log::info;
-
-        return in;
-    }
-
     class webpier
     {
         config m_config;
@@ -80,7 +35,6 @@ namespace webpier
                 boost::property_tree::read_json(m_path, info);
 
                 m_config.host = info.get<std::string>("host");
-                m_config.report = info.get<log>("report", log::info);
                 m_config.daemon = info.get<bool>("daemon", false);
                 m_config.tray = info.get<bool>("tray", true);
                 m_config.traverse.stun = info.get<std::string>("nat.traverse.stun", default_stun_server);
@@ -118,7 +72,6 @@ namespace webpier
                     boost::property_tree::ptree info;
 
                     info.put("host", m_config.host);
-                    info.put("report", m_config.report);
                     info.put("daemon", m_config.daemon);
                     info.put("tray", m_config.tray);
                     info.put("nat.traverse.stun", m_config.traverse.stun);

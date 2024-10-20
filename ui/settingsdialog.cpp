@@ -70,22 +70,6 @@ CSettingsDialog::CSettingsDialog(wxWindow* parent, wxWindowID id, const wxString
     m_trayCheckBox->SetValue(true);
     basicSizer->Add( m_trayCheckBox, 0, wxALL, 5 );
 
-    wxBoxSizer* logSizer;
-    logSizer = new wxBoxSizer( wxHORIZONTAL );
-
-    wxStaticText* logLabel;
-    logLabel = new wxStaticText( basicPanel, wxID_ANY, _("Logging"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
-    logLabel->Wrap( -1 );
-    logSizer->Add( logLabel, 0, wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
-
-    wxString m_logChoiceChoices[] = { _("fatal"), _("error"), _("warning"), _("info"), _("debug"), _("trace") };
-    int m_logChoiceNChoices = sizeof( m_logChoiceChoices ) / sizeof( wxString );
-    m_logChoice = new wxChoice( basicPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_logChoiceNChoices, m_logChoiceChoices, 0 );
-    m_logChoice->SetSelection( 3 );
-    logSizer->Add( m_logChoice, 0, wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
-
-    basicSizer->Add( logSizer, 0, wxTOP|wxRIGHT|wxLEFT|wxEXPAND, 5 );
-
     basicPanel->SetSizer( basicSizer );
     basicPanel->Layout();
     basicSizer->Fit( basicPanel );
