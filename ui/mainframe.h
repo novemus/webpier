@@ -1,5 +1,6 @@
 #pragma once
 
+#include "context.h"
 #include <wx/artprov.h>
 #include <wx/xrc/xmlres.h>
 #include <wx/intl.h>
@@ -25,6 +26,8 @@
 
 class CMainFrame : public wxFrame
 {
+    wxMenuItem* m_importItem;
+    wxMenuItem* m_exportItem;
     wxRadioButton* m_remoteBtn;
     wxRadioButton* m_localBtn;
     wxStaticText* m_hostLabel;
@@ -33,6 +36,7 @@ class CMainFrame : public wxFrame
     wxBitmapButton* m_deleteBtn;
     wxDataViewListCtrl* m_serviceList;
     wxStatusBar* m_statusBar;
+    wxVector<WebPier::Service> m_services;
 
 protected:
 
@@ -56,23 +60,13 @@ protected:
 
     void onAboutMenuSelection(wxCommandEvent& event);
 
-    void onRemoteRadioClick(wxCommandEvent& event)
-    {
-        event.Skip();
-    }
-
-    void onLocalRadioClick(wxCommandEvent& event)
-    {
-        event.Skip();
-    }
+    void onRemoteRadioClick(wxCommandEvent& event);
+    void onLocalRadioClick(wxCommandEvent& event);
 
     void onAddServiceButtonClick(wxCommandEvent& event);
     void onEditServiceButtonClick(wxCommandEvent& event);
 
-    void onDeleteServiceButtonClick(wxCommandEvent& event)
-    {
-        event.Skip();
-    }
+    void onDeleteServiceButtonClick(wxCommandEvent& event);
 
     void onServiceItemContextMenu(wxDataViewEvent& event)
     {

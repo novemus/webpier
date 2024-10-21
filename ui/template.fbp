@@ -627,7 +627,7 @@
             <property name="permission">private</property>
             <property name="pos"></property>
             <property name="size"></property>
-            <property name="style">wxDV_HORIZ_RULES|wxDV_ROW_LINES|wxDV_SINGLE</property>
+            <property name="style">wxDV_HORIZ_RULES|wxDV_ROW_LINES|wxDV_SINGLE|wxDV_VERT_RULES</property>
             <property name="subclass">; ; forward_declare</property>
             <property name="tooltip"></property>
             <property name="window_extra_style"></property>
@@ -636,8 +636,8 @@
             <object class="dataViewListColumn" expanded="false">
               <property name="align">wxALIGN_LEFT</property>
               <property name="ellipsize"></property>
-              <property name="flags">wxDATAVIEW_COL_RESIZABLE</property>
-              <property name="label">Service</property>
+              <property name="flags">wxDATAVIEW_COL_RESIZABLE|wxDATAVIEW_COL_SORTABLE</property>
+              <property name="label">Id</property>
               <property name="mode">wxDATAVIEW_CELL_INERT</property>
               <property name="name">idColumn</property>
               <property name="permission">none</property>
@@ -646,22 +646,22 @@
             </object>
             <object class="dataViewListColumn" expanded="false">
               <property name="align">wxALIGN_LEFT</property>
-              <property name="ellipsize"></property>
-              <property name="flags">wxDATAVIEW_COL_RESIZABLE</property>
+              <property name="ellipsize">wxELLIPSIZE_END</property>
+              <property name="flags">wxDATAVIEW_COL_RESIZABLE|wxDATAVIEW_COL_SORTABLE</property>
               <property name="label">Peer</property>
               <property name="mode">wxDATAVIEW_CELL_INERT</property>
               <property name="name">peerColumn</property>
               <property name="permission">none</property>
               <property name="type">Text</property>
-              <property name="width">150</property>
+              <property name="width">200</property>
             </object>
             <object class="dataViewListColumn" expanded="false">
               <property name="align">wxALIGN_LEFT</property>
               <property name="ellipsize"></property>
-              <property name="flags">wxDATAVIEW_COL_RESIZABLE</property>
-              <property name="label">Mapping</property>
+              <property name="flags">wxDATAVIEW_COL_RESIZABLE|wxDATAVIEW_COL_SORTABLE</property>
+              <property name="label">Service</property>
               <property name="mode">wxDATAVIEW_CELL_INERT</property>
-              <property name="name">mappingColumn</property>
+              <property name="name">serviceColumn</property>
               <property name="permission">none</property>
               <property name="type">Text</property>
               <property name="width">150</property>
@@ -669,7 +669,7 @@
             <object class="dataViewListColumn" expanded="false">
               <property name="align">wxALIGN_LEFT</property>
               <property name="ellipsize"></property>
-              <property name="flags">wxDATAVIEW_COL_RESIZABLE</property>
+              <property name="flags">wxDATAVIEW_COL_RESIZABLE|wxDATAVIEW_COL_SORTABLE</property>
               <property name="label">Gateway</property>
               <property name="mode">wxDATAVIEW_CELL_INERT</property>
               <property name="name">gateColumn</property>
@@ -680,7 +680,7 @@
             <object class="dataViewListColumn" expanded="false">
               <property name="align">wxALIGN_LEFT</property>
               <property name="ellipsize"></property>
-              <property name="flags">wxDATAVIEW_COL_RESIZABLE</property>
+              <property name="flags">wxDATAVIEW_COL_RESIZABLE|wxDATAVIEW_COL_SORTABLE</property>
               <property name="label">Rendezvous</property>
               <property name="mode">wxDATAVIEW_CELL_INERT</property>
               <property name="name">rendColumn</property>
@@ -691,7 +691,7 @@
             <object class="dataViewListColumn" expanded="false">
               <property name="align">wxALIGN_LEFT</property>
               <property name="ellipsize"></property>
-              <property name="flags">wxDATAVIEW_COL_RESIZABLE</property>
+              <property name="flags">wxDATAVIEW_COL_RESIZABLE|wxDATAVIEW_COL_SORTABLE</property>
               <property name="label">Autostart</property>
               <property name="mode">wxDATAVIEW_CELL_INERT</property>
               <property name="name">startColumn</property>
@@ -727,7 +727,7 @@
         <property name="window_style"></property>
       </object>
     </object>
-    <object class="Dialog" expanded="true">
+    <object class="Dialog" expanded="false">
       <property name="aui_managed">0</property>
       <property name="aui_manager_style">wxAUI_MGR_DEFAULT</property>
       <property name="bg"></property>
@@ -755,16 +755,16 @@
       <property name="window_extra_style"></property>
       <property name="window_name"></property>
       <property name="window_style"></property>
-      <object class="wxBoxSizer" expanded="true">
+      <object class="wxBoxSizer" expanded="false">
         <property name="minimum_size">450,-1</property>
         <property name="name">mainSizer</property>
         <property name="orient">wxVERTICAL</property>
         <property name="permission">none</property>
-        <object class="sizeritem" expanded="true">
+        <object class="sizeritem" expanded="false">
           <property name="border">5</property>
           <property name="flag">wxEXPAND | wxALL</property>
           <property name="proportion">1</property>
-          <object class="wxNotebook" expanded="true">
+          <object class="wxNotebook" expanded="false">
             <property name="BottomDockable">1</property>
             <property name="LeftDockable">1</property>
             <property name="RightDockable">1</property>
@@ -818,11 +818,11 @@
             <property name="window_extra_style"></property>
             <property name="window_name"></property>
             <property name="window_style"></property>
-            <object class="notebookpage" expanded="true">
+            <object class="notebookpage" expanded="false">
               <property name="bitmap"></property>
               <property name="label">Basic</property>
               <property name="select">1</property>
-              <object class="wxPanel" expanded="true">
+              <object class="wxPanel" expanded="false">
                 <property name="BottomDockable">1</property>
                 <property name="LeftDockable">1</property>
                 <property name="RightDockable">1</property>
@@ -874,12 +874,12 @@
                 <property name="window_extra_style"></property>
                 <property name="window_name"></property>
                 <property name="window_style">wxTAB_TRAVERSAL</property>
-                <object class="wxBoxSizer" expanded="true">
+                <object class="wxBoxSizer" expanded="false">
                   <property name="minimum_size"></property>
                   <property name="name">basicSizer</property>
                   <property name="orient">wxVERTICAL</property>
                   <property name="permission">none</property>
-                  <object class="sizeritem" expanded="true">
+                  <object class="sizeritem" expanded="false">
                     <property name="border">10</property>
                     <property name="flag">wxEXPAND|wxALL</property>
                     <property name="proportion">0</property>
@@ -4175,7 +4175,7 @@
               <property name="name">m_netItem</property>
               <property name="permission">protected</property>
               <property name="prop_name"></property>
-              <property name="type">String</property>
+              <property name="type">UInt</property>
             </object>
           </object>
         </object>
@@ -4195,6 +4195,8 @@
             <property name="minimum_size"></property>
             <property name="name">sdbSizer</property>
             <property name="permission">none</property>
+            <event name="OnCancelButtonClick">onCancelButtonClick</event>
+            <event name="OnOKButtonClick">onOKButtonClick</event>
           </object>
         </object>
       </object>

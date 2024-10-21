@@ -1,5 +1,6 @@
 #pragma once
 
+#include "context.h"
 #include <wx/artprov.h>
 #include <wx/xrc/xmlres.h>
 #include <wx/intl.h>
@@ -44,6 +45,7 @@ class CSettingsDialog : public wxDialog
     wxFilePickerCtrl* m_caPicker;
     wxButton* m_cancelBtn;
     wxButton* m_okBtn;
+    WebPier::Config m_config;
 
     void onCancelButtonClick( wxCommandEvent& event ) { event.Skip(); }
     void onOkButtonClick( wxCommandEvent& event );

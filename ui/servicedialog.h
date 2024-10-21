@@ -1,5 +1,6 @@
 #pragma once
 
+#include "context.h"
 #include <wx/artprov.h>
 #include <wx/xrc/xmlres.h>
 #include <wx/intl.h>
@@ -31,12 +32,16 @@ class CServiceDialog : public wxDialog
     wxPGProperty* m_netItem;
     wxButton* m_ok;
     wxButton* m_cancel;
+    WebPier::Service* m_service;
 
     void onPropertyChanged( wxPropertyGridEvent& event );
+    void onOKButtonClick( wxCommandEvent& event );
+    void onCancelButtonClick( wxCommandEvent& event );
 
 public:
 
     CServiceDialog(
+        WebPier::Service* service,
         wxWindow* parent,
         wxWindowID id = wxID_ANY,
         const wxString& title = _("Service"),

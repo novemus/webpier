@@ -378,10 +378,8 @@ public:
     {
         PU_CONFIGURE = 10001,
         PU_START,
-        PU_HARD_RESTART,
-        PU_SOFT_RESTART,
         PU_STOP,
-        PU_EXIT
+        PU_QUIT
     };
 
 #if defined(__WXOSX__) && wxOSX_USE_COCOA
@@ -423,16 +421,6 @@ public:
 
     }
 
-    void OnMenuHardRestart(wxCommandEvent&)
-    {
-
-    }
-
-    void OnMenuSoftRestart(wxCommandEvent&)
-    {
-
-    }
-
     void OnMenuStop(wxCommandEvent&)
     {
 
@@ -450,15 +438,13 @@ public:
         menu->Append(PU_CONFIGURE, _("&Configure..."));
         wxMenu* submenu = new wxMenu();
         submenu->Append(PU_START, _("&Start"));
-        submenu->Append(PU_HARD_RESTART, _("&Hard Restart"));
-        submenu->Append(PU_SOFT_RESTART, _("S&oft Restart"));
         submenu->Append(PU_STOP, _("S&top"));
-        menu->Append(wxID_ANY, "Daemon", submenu);
+        menu->Append(wxID_ANY, "&Daemon", submenu);
 
     #ifdef __WXOSX__
         if ( OSXIsStatusItem() )
     #endif
-        menu->Append(PU_EXIT, _("&Exit"));
+        menu->Append(PU_QUIT, _("&Quit"));
 
         return menu;
     }
@@ -469,10 +455,8 @@ public:
 wxBEGIN_EVENT_TABLE(CTaskBarIcon, wxTaskBarIcon)
     EVT_MENU(PU_CONFIGURE, CTaskBarIcon::OnMenuConfigure)
     EVT_MENU(PU_START, CTaskBarIcon::OnMenuStart)
-    EVT_MENU(PU_HARD_RESTART, CTaskBarIcon::OnMenuHardRestart)
-    EVT_MENU(PU_SOFT_RESTART, CTaskBarIcon::OnMenuSoftRestart)
     EVT_MENU(PU_STOP, CTaskBarIcon::OnMenuStop)
-    EVT_MENU(PU_EXIT, CTaskBarIcon::OnMenuExit)
+    EVT_MENU(PU_QUIT, CTaskBarIcon::OnMenuExit)
     EVT_TASKBAR_LEFT_DCLICK(CTaskBarIcon::OnLeftButtonDClick)
 wxEND_EVENT_TABLE()
 

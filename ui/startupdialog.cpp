@@ -1,9 +1,13 @@
 #include "startupdialog.h"
+#include "messagedialog.h"
 #include "logo.h"
+#include <wx/valtext.h>
 
 CStartupDialog::CStartupDialog(wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style) :
         wxDialog(parent, id, title, pos, size, style)
 {
+    static constexpr const char* FORBIDDEN_PATH_CHARS = "*/\\<>:|?";
+
     this->SetSizeHints(wxDefaultSize, wxDefaultSize);
 
     wxBoxSizer* mainSizer;
@@ -40,6 +44,8 @@ CStartupDialog::CStartupDialog(wxWindow* parent, wxWindowID id, const wxString& 
 
     m_ownerCtrl = new wxTextCtrl(idSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
     m_ownerCtrl->SetToolTip(_("Email address to represent you to your peers and use it for email rendezvous"));
+    m_ownerCtrl->SetValidator(wxTextValidator(wxFILTER_EXCLUDE_CHAR_LIST));
+    ((wxTextValidator*)m_ownerCtrl->GetValidator())->SetCharExcludes(FORBIDDEN_PATH_CHARS);
 
     idGridSizer->Add(m_ownerCtrl, 0, wxEXPAND | wxALIGN_CENTER_VERTICAL | wxRIGHT | wxLEFT, 5);
 
@@ -50,6 +56,8 @@ CStartupDialog::CStartupDialog(wxWindow* parent, wxWindowID id, const wxString& 
 
     m_pierCtrl = new wxTextCtrl(idSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
     m_pierCtrl->SetToolTip(_("Identifier of this pier"));
+    m_pierCtrl->SetValidator(wxTextValidator(wxFILTER_EXCLUDE_CHAR_LIST));
+    ((wxTextValidator*)m_ownerCtrl->GetValidator())->SetCharExcludes(FORBIDDEN_PATH_CHARS);
 
     idGridSizer->Add(m_pierCtrl, 0, wxEXPAND | wxALIGN_CENTER_VERTICAL | wxBOTTOM | wxRIGHT | wxLEFT, 5);
 
@@ -71,11 +79,24 @@ CStartupDialog::CStartupDialog(wxWindow* parent, wxWindowID id, const wxString& 
     this->Centre(wxBOTH);
 
     sdbSizerOK->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(CStartupDialog::onOkButtonClick), NULL, this);
+    this->Bind(wxEVT_CLOSE_WINDOW, &CStartupDialog::onCloseButtonClick, this);
+}
+
+void CStartupDialog::onCloseButtonClick(wxCloseEvent& event)
+{
+    this->EndModal(wxID_CANCEL);
+    event.Skip();
 }
 
 void CStartupDialog::onOkButtonClick(wxCommandEvent& event)
 {
-    event.Skip();
+    if (m_ownerCtrl->GetValue().IsEmpty() || m_pierCtrl->GetValue().IsEmpty())
+    {
+        CMessageDialog dialog(this, _("You must define Owner and Pier parameters"), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
+        dialog.ShowModal();
+    }
+    else
+        event.Skip();
 }
 
 CStartupDialog::~CStartupDialog()

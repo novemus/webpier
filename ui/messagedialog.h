@@ -24,7 +24,7 @@ class CMessageDialog : public wxDialog
     wxButton* m_ok = nullptr;
     wxButton* m_no = nullptr;
 
-	void onNoButtonClick( wxCommandEvent& event ) { this->EndModal(m_ok->GetId()); event.Skip(); }
+	void onNoButtonClick( wxCommandEvent& event ) { this->EndModal(m_no->GetId()); event.Skip(); }
 	void onOkButtonClick( wxCommandEvent& event ) { this->EndModal(m_ok->GetId()); event.Skip(); }
 
 public:

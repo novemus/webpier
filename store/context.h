@@ -64,6 +64,9 @@ namespace webpier
     {
         virtual ~context() {}
 
+        virtual std::string get_home() const noexcept(true) = 0;
+        virtual std::string get_host() const noexcept(true) = 0;
+
         virtual void get_peers(std::vector<std::string>& list) const noexcept(true) = 0;
         virtual void add_peer(const std::string& id, const std::string& cert) noexcept(false) = 0;
         virtual void del_peer(const std::string& id) noexcept(false) = 0;

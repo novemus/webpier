@@ -3,14 +3,12 @@
 #include <wx/msgdlg.h> 
 #include <wx/valnum.h>
 
-namespace
-{
-   static constexpr const char* FORBIDDEN_PATH_CHARS = "*/\\<>:|?";
-}
-
 CSettingsDialog::CSettingsDialog(wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style)
     : wxDialog(parent, id, title, pos, size, style)
+    , m_config(WebPier::GetConfig())
 {
+    static constexpr const char* FORBIDDEN_PATH_CHARS = "*/\\<>:|?";
+
     this->SetSizeHints( wxDefaultSize, wxDefaultSize );
 
     wxBoxSizer* mainSizer;
@@ -39,7 +37,7 @@ CSettingsDialog::CSettingsDialog(wxWindow* parent, wxWindowID id, const wxString
     ownerLabel->Wrap( -1 );
     idGridSizer->Add( ownerLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
-    m_ownerCtrl = new wxTextCtrl( idSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
+    m_ownerCtrl = new wxTextCtrl( idSizer->GetStaticBox(), wxID_ANY, m_config.GetOwner(), wxDefaultPosition, wxDefaultSize, 0);
     m_ownerCtrl->SetToolTip( _("Email address to represent you to your peers and use it for email rendezvous") );
     m_ownerCtrl->SetValidator(wxTextValidator(wxFILTER_EXCLUDE_CHAR_LIST));
     ((wxTextValidator*)m_ownerCtrl->GetValidator())->SetCharExcludes(FORBIDDEN_PATH_CHARS);
@@ -51,7 +49,7 @@ CSettingsDialog::CSettingsDialog(wxWindow* parent, wxWindowID id, const wxString
     pierLabel->Wrap( -1 );
     idGridSizer->Add( pierLabel, 0, wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
 
-    m_pierCtrl = new wxTextCtrl( idSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+    m_pierCtrl = new wxTextCtrl( idSizer->GetStaticBox(), wxID_ANY, m_config.GetPier(), wxDefaultPosition, wxDefaultSize, 0 );
     m_pierCtrl->SetToolTip( _("Identifier of this pier") );
     m_pierCtrl->SetValidator(wxTextValidator(wxFILTER_EXCLUDE_CHAR_LIST));
     ((wxTextValidator*)m_pierCtrl->GetValidator())->SetCharExcludes(FORBIDDEN_PATH_CHARS);
@@ -63,11 +61,11 @@ CSettingsDialog::CSettingsDialog(wxWindow* parent, wxWindowID id, const wxString
     basicSizer->Add( idSizer, 0, wxEXPAND|wxALL, 10 );
 
     m_startupCheckBox = new wxCheckBox( basicPanel, wxID_ANY, _("Launch daemon on system startup"), wxDefaultPosition, wxDefaultSize, 0 );
-    m_startupCheckBox->SetValue(true);
+    m_startupCheckBox->SetValue(m_config.IsDaemon());
     basicSizer->Add( m_startupCheckBox, 0, wxALL, 5 );
 
     m_trayCheckBox = new wxCheckBox( basicPanel, wxID_ANY, _("Show tray icon"), wxDefaultPosition, wxDefaultSize, 0 );
-    m_trayCheckBox->SetValue(true);
+    m_trayCheckBox->SetValue(m_config.IsTray());
     basicSizer->Add( m_trayCheckBox, 0, wxALL, 5 );
 
     basicPanel->SetSizer( basicSizer );
@@ -92,7 +90,7 @@ CSettingsDialog::CSettingsDialog(wxWindow* parent, wxWindowID id, const wxString
     stunLabel->Wrap( -1 );
     stunGridSizer->Add( stunLabel, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
 
-    m_stunCtrl = new wxTextCtrl( natPanel, wxID_ANY, _("stun.ekiga.net"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_stunCtrl = new wxTextCtrl( natPanel, wxID_ANY, m_config.GetStunServer(), wxDefaultPosition, wxDefaultSize, 0 );
     stunGridSizer->Add( m_stunCtrl, 0, wxALIGN_CENTER_VERTICAL|wxEXPAND|wxTOP|wxRIGHT|wxLEFT, 5 );
 
     wxStaticText* punchLabel;
@@ -100,7 +98,7 @@ CSettingsDialog::CSettingsDialog(wxWindow* parent, wxWindowID id, const wxString
     punchLabel->Wrap( -1 );
     stunGridSizer->Add( punchLabel, 0, wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
 
-    m_punchCtrl = new wxTextCtrl( natPanel, wxID_ANY, _("7"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_punchCtrl = new wxTextCtrl( natPanel, wxID_ANY, wxString::Format(wxT("%d"), (int)m_config.GetPunchHops()), wxDefaultPosition, wxDefaultSize, 0 );
     m_punchCtrl->SetValidator( wxIntegerValidator<unsigned char>() );
 
     stunGridSizer->Add( m_punchCtrl, 0, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT|wxALIGN_CENTER_VERTICAL, 5 );
@@ -129,7 +127,7 @@ CSettingsDialog::CSettingsDialog(wxWindow* parent, wxWindowID id, const wxString
     dhtBootLabel->Wrap( -1 );
     dhtGridSizer->Add( dhtBootLabel, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
 
-    m_dhtBootCtrl = new wxTextCtrl( dhtPanel, wxID_ANY, _("bootstrap.jami.net:4222"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
+    m_dhtBootCtrl = new wxTextCtrl( dhtPanel, wxID_ANY, m_config.GetDhtBootstrap(), wxDefaultPosition, wxSize( -1,-1 ), 0 );
     dhtGridSizer->Add( m_dhtBootCtrl, 0, wxEXPAND|wxTOP|wxRIGHT|wxLEFT|wxALIGN_CENTER_VERTICAL, 5 );
 
     wxStaticText* dhtNetLabel;
@@ -137,7 +135,7 @@ CSettingsDialog::CSettingsDialog(wxWindow* parent, wxWindowID id, const wxString
     dhtNetLabel->Wrap( -1 );
     dhtGridSizer->Add( dhtNetLabel, 0, wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
 
-    m_dhtNetCtrl = new wxTextCtrl( dhtPanel, wxID_ANY, _("0"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_dhtNetCtrl = new wxTextCtrl( dhtPanel, wxID_ANY, wxString::Format(wxT("%d"), (int)m_config.GetDhtNetwork()), wxDefaultPosition, wxDefaultSize, 0 );
     m_dhtNetCtrl->SetValidator( wxIntegerValidator<unsigned int>() );
     dhtGridSizer->Add( m_dhtNetCtrl, 0, wxALIGN_CENTER_VERTICAL|wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
 
@@ -165,7 +163,7 @@ CSettingsDialog::CSettingsDialog(wxWindow* parent, wxWindowID id, const wxString
     smtpLabel->Wrap( -1 );
     emailGridSizer->Add( smtpLabel, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
 
-    m_smtpCtrl = new wxTextCtrl( emailPanel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+    m_smtpCtrl = new wxTextCtrl( emailPanel, wxID_ANY, m_config.GetSmtpServer(), wxDefaultPosition, wxDefaultSize, 0 );
     emailGridSizer->Add( m_smtpCtrl, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
 
     wxStaticText* imapLabel;
@@ -173,7 +171,7 @@ CSettingsDialog::CSettingsDialog(wxWindow* parent, wxWindowID id, const wxString
     imapLabel->Wrap( -1 );
     emailGridSizer->Add( imapLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
-    m_imapCtrl = new wxTextCtrl( emailPanel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+    m_imapCtrl = new wxTextCtrl( emailPanel, wxID_ANY, m_config.GetImapServer(), wxDefaultPosition, wxDefaultSize, 0 );
     emailGridSizer->Add( m_imapCtrl, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
     wxStaticText* loginLabel;
@@ -181,7 +179,7 @@ CSettingsDialog::CSettingsDialog(wxWindow* parent, wxWindowID id, const wxString
     loginLabel->Wrap( -1 );
     emailGridSizer->Add( loginLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
-    m_loginCtrl = new wxTextCtrl( emailPanel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+    m_loginCtrl = new wxTextCtrl( emailPanel, wxID_ANY, m_config.GetEmailLogin(), wxDefaultPosition, wxDefaultSize, 0 );
     emailGridSizer->Add( m_loginCtrl, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
     wxStaticText* passLabel;
@@ -191,7 +189,7 @@ CSettingsDialog::CSettingsDialog(wxWindow* parent, wxWindowID id, const wxString
 
     emailGridSizer->Add( passLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
-    m_passCtrl = new wxTextCtrl( emailPanel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_PASSWORD );
+    m_passCtrl = new wxTextCtrl( emailPanel, wxID_ANY, m_config.GetEmailPassword(), wxDefaultPosition, wxDefaultSize, wxTE_PASSWORD );
     emailGridSizer->Add( m_passCtrl, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
     wxStaticText* certLabel;
@@ -199,7 +197,7 @@ CSettingsDialog::CSettingsDialog(wxWindow* parent, wxWindowID id, const wxString
     certLabel->Wrap( -1 );
     emailGridSizer->Add( certLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
-    m_certPicker = new wxFilePickerCtrl( emailPanel, wxID_ANY, wxEmptyString, _("Select a file"), _("*.*"), wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE );
+    m_certPicker = new wxFilePickerCtrl( emailPanel, wxID_ANY, m_config.GetEmailX509Cert(), _("Select a file"), _("*.*"), wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE );
     emailGridSizer->Add( m_certPicker, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
     wxStaticText* keyLabel;
@@ -207,7 +205,7 @@ CSettingsDialog::CSettingsDialog(wxWindow* parent, wxWindowID id, const wxString
     keyLabel->Wrap( -1 );
     emailGridSizer->Add( keyLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
-    m_keyPicker = new wxFilePickerCtrl( emailPanel, wxID_ANY, wxEmptyString, _("Select a file"), _("*.*"), wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE );
+    m_keyPicker = new wxFilePickerCtrl( emailPanel, wxID_ANY, m_config.GetEmailX509Key(), _("Select a file"), _("*.*"), wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE );
     emailGridSizer->Add( m_keyPicker, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
     wxStaticText* caLabel;
@@ -215,7 +213,7 @@ CSettingsDialog::CSettingsDialog(wxWindow* parent, wxWindowID id, const wxString
     caLabel->Wrap( -1 );
     emailGridSizer->Add( caLabel, 0, wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
 
-    m_caPicker = new wxFilePickerCtrl( emailPanel, wxID_ANY, wxEmptyString, _("Select a file"), _("*.*"), wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE );
+    m_caPicker = new wxFilePickerCtrl( emailPanel, wxID_ANY, m_config.GetEmailX509Ca(), _("Select a file"), _("*.*"), wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE );
     emailGridSizer->Add( m_caPicker, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
 
     emailSizer->Add( emailGridSizer, 1, wxEXPAND|wxALL, 5 );
@@ -263,21 +261,47 @@ CSettingsDialog::~CSettingsDialog()
 
 void CSettingsDialog::onOkButtonClick(wxCommandEvent& event)
 {
-    auto owner = m_ownerCtrl->GetValue();
-    auto pier = m_pierCtrl->GetValue();
-    auto stun = m_stunCtrl->GetValue();
-    auto dht = m_dhtBootCtrl->GetValue();
-    auto smtp = m_smtpCtrl->GetValue();
-    auto imap = m_imapCtrl->GetValue();
-    auto login = m_loginCtrl->GetValue();
-    auto passwd = m_passCtrl->GetValue();
+    auto prevHost = m_config.GetHost();
+    auto pier = m_config.GetPier();
 
-    if (owner.IsEmpty() || pier.IsEmpty() || stun.IsEmpty() || (dht.IsEmpty() && (smtp.IsEmpty() || imap.IsEmpty() || login.IsEmpty() || passwd.IsEmpty())))
+    m_config.SetHost(m_ownerCtrl->GetValue(), m_pierCtrl->GetValue());
+    m_config.SetDaemon(m_startupCheckBox->GetValue());
+    m_config.SetTray(m_trayCheckBox->GetValue());
+    
+    m_config.SetStunServer(m_stunCtrl->GetValue());
+    uint32_t hops = m_config.GetPunchHops();
+    m_punchCtrl->GetValue().ToUInt(&hops);
+    m_config.SetPunchHops(static_cast<uint8_t>(hops));
+
+    m_config.SetDhtBootstrap(m_dhtBootCtrl->GetValue());
+    uint32_t net = m_config.GetPunchHops();
+    m_dhtNetCtrl->GetValue().ToUInt(&net);
+    m_config.SetDhtNetwork(net);
+
+    m_config.SetSmtpServer(m_smtpCtrl->GetValue());
+    m_config.SetImapServer(m_imapCtrl->GetValue());
+    m_config.SetEmailLogin(m_loginCtrl->GetValue());
+    m_config.SetEmailPassword(m_passCtrl->GetValue());
+    m_config.SetEmailX509Cert(m_certPicker->GetPath());
+    m_config.SetEmailX509Key(m_keyPicker->GetPath());
+    m_config.SetEmailX509Ca(m_caPicker->GetPath());
+
+    if (m_config.GetOwner().IsEmpty() || m_config.GetPier().IsEmpty() || m_config.GetStunServer().IsEmpty() 
+        || (m_config.GetDhtBootstrap().IsEmpty() && (m_config.GetSmtpServer().IsEmpty() || m_config.GetImapServer().IsEmpty() 
+            || m_config.GetEmailLogin().IsEmpty() || m_config.GetEmailPassword().IsEmpty())))
     {
         CMessageDialog dialog(this, _("To use WebPier you must define identity, STUN and either DHT or Email rendezvous"), wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
         dialog.ShowModal();
         return;
     }
 
+    bool tidy = false;
+    if (prevHost != m_config.GetHost())
+    {
+        CMessageDialog dialog(this, _("You have changed your WebPier identity. This will cause the service context to\nswitch. The current services will become unavailable. You can delete the current\ncontext permanently or retain it to switch back later by restoring the identity.\n\nDo you want to delete the current context?"), wxDEFAULT_DIALOG_STYLE|wxICON_QUESTION);
+        tidy = dialog.ShowModal() == wxID_YES;
+    }
+
+    m_config.Store(tidy);
     event.Skip();
 }

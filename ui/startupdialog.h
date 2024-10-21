@@ -27,6 +27,7 @@ class CStartupDialog : public wxDialog
     wxTextCtrl* m_pierCtrl;
 
     void onOkButtonClick(wxCommandEvent& event);
+    void onCloseButtonClick(wxCloseEvent& event);
 
 public:
 
