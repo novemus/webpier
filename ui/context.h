@@ -95,6 +95,13 @@ namespace WebPier
         void SetEmailX509Ca(const wxString& ca) noexcept(true) { m_midway.emailer.ca = ca; }
     };
 
+    struct Exchange
+    {
+        wxString pier;
+        wxString certificate;
+        wxVector<Service> services;
+    };
+
     wxString GetHost() noexcept(false);
     Config GetConfig() noexcept(false);
     wxVector<Service> GetLocalServices() noexcept(false);
@@ -105,4 +112,6 @@ namespace WebPier
     void DelPeer(const wxString& id) noexcept(false);
     wxString GetCertificate(const wxString& id) noexcept(false);
     wxString GetFingerprint(const wxString& id) noexcept(false);
+    void WriteExchangeFile(const wxString& file, const Exchange& data) noexcept(false);
+    void ReadExchangeFile(const wxString& file, Exchange& data) noexcept(false);
 }

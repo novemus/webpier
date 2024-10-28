@@ -221,31 +221,31 @@ void CMainFrame::onEditServiceButtonClick(wxCommandEvent& event)
 
 void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
 {
-    wxFileDialog fileDialog(this, _("Open exchange file"), "", "", "*.*", wxFD_OPEN|wxFD_FILE_MUST_EXIST);
+    wxFileDialog fileDialog(this, _("Open exchange file"), wxStandardPaths::Get().GetUserDir(wxStandardPathsBase::Dir_Downloads), "", "*.json", wxFD_OPEN|wxFD_FILE_MUST_EXIST);
 
     if (fileDialog.ShowModal() == wxID_CANCEL)
         return;
 
+    WebPier::Exchange data {};
+    WebPier::ReadExchangeFile(fileDialog.GetPath(), data);
+
     CImportDialog dialog(this);
     if (dialog.ShowModal() != wxID_OK)
-        std::cout << "cancel\n";
-    else
-        std::cout << "ok\n";
+        return;
 }
 
 void CMainFrame::onExportMenuSelection(wxCommandEvent& event)
 {
     CExportDialog dialog(this);
     if (dialog.ShowModal() != wxID_OK)
-        std::cout << "cancel\n";
-    else
-    {
-        wxFileDialog fileDialog(this, _("Save exchange file"), "", "", "*.*", wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
-        if (fileDialog.ShowModal() == wxID_CANCEL)
-            return;
+        return;
 
-        std::cout << "ok\n";
-    }
+    wxFileDialog fileDialog(this, _("Save exchange file"), wxStandardPaths::Get().GetUserDir(wxStandardPathsBase::Dir_Desktop), "", "*.json", wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
+    if (fileDialog.ShowModal() == wxID_CANCEL)
+        return;
+
+    WebPier::Exchange data { WebPier::GetHost(), WebPier::GetCertificate(WebPier::GetHost()), m_services };
+    WebPier::WriteExchangeFile(fileDialog.GetPath(), data);
 }
 
 void CMainFrame::onDeleteServiceButtonClick(wxCommandEvent& event)

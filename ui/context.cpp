@@ -2,6 +2,7 @@
 #include "startupdialog.h"
 #include "messagedialog.h"
 #include <sstream>
+#include <boost/property_tree/json_parser.hpp>
 #include <wx/utils.h> 
 #include <wx/stdpaths.h>
 #include <wx/dataview.h>
@@ -407,5 +408,46 @@ namespace WebPier
     wxString GetFingerprint(const wxString& id) noexcept(false)
     {
         return Context::Get()->get_fingerprint(id.ToStdString());
+    }
+
+    void WriteExchangeFile(const wxString& file, const Exchange& data) noexcept(false)
+    {
+        boost::property_tree::ptree doc;
+        doc.put("pier", data.pier.ToStdString());
+        doc.put("certificate", data.certificate.ToStdString());
+
+        boost::property_tree::ptree array;
+        for (const auto& service : data.services)
+        {
+            boost::property_tree::ptree item;
+            item.put("id", service.GetId().ToStdString());
+            item.put("obscure", service.IsObscure());
+            item.put("rendezvous.dht.bootstrap", service.GetDhtBootstrap().ToStdString());
+            item.put("rendezvous.dht.network", service.GetDhtNetwork());
+            array.push_back(std::make_pair("", item));
+        }
+        doc.put_child("services", array);
+
+        boost::property_tree::write_json(file.ToStdString(), doc);
+    }
+
+    void ReadExchangeFile(const wxString& file, Exchange& data) noexcept(false)
+    {
+        boost::property_tree::ptree doc;
+        boost::property_tree::read_json(file.ToStdString(), doc);
+
+        data.pier = doc.get<std::string>("pier", "");
+        data.certificate = doc.get<std::string>("certificate", "");
+
+        boost::property_tree::ptree array = doc.get_child("services", boost::property_tree::ptree());
+        for (auto& item : array)
+        {
+            Service service(false);
+            service.SetId(item.second.get<std::string>("id"));
+            service.SetObscure(item.second.get<bool>("obscure"));
+            service.SetDhtBootstrap(item.second.get<std::string>("rendezvous.dht.bootstrap", ""));
+            service.SetDhtNetwork(item.second.get<uint32_t>("rendezvous.dht.network", 0));
+            data.services.push_back(service);
+        }
     }
 }

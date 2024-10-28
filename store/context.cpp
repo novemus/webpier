@@ -31,23 +31,23 @@ namespace webpier
             {
                 boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(m_locker, boost::interprocess::try_to_lock_type());
 
-                boost::property_tree::ptree info;
-                boost::property_tree::read_json(m_path, info);
+                boost::property_tree::ptree doc;
+                boost::property_tree::read_json(m_path, doc);
 
-                m_config.host = info.get<std::string>("host");
-                m_config.daemon = info.get<bool>("daemon", false);
-                m_config.tray = info.get<bool>("tray", true);
-                m_config.traverse.stun = info.get<std::string>("nat.traverse.stun", default_stun_server);
-                m_config.traverse.hops = info.get<uint8_t>("nat.traverse.hops", 7);
-                m_config.rendezvous.bootstrap = info.get<std::string>("rendezvous.dht.bootstrap", default_dht_bootstrap);
-                m_config.rendezvous.network = info.get<uint32_t>("rendezvous.dht.network", 0);
-                m_config.emailer.smtp = info.get<std::string>("emailer.smtp", "");
-                m_config.emailer.imap = info.get<std::string>("emailer.imap", "");
-                m_config.emailer.login = info.get<std::string>("emailer.login", "");
-                m_config.emailer.password = info.get<std::string>("emailer.password", "");
-                m_config.emailer.cert = info.get<std::string>("emailer.cert", "");
-                m_config.emailer.key = info.get<std::string>("emailer.key", "");
-                m_config.emailer.ca = info.get<std::string>("emailer.ca", "");
+                m_config.host = doc.get<std::string>("host");
+                m_config.daemon = doc.get<bool>("daemon", false);
+                m_config.tray = doc.get<bool>("tray", true);
+                m_config.traverse.stun = doc.get<std::string>("nat.traverse.stun", default_stun_server);
+                m_config.traverse.hops = doc.get<uint8_t>("nat.traverse.hops", 7);
+                m_config.rendezvous.bootstrap = doc.get<std::string>("rendezvous.dht.bootstrap", default_dht_bootstrap);
+                m_config.rendezvous.network = doc.get<uint32_t>("rendezvous.dht.network", 0);
+                m_config.emailer.smtp = doc.get<std::string>("emailer.smtp", "");
+                m_config.emailer.imap = doc.get<std::string>("emailer.imap", "");
+                m_config.emailer.login = doc.get<std::string>("emailer.login", "");
+                m_config.emailer.password = doc.get<std::string>("emailer.password", "");
+                m_config.emailer.cert = doc.get<std::string>("emailer.cert", "");
+                m_config.emailer.key = doc.get<std::string>("emailer.key", "");
+                m_config.emailer.ca = doc.get<std::string>("emailer.ca", "");
 
                 m_timestamp = std::filesystem::last_write_time(m_path);
             }
@@ -69,24 +69,24 @@ namespace webpier
 
                 if (std::filesystem::last_write_time(m_path) == m_timestamp)
                 {
-                    boost::property_tree::ptree info;
+                    boost::property_tree::ptree doc;
 
-                    info.put("host", m_config.host);
-                    info.put("daemon", m_config.daemon);
-                    info.put("tray", m_config.tray);
-                    info.put("nat.traverse.stun", m_config.traverse.stun);
-                    info.put("nat.traverse.hops", m_config.traverse.hops);
-                    info.put("rendezvous.dht.bootstrap", m_config.rendezvous.bootstrap);
-                    info.put("rendezvous.dht.network", m_config.rendezvous.network);
-                    info.put("emailer.smtp", m_config.emailer.smtp);
-                    info.put("emailer.imap", m_config.emailer.imap);
-                    info.put("emailer.login", m_config.emailer.login);
-                    info.put("emailer.password", m_config.emailer.password);
-                    info.put("emailer.cert", m_config.emailer.cert);
-                    info.put("emailer.key", m_config.emailer.key);
-                    info.put("emailer.ca", m_config.emailer.ca);
+                    doc.put("host", m_config.host);
+                    doc.put("daemon", m_config.daemon);
+                    doc.put("tray", m_config.tray);
+                    doc.put("nat.traverse.stun", m_config.traverse.stun);
+                    doc.put("nat.traverse.hops", m_config.traverse.hops);
+                    doc.put("rendezvous.dht.bootstrap", m_config.rendezvous.bootstrap);
+                    doc.put("rendezvous.dht.network", m_config.rendezvous.network);
+                    doc.put("emailer.smtp", m_config.emailer.smtp);
+                    doc.put("emailer.imap", m_config.emailer.imap);
+                    doc.put("emailer.login", m_config.emailer.login);
+                    doc.put("emailer.password", m_config.emailer.password);
+                    doc.put("emailer.cert", m_config.emailer.cert);
+                    doc.put("emailer.key", m_config.emailer.key);
+                    doc.put("emailer.ca", m_config.emailer.ca);
 
-                    boost::property_tree::write_json(m_path, info);
+                    boost::property_tree::write_json(m_path, doc);
                     m_timestamp = std::filesystem::last_write_time(m_path);
 
                     return;
@@ -183,13 +183,14 @@ namespace webpier
             {
                 boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(m_locker, boost::interprocess::try_to_lock_type());
 
-                boost::property_tree::ptree info;
-                boost::property_tree::read_json(m_path, info);
+                boost::property_tree::ptree doc;
+                boost::property_tree::read_json(m_path, doc);
 
-                for (auto& item : info)
+                auto array = doc.get_child("services", boost::property_tree::ptree());
+                for (auto& item : array)
                 {
                     service unit;
-                    unit.id = item.first;
+                    unit.id = item.second.get<std::string>("id", "");
                     unit.peer = item.second.get<std::string>("peer", "");
                     unit.service = item.second.get<std::string>("service", "");
                     unit.gateway = item.second.get<std::string>("gateway", "");
@@ -220,10 +221,11 @@ namespace webpier
 
                 if (std::filesystem::last_write_time(m_path) == m_timestamp)
                 {
-                    boost::property_tree::ptree info;
+                    boost::property_tree::ptree array;
                     for (auto& unit : m_units)
                     {
                         boost::property_tree::ptree item;
+                        item.put("id", unit.id);
                         item.put("peer", unit.peer);
                         item.put("service", unit.service);
                         item.put("gateway", unit.gateway);
@@ -231,10 +233,13 @@ namespace webpier
                         item.put("obscure", unit.obscure);
                         item.put("rendezvous.dht.bootstrap", unit.rendezvous.bootstrap);
                         item.put("rendezvous.dht.network", unit.rendezvous.network);
-                        info.put_child(unit.id, item);
+                        array.push_back(std::make_pair("", item));
                     }
 
-                    boost::property_tree::write_json(m_path, info);
+                    boost::property_tree::ptree doc;
+                    doc.put_child("services", array);
+
+                    boost::property_tree::write_json(m_path, doc);
                     m_timestamp = std::filesystem::last_write_time(m_path);
 
                     return;
