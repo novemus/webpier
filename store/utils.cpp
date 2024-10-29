@@ -2,6 +2,7 @@
 #include <memory>
 #include <vector>
 #include <fstream>
+#include <sstream>
 #include <openssl/x509v3.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>

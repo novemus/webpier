@@ -16,6 +16,7 @@ namespace webpier
     constexpr const char* cert_file_name = "cert.crt";
     constexpr const char* key_file_name = "private.key";
     constexpr const char* conf_file_name = "webpier.json";
+    constexpr const char* lock_file_name = "lock";
     constexpr const char* repo_dir_name = "repo";
 
     class webpier
@@ -32,7 +33,7 @@ namespace webpier
                 boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(m_locker, boost::interprocess::try_to_lock_type());
 
                 boost::property_tree::ptree doc;
-                boost::property_tree::read_json(m_path, doc);
+                boost::property_tree::read_json(m_path.string(), doc);
 
                 m_config.host = doc.get<std::string>("host");
                 m_config.daemon = doc.get<bool>("daemon", false);
@@ -67,7 +68,7 @@ namespace webpier
             {
                 boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(m_locker, boost::interprocess::try_to_lock_type());
 
-                if (std::filesystem::last_write_time(m_path) == m_timestamp)
+                if (m_timestamp == std::filesystem::file_time_type() || std::filesystem::last_write_time(m_path) == m_timestamp)
                 {
                     boost::property_tree::ptree doc;
 
@@ -86,7 +87,7 @@ namespace webpier
                     doc.put("emailer.key", m_config.emailer.key);
                     doc.put("emailer.ca", m_config.emailer.ca);
 
-                    boost::property_tree::write_json(m_path, doc);
+                    boost::property_tree::write_json(m_path.string(), doc);
                     m_timestamp = std::filesystem::last_write_time(m_path);
 
                     return;
@@ -112,7 +113,8 @@ namespace webpier
             if (!std::filesystem::exists(m_path))
                 throw usage_error("context is not exist");
 
-            m_locker = boost::interprocess::file_lock(m_path.c_str());
+            auto locker = home / lock_file_name;
+            m_locker = boost::interprocess::file_lock(locker.string().c_str());
 
             load();
         }
@@ -129,11 +131,11 @@ namespace webpier
             {
                 {
                     std::filesystem::create_directories(home);
-                    std::ofstream(m_path).close();
 
-                    m_locker = boost::interprocess::file_lock(m_path.c_str());
-                    boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(m_locker, boost::interprocess::try_to_lock_type());
-                    m_timestamp = std::filesystem::last_write_time(m_path);
+                    auto locker = home / lock_file_name;
+                    std::ofstream(locker).close();
+
+                    m_locker = boost::interprocess::file_lock(locker.string().c_str());
                 }
 
                 save();
@@ -184,10 +186,10 @@ namespace webpier
                 boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(m_locker, boost::interprocess::try_to_lock_type());
 
                 boost::property_tree::ptree doc;
-                boost::property_tree::read_json(m_path, doc);
+                boost::property_tree::read_json(m_path.string(), doc);
 
-                auto array = doc.get_child("services", boost::property_tree::ptree());
-                for (auto& item : array)
+                boost::property_tree::ptree array;
+                for (auto& item : doc.get_child("services", array))
                 {
                     service unit;
                     unit.id = item.second.get<std::string>("id", "");
@@ -219,7 +221,7 @@ namespace webpier
             {
                 boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(m_locker, boost::interprocess::try_to_lock_type());
 
-                if (std::filesystem::last_write_time(m_path) == m_timestamp)
+                if (m_timestamp == std::filesystem::file_time_type() || std::filesystem::last_write_time(m_path) == m_timestamp)
                 {
                     boost::property_tree::ptree array;
                     for (auto& unit : m_units)
@@ -239,7 +241,7 @@ namespace webpier
                     boost::property_tree::ptree doc;
                     doc.put_child("services", array);
 
-                    boost::property_tree::write_json(m_path, doc);
+                    boost::property_tree::write_json(m_path.string(), doc);
                     m_timestamp = std::filesystem::last_write_time(m_path);
 
                     return;
@@ -271,12 +273,12 @@ namespace webpier
                 {
                     {
                         std::filesystem::create_directories(home);
-                        std::ofstream(m_path.string()).close();
 
-                        m_locker = boost::interprocess::file_lock(m_path.c_str());
+                        auto locker = home / lock_file_name;
+                        std::ofstream(locker).close();
+
+                        m_locker = boost::interprocess::file_lock(locker.string().c_str());
                         boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(m_locker, boost::interprocess::try_to_lock_type());
-                        m_timestamp = std::filesystem::last_write_time(m_path);
-
                         generate_x509_pair(home / cert_file_name, home / key_file_name, home.parent_path().filename().string() + "/" + home.filename().string());
                     }
 
@@ -293,7 +295,8 @@ namespace webpier
                 if (!std::filesystem::exists(m_path))
                     throw usage_error("bad node directory");
 
-                m_locker = boost::interprocess::file_lock(m_path.c_str());
+                auto locker = home / lock_file_name;
+                m_locker = boost::interprocess::file_lock(locker.string().c_str());
 
                 load();
             }
@@ -309,13 +312,12 @@ namespace webpier
             {
                 {
                     std::filesystem::create_directories(home);
-                    std::ofstream outfile(m_path.string());
-                    outfile.close();
 
-                    m_locker = boost::interprocess::file_lock(m_path.c_str());
+                    auto locker = home / lock_file_name;
+                    std::ofstream(locker).close();
+
+                    m_locker = boost::interprocess::file_lock(locker.string().c_str());
                     boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(m_locker, boost::interprocess::try_to_lock_type());
-
-                    m_timestamp = std::filesystem::last_write_time(m_path);
                     save_x509_cert(home / cert_file_name, cert);
                 }
                 save();

@@ -224,13 +224,13 @@ namespace WebPier
         auto context = Context::Get();
         if (m_local)
         {
-            if (not m_origin.id.empty())
+            if (!m_origin.id.empty())
                 context->del_local_service(m_origin.id);
             context->add_local_service(m_midway);
         }
         else
         {
-            if (not m_origin.id.empty() && not m_origin.peer.empty())
+            if (!m_origin.id.empty() && !m_origin.peer.empty())
                 context->del_remote_service(m_origin.peer, m_origin.id);
             context->add_remote_service(m_midway);
         }
@@ -242,12 +242,12 @@ namespace WebPier
         auto context = Context::Get();
         if (m_local)
         {
-            if (not m_origin.id.empty())
+            if (!m_origin.id.empty())
                 context->del_local_service(m_origin.id);
         }
         else
         {
-            if (not m_origin.id.empty() && not m_origin.peer.empty())
+            if (!m_origin.id.empty() && !m_origin.peer.empty())
                 context->del_remote_service(m_origin.peer, m_origin.id);
         }
         m_origin = {};
@@ -387,7 +387,7 @@ namespace WebPier
             return iter != list.end();
         };
 
-        return not isUsedForRemote() && not isUsedForLocal();
+        return !isUsedForRemote() && !isUsedForLocal();
     }
 
     void AddPeer(const wxString& id, const wxString& cert) noexcept(false)
@@ -439,8 +439,8 @@ namespace WebPier
         data.pier = doc.get<std::string>("pier", "");
         data.certificate = doc.get<std::string>("certificate", "");
 
-        boost::property_tree::ptree array = doc.get_child("services", boost::property_tree::ptree());
-        for (auto& item : array)
+        boost::property_tree::ptree array;
+        for (auto& item : doc.get_child("services", array))
         {
             Service service(false);
             service.SetId(item.second.get<std::string>("id"));
