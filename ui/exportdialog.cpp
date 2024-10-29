@@ -2,7 +2,9 @@
 
 ///////////////////////////////////////////////////////////////////////////
 
-CExportDialog::CExportDialog( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxDialog( parent, id, title, pos, size, style )
+CExportDialog::CExportDialog( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style )
+    : wxDialog( parent, id, title, pos, size, style )
+    , m_locals(WebPier::GetLocalServices())
 {
     this->SetSizeHints( wxDefaultSize, wxDefaultSize );
 
@@ -11,12 +13,16 @@ CExportDialog::CExportDialog( wxWindow* parent, wxWindowID id, const wxString& t
 
     mainSizer->SetMinSize( wxSize( 400,-1 ) );
     wxStaticBoxSizer* peerSizer;
-    peerSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, _("indefinite") ), wxVERTICAL );
+    peerSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, WebPier::GetHost() ), wxVERTICAL );
 
     wxBoxSizer* listSizer;
     listSizer = new wxBoxSizer( wxHORIZONTAL );
 
-    m_serviceList = new wxCheckListBox( peerSizer->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize( -1,10 ), 0, nullptr, wxLB_SINGLE );
+    wxArrayString choices;
+    for (const auto& service : m_locals)
+        choices.Add(service.GetId());
+
+    m_serviceList = new wxCheckListBox( peerSizer->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize( -1,10 ), choices, wxLB_SINGLE );
     listSizer->Add( m_serviceList, 0, wxALL|wxEXPAND, 5 );
 
     wxBoxSizer* tableSizer;
@@ -42,7 +48,7 @@ CExportDialog::CExportDialog( wxWindow* parent, wxWindowID id, const wxString& t
 
     serviceSizer->Add( m_serviceLabel, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
 
-    m_serviceValue = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("127.0.0.1:22"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_serviceValue = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("0.0.0.0:0"), wxDefaultPosition, wxDefaultSize, 0 );
     m_serviceValue->Wrap( -1 );
     serviceSizer->Add( m_serviceValue, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
 
@@ -86,7 +92,7 @@ CExportDialog::CExportDialog( wxWindow* parent, wxWindowID id, const wxString& t
     m_bootLabel->Wrap( -1 );
     rendGridSizer->Add( m_bootLabel, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
 
-    m_bootValue = new wxStaticText( rendSizer->GetStaticBox(), wxID_ANY, _("bootstrap.jami.net:4222"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_bootValue = new wxStaticText( rendSizer->GetStaticBox(), wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, 0 );
     m_bootValue->Wrap( -1 );
     rendGridSizer->Add( m_bootValue, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
 
@@ -121,8 +127,9 @@ CExportDialog::CExportDialog( wxWindow* parent, wxWindowID id, const wxString& t
 
     this->Centre( wxBOTH );
 
-    // Connect Events
     m_serviceList->Connect( wxEVT_COMMAND_LISTBOX_SELECTED, wxCommandEventHandler( CExportDialog::onListItemSelected ), NULL, this );
+
+    populate();
 }
 
 CExportDialog::~CExportDialog()
@@ -144,4 +151,47 @@ CExportDialog::~CExportDialog()
     delete m_netValue;
     delete m_ok;
     delete m_cancel;
+}
+
+void CExportDialog::populate()
+{
+    if (m_locals.empty())
+        return;
+
+    int line = m_serviceList->GetSelection();
+    if (line == wxNOT_FOUND)
+    {
+        line = 0;
+        m_serviceList->SetSelection(line);
+    }
+
+    const auto& service = m_locals[line];
+
+    m_idValue->SetLabel(service.GetId());
+    m_serviceValue->SetLabel(service.GetService());
+    m_gateValue->SetLabel(service.GetGateway());
+    m_startValue->SetLabel(service.IsAutostart() ? _("yes") : _("no"));
+    m_obscureValue->SetLabel(service.IsObscure() ? _("yes") : _("no"));
+    m_bootValue->SetLabel(service.GetDhtBootstrap());
+    m_netValue->SetLabel(wxString::Format(wxT("%d"), (int)service.GetDhtNetwork()));
+
+    this->Layout();
+}
+
+void CExportDialog::onListItemSelected(wxCommandEvent& event)
+{
+    populate();
+    event.Skip();
+}
+
+wxVector<WebPier::Service> CExportDialog::GetExport() const
+{
+    wxArrayInt checked;
+    m_serviceList->GetCheckedItems(checked);
+
+    wxVector<WebPier::Service> exports;
+    for(auto index : checked)
+        exports.push_back(m_locals[index]);
+
+    return exports;
 }

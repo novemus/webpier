@@ -19,11 +19,12 @@ CMainFrame::CMainFrame() : wxFrame(nullptr, wxID_ANY, wxT("WebPier"), wxDefaultP
     wxMenuItem* settingsItem = fileMenu->Append( new wxMenuItem( fileMenu, wxID_ANY, wxString( _("&Settings...") ) , wxEmptyString, wxITEM_NORMAL ) );
 
     fileMenu->AppendSeparator();
-    m_importItem = fileMenu->Append( new wxMenuItem( fileMenu, wxID_ANY, wxString( _("&Import services...") ) , wxEmptyString, wxITEM_NORMAL ) );
-    m_importItem->Enable(false);
 
-    m_exportItem = fileMenu->Append( new wxMenuItem( fileMenu, wxID_ANY, wxString( _("&Export services...") ) , wxEmptyString, wxITEM_NORMAL ) );
+    m_exportItem = fileMenu->Append( new wxMenuItem( fileMenu, wxID_ANY, wxString( _("&Advertise host...") ) , wxEmptyString, wxITEM_NORMAL ) );
     m_exportItem->Enable(false);
+
+    m_importItem = fileMenu->Append( new wxMenuItem( fileMenu, wxID_ANY, wxString( _("&Introduce peer...") ) , wxEmptyString, wxITEM_NORMAL ) );
+    m_importItem->Enable(false);
 
     fileMenu->AppendSeparator();
     wxMenuItem* exitItem = fileMenu->Append( new wxMenuItem( fileMenu, wxID_ANY, wxString( _("E&xit") ) , wxEmptyString, wxITEM_NORMAL ) );
@@ -221,31 +222,47 @@ void CMainFrame::onEditServiceButtonClick(wxCommandEvent& event)
 
 void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
 {
-    wxFileDialog fileDialog(this, _("Open exchange file"), wxStandardPaths::Get().GetUserDir(wxStandardPathsBase::Dir_Downloads), "", "*.json", wxFD_OPEN|wxFD_FILE_MUST_EXIST);
+    try
+    {
+        wxFileDialog fileDialog(this, _("Open advertisement file"), wxStandardPaths::Get().GetUserDir(wxStandardPathsBase::Dir_Downloads), "", "*.json", wxFD_OPEN|wxFD_FILE_MUST_EXIST);
 
-    if (fileDialog.ShowModal() == wxID_CANCEL)
-        return;
+        if (fileDialog.ShowModal() == wxID_CANCEL)
+            return;
 
-    WebPier::Exchange data {};
-    WebPier::ReadExchangeFile(fileDialog.GetPath(), data);
+        WebPier::Exchange data {};
+        WebPier::ReadExchangeFile(fileDialog.GetPath(), data);
 
-    CImportDialog dialog(this);
-    if (dialog.ShowModal() != wxID_OK)
-        return;
+        CImportDialog dialog(this);
+        if (dialog.ShowModal() != wxID_OK)
+            return;
+    }
+    catch (const std::exception &ex)
+    {
+        CMessageDialog dialog(this, _("Can't intergate peer: ") + ex.what(), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
+        dialog.ShowModal();
+    }
 }
 
 void CMainFrame::onExportMenuSelection(wxCommandEvent& event)
 {
-    CExportDialog dialog(this);
-    if (dialog.ShowModal() != wxID_OK)
-        return;
+    try
+    {
+        CExportDialog dialog(this);
+        if (dialog.ShowModal() != wxID_OK)
+            return;
 
-    wxFileDialog fileDialog(this, _("Save exchange file"), wxStandardPaths::Get().GetUserDir(wxStandardPathsBase::Dir_Desktop), "", "*.json", wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
-    if (fileDialog.ShowModal() == wxID_CANCEL)
-        return;
+        wxFileDialog fileDialog(this, _("Save advertisement file"), wxStandardPaths::Get().GetUserDir(wxStandardPathsBase::Dir_Desktop), "", "*.json", wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
+        if (fileDialog.ShowModal() == wxID_CANCEL)
+            return;
 
-    WebPier::Exchange data { WebPier::GetHost(), WebPier::GetCertificate(WebPier::GetHost()), m_services };
-    WebPier::WriteExchangeFile(fileDialog.GetPath(), data);
+        WebPier::Exchange data { WebPier::GetHost(), WebPier::GetCertificate(WebPier::GetHost()), dialog.GetExport() };
+        WebPier::WriteExchangeFile(fileDialog.GetPath(), data);
+    }
+    catch (const std::exception &ex)
+    {
+        CMessageDialog dialog(this, _("Can't advertise host: ") + ex.what(), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
+        dialog.ShowModal();
+    }
 }
 
 void CMainFrame::onDeleteServiceButtonClick(wxCommandEvent& event)
@@ -254,7 +271,7 @@ void CMainFrame::onDeleteServiceButtonClick(wxCommandEvent& event)
         return event.Skip();
 
     WebPier::Service* service = reinterpret_cast<WebPier::Service*>(m_serviceList->GetItemData(m_serviceList->GetSelection()));
-    
+
     CMessageDialog dialog(nullptr, _("Do you want to remove service ") + service->GetId(), wxDEFAULT_DIALOG_STYLE|wxICON_QUESTION);
     if (dialog.ShowModal() == wxID_YES)
     {

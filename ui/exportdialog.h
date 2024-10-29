@@ -1,5 +1,6 @@
 #pragma once
 
+#include "context.h"
 #include <wx/artprov.h>
 #include <wx/xrc/xmlres.h>
 #include <wx/intl.h>
@@ -34,13 +35,15 @@ class CExportDialog : public wxDialog
     wxStaticText* m_netValue;
     wxButton* m_ok;
     wxButton* m_cancel;
+    wxVector<WebPier::Service> m_locals;
 
-    void onListItemSelected( wxCommandEvent& event ) { event.Skip(); }
+    void onListItemSelected( wxCommandEvent& event );
+    void populate();
 
 public:
 
-    CExportDialog( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Export"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_DIALOG_STYLE );
-
+    CExportDialog( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Advertisement"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_DIALOG_STYLE );
     ~CExportDialog();
 
+    wxVector<WebPier::Service> GetExport() const;
 };
