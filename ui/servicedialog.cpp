@@ -148,8 +148,8 @@ void CServiceDialog::onOKButtonClick( wxCommandEvent& event )
     if (m_service->GetId().IsEmpty() || m_service->GetService().IsEmpty() || m_service->GetGateway().IsEmpty() || (m_service->IsRemote() && m_service->GetPeer().IsEmpty()))
     {
         wxString message = m_service->IsRemote() 
-            ? _("Define the id, service, gateway and peer properties") 
-            : _("Define the id, service and gateway properties");
+            ? _("Define the 'id', 'service', 'gateway' and 'peer' properties") 
+            : _("Define the 'id', 'service' and 'gateway' properties");
         CMessageDialog dialog(this, message, wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
         dialog.ShowModal();
     }

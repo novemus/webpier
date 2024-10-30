@@ -232,13 +232,62 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
         WebPier::Exchange data {};
         WebPier::ReadExchangeFile(fileDialog.GetPath(), data);
 
-        CImportDialog dialog(this);
+        if (WebPier::GetHost() == data.pier)
+        {
+            CMessageDialog dialog(this, _("Peer name is the same as the local pier."), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
+            dialog.ShowModal();
+            return;
+        }
+
+        if (WebPier::IsPeerExist(data.pier))
+        {
+            if (data.certificate != WebPier::GetCertificate(data.pier))
+            {
+                CMessageDialog dialog(this, _("Such peer is already exists, but has a different certificate. Do you want to replace existing peer and drop its services?"), wxDEFAULT_DIALOG_STYLE | wxICON_QUESTION);
+                if (dialog.ShowModal() != wxID_YES)
+                    return;
+
+                WebPier::DelPeer(data.pier);
+                WebPier::AddPeer(data.pier, data.certificate);
+            }
+        }
+        else
+            WebPier::AddPeer(data.pier, data.certificate);
+
+        CImportDialog dialog(data.pier, data.services, this);
         if (dialog.ShowModal() != wxID_OK)
             return;
+
+        for (auto& item : dialog.GetImport())
+        {
+            WebPier::Service info;
+            if (WebPier::GetRemoteService(data.pier, item.GetId(), info))
+            {
+                if (!info.IsEqual(item))
+                {
+                    CMessageDialog dialog(this, wxString::Format(_("Service '%s' is already exist, but differs from the new one. Do you want to replace it?"), item.GetId()), wxDEFAULT_DIALOG_STYLE | wxICON_QUESTION);
+                    if (dialog.ShowModal() == wxID_YES)
+                    {
+                        info.Purge();
+                        item.Store();
+                    }
+                }
+            }
+            else
+                item.Store();
+        }
+
+        populate();
+
+        if (dialog.IsNeedBackAdvertising())
+        {
+            wxCommandEvent dummy;
+            onExportMenuSelection(dummy);
+        }
     }
     catch (const std::exception &ex)
     {
-        CMessageDialog dialog(this, _("Can't intergate peer: ") + ex.what(), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
+        CMessageDialog dialog(this, _("Can't introduce peer: ") + ex.what(), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
         dialog.ShowModal();
     }
 }
@@ -247,7 +296,7 @@ void CMainFrame::onExportMenuSelection(wxCommandEvent& event)
 {
     try
     {
-        CExportDialog dialog(this);
+        CExportDialog dialog(WebPier::GetLocalServices(), this);
         if (dialog.ShowModal() != wxID_OK)
             return;
 

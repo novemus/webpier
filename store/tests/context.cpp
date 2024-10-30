@@ -75,6 +75,7 @@ BOOST_AUTO_TEST_CASE(context)
 
     BOOST_REQUIRE_NO_THROW(context->add_peer(peer, peer_certificate));
     BOOST_REQUIRE_THROW(context->add_peer(peer, peer_certificate), webpier::usage_error);
+    BOOST_CHECK(context->is_peer_exist(peer));
 
     std::vector<std::string> list;
     context->get_peers(list);
@@ -106,6 +107,7 @@ BOOST_AUTO_TEST_CASE(context)
     context->get_local_services(locals);
 
     BOOST_REQUIRE_EQUAL(locals.size(), 1);
+    BOOST_CHECK(context->get_local_service(service.id, service));
     BOOST_CHECK_EQUAL(service.id, locals[0].id);
     BOOST_CHECK_EQUAL(service.peer, locals[0].peer);
     BOOST_CHECK_EQUAL(service.service, locals[0].service);
@@ -119,6 +121,7 @@ BOOST_AUTO_TEST_CASE(context)
     context->get_remote_services(remotes);
 
     BOOST_REQUIRE_EQUAL(remotes.size(), 1);
+    BOOST_CHECK(context->get_remote_service(peer, service.id, service));
     BOOST_CHECK_EQUAL(service.id, remotes[0].id);
     BOOST_CHECK_EQUAL(service.peer, remotes[0].peer);
     BOOST_CHECK_EQUAL(service.service, remotes[0].service);
@@ -129,6 +132,8 @@ BOOST_AUTO_TEST_CASE(context)
     BOOST_CHECK_EQUAL(service.obscure, remotes[0].obscure);
 
     BOOST_REQUIRE_NO_THROW(context->del_peer(peer));
+    BOOST_CHECK(!context->is_peer_exist(peer));
+    BOOST_CHECK(!context->get_remote_service(peer, service.id, service));
 
     remotes.clear();
     context->get_remote_services(remotes);

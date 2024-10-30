@@ -1,8 +1,11 @@
 #include "importdialog.h"
+#include "messagedialog.h"
 
 ///////////////////////////////////////////////////////////////////////////
 
-CImportDialog::CImportDialog( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxDialog( parent, id, title, pos, size, style )
+CImportDialog::CImportDialog(const wxString& host, const wxVector<WebPier::Service>& remotes,  wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style )
+    : wxDialog( parent, id, title, pos, size, style )
+    , m_remotes(remotes)
 {
     this->SetSizeHints( wxDefaultSize, wxDefaultSize );
 
@@ -11,12 +14,16 @@ CImportDialog::CImportDialog( wxWindow* parent, wxWindowID id, const wxString& t
 
     mainSizer->SetMinSize( wxSize( 400,-1 ) );
     wxStaticBoxSizer* peerSizer;
-    peerSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, _("indefinite") ), wxVERTICAL );
+    peerSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, host ), wxVERTICAL );
 
     wxBoxSizer* listSizer;
     listSizer = new wxBoxSizer( wxHORIZONTAL );
 
-    m_serviceList = new wxCheckListBox( peerSizer->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize( -1,10 ), 0, nullptr, wxLB_SINGLE );
+    wxArrayString choices;
+    for (const auto& service : m_remotes)
+        choices.Add(service.GetId());
+
+    m_serviceList = new wxCheckListBox( peerSizer->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize( -1,10 ), choices, wxLB_SINGLE );
     listSizer->Add( m_serviceList, 0, wxALL|wxEXPAND, 5 );
 
     wxBoxSizer* tableSizer;
@@ -109,9 +116,9 @@ CImportDialog::CImportDialog( wxWindow* parent, wxWindowID id, const wxString& t
     wxBoxSizer* footSizer;
     footSizer = new wxBoxSizer( wxHORIZONTAL );
 
-    m_responseCtrl = new wxCheckBox( this, wxID_ANY, _("Make response"), wxDefaultPosition, wxDefaultSize, 0 );
-    m_responseCtrl->SetValue(true);
-    footSizer->Add( m_responseCtrl, 0, wxBOTTOM|wxRIGHT|wxLEFT|wxALIGN_CENTER_VERTICAL, 5 );
+    m_backCtrl = new wxCheckBox( this, wxID_ANY, _("Make back advertising"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_backCtrl->SetValue(true);
+    footSizer->Add( m_backCtrl, 0, wxBOTTOM|wxRIGHT|wxLEFT|wxALIGN_CENTER_VERTICAL, 5 );
 
     wxStdDialogButtonSizer* sdbSizer;
     sdbSizer = new wxStdDialogButtonSizer();
@@ -130,8 +137,13 @@ CImportDialog::CImportDialog( wxWindow* parent, wxWindowID id, const wxString& t
 
     this->Centre( wxBOTH );
 
-    // Connect Events
-    m_serviceList->Connect( wxEVT_COMMAND_LISTBOX_SELECTED, wxCommandEventHandler( CImportDialog::onListItemSelected ), NULL, this );
+    m_serviceList->Connect(wxEVT_COMMAND_LISTBOX_SELECTED, wxCommandEventHandler(CImportDialog::onListItemSelected), NULL, this);
+    m_serviceCtrl->Connect(wxEVT_KILL_FOCUS, wxFocusEventHandler(CImportDialog::onServiceCtrlKillFocus), NULL, this);
+    m_gateCtrl->Connect(wxEVT_KILL_FOCUS, wxFocusEventHandler(CImportDialog::onGatewayCtrlKillFocus), NULL, this);
+    m_startCtrl->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(CImportDialog::onAutostartCheckBox), NULL, this);
+    m_ok->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(CImportDialog::onOKButtonClick), NULL, this);
+
+    populate();
 }
 
 CImportDialog::~CImportDialog()
@@ -151,7 +163,116 @@ CImportDialog::~CImportDialog()
     delete m_bootValue;
     delete m_netLabel;
     delete m_netValue;
-    delete m_responseCtrl;
+    delete m_backCtrl;
     delete m_ok;
     delete m_cancel;
+}
+
+void CImportDialog::populate()
+{
+    if (m_remotes.empty())
+        return;
+
+    int line = m_serviceList->GetSelection();
+    if (line == wxNOT_FOUND)
+    {
+        line = 0;
+        m_serviceList->SetSelection(line);
+    }
+
+    const auto& service = m_remotes[line];
+
+    m_idValue->SetLabel(service.GetId());
+    m_serviceCtrl->SetValue(service.GetService());
+    m_gateCtrl->SetValue(service.GetGateway());
+    m_startCtrl->SetValue(service.IsAutostart());
+    m_obscureValue->SetLabel(service.IsObscure() ? _("yes") : _("no"));
+    m_bootValue->SetLabel(service.GetDhtBootstrap());
+    m_netValue->SetLabel(wxString::Format(wxT("%d"), (int)service.GetDhtNetwork()));
+
+    this->Layout();
+}
+
+void CImportDialog::onListItemSelected(wxCommandEvent& event)
+{
+    populate();
+    event.Skip();
+}
+
+void CImportDialog::onServiceCtrlKillFocus(wxFocusEvent& event)
+{
+    if (m_remotes.empty())
+        return;
+
+    int line = m_serviceList->GetSelection();
+    if (line == wxNOT_FOUND)
+    {
+        line = 0;
+        m_serviceList->SetSelection(line);
+    }
+
+    m_remotes[line].SetService(m_serviceCtrl->GetValue());
+    event.Skip();
+}
+
+void CImportDialog::onGatewayCtrlKillFocus(wxFocusEvent& event)
+{
+    if (m_remotes.empty())
+        return;
+
+    int line = m_serviceList->GetSelection();
+    if (line == wxNOT_FOUND)
+    {
+        line = 0;
+        m_serviceList->SetSelection(line);
+    }
+
+    m_remotes[line].SetGateway(m_gateCtrl->GetValue());
+    event.Skip();
+}
+
+void CImportDialog::onAutostartCheckBox(wxCommandEvent& event)
+{
+    if (m_remotes.empty())
+        return;
+
+    int line = m_serviceList->GetSelection();
+    if (line == wxNOT_FOUND)
+    {
+        line = 0;
+        m_serviceList->SetSelection(line);
+    }
+
+    m_remotes[line].SetAutostart(m_startCtrl->IsChecked());
+    event.Skip();
+}
+
+void CImportDialog::onOKButtonClick(wxCommandEvent& event)
+{
+    wxArrayInt checked;
+    m_serviceList->GetCheckedItems(checked);
+
+    for(auto index : checked)
+    {
+        if (m_remotes[index].GetService().IsEmpty() || m_remotes[index].GetGateway().IsEmpty())
+        {
+            CMessageDialog dialog(this, _("Define the 'service' and 'gateway' properties for all checked services"), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
+            dialog.ShowModal();
+            return;
+        }
+    }
+
+    event.Skip();
+}
+
+wxVector<WebPier::Service> CImportDialog::GetImport() const
+{
+    wxArrayInt checked;
+    m_serviceList->GetCheckedItems(checked);
+
+    wxVector<WebPier::Service> exports;
+    for(auto index : checked)
+        exports.push_back(m_remotes[index]);
+
+    return exports;
 }

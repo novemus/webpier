@@ -19,7 +19,7 @@ namespace WebPier
 
     public:
 
-        Service(bool local, const webpier::service& service = {}) : m_local(local), m_origin(service), m_midway(service) {}
+        Service(bool local = false, const webpier::service& service = {}) : m_local(local), m_origin(service), m_midway(service) {}
         void Store() noexcept(false);
         void Purge() noexcept(false);
         void Revert() noexcept(true) { m_midway = m_origin; }
@@ -48,6 +48,7 @@ namespace WebPier
         void SetDhtNetwork(wxUint32 network) noexcept(true) { m_midway.rendezvous.network = network; }
         void SetAutostart(bool state) noexcept(true) { m_midway.autostart = state; }
         void SetObscure(bool state) noexcept(true) { m_midway.obscure = state; }
+        bool IsEqual(const Service& other) noexcept(true);
     };
 
     class Config
@@ -106,8 +107,11 @@ namespace WebPier
     Config GetConfig() noexcept(false);
     wxVector<Service> GetLocalServices() noexcept(false);
     wxVector<Service> GetRemoteServices() noexcept(false);
+    bool GetLocalService(const wxString& id, Service& info) noexcept(false);
+    bool GetRemoteService(const wxString& peer, const wxString& id, Service& info) noexcept(false);
     wxArrayString GetPeers() noexcept(false);
-    bool IsUnusedPeer(const wxString& id) noexcept(false);
+    bool IsUselessPeer(const wxString& id) noexcept(false);
+    bool IsPeerExist(const wxString& id) noexcept(false);
     void AddPeer(const wxString& id, const wxString& cert) noexcept(false);
     void DelPeer(const wxString& id) noexcept(false);
     wxString GetCertificate(const wxString& id) noexcept(false);

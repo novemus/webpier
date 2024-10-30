@@ -7,7 +7,7 @@ CSettingsDialog::CSettingsDialog(wxWindow* parent, wxWindowID id, const wxString
     : wxDialog(parent, id, title, pos, size, style)
     , m_config(WebPier::GetConfig())
 {
-    static constexpr const char* FORBIDDEN_PATH_CHARS = "*/\\<>:|?";
+    static constexpr const char* FORBIDDEN_PATH_CHARS = "*/\\<>:|? \t\n\r";
 
     this->SetSizeHints( wxDefaultSize, wxDefaultSize );
 

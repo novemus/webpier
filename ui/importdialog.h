@@ -1,5 +1,6 @@
 #pragma once
 
+#include "context.h"
 #include <wx/artprov.h>
 #include <wx/xrc/xmlres.h>
 #include <wx/intl.h>
@@ -34,14 +35,23 @@ class CImportDialog : public wxDialog
     wxStaticText* m_bootValue;
     wxStaticText* m_netLabel;
     wxStaticText* m_netValue;
-    wxCheckBox* m_responseCtrl;
+    wxCheckBox* m_backCtrl;
     wxButton* m_ok;
     wxButton* m_cancel;
+    wxVector<WebPier::Service> m_remotes;
 
-    void onListItemSelected( wxCommandEvent& event ) { event.Skip(); }
+    void onListItemSelected( wxCommandEvent& event );
+    void onOKButtonClick( wxCommandEvent& event );
+    void onServiceCtrlKillFocus( wxFocusEvent& event );
+	void onGatewayCtrlKillFocus( wxFocusEvent& event );
+	void onAutostartCheckBox( wxCommandEvent& event );
+    void populate();
 
 public:
 
-    CImportDialog( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Introduction"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_DIALOG_STYLE );
+    CImportDialog( const wxString& host, const wxVector<WebPier::Service>& remotes, wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Introduce..."), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_DIALOG_STYLE );
     ~CImportDialog();
+
+    wxVector<WebPier::Service> GetImport() const;
+    bool IsNeedBackAdvertising() const { return m_backCtrl->IsChecked(); }
 };

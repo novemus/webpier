@@ -2,9 +2,9 @@
 
 ///////////////////////////////////////////////////////////////////////////
 
-CExportDialog::CExportDialog( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style )
+CExportDialog::CExportDialog( const wxVector<WebPier::Service>& locals, wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style )
     : wxDialog( parent, id, title, pos, size, style )
-    , m_locals(WebPier::GetLocalServices())
+    , m_locals(locals)
 {
     this->SetSizeHints( wxDefaultSize, wxDefaultSize );
 

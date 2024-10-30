@@ -303,6 +303,18 @@ namespace WebPier
         m_midway.rendezvous.network = 0;
     }
 
+    bool Service::IsEqual(const Service& other) noexcept(true)
+    {
+        return m_midway.id == other.m_midway.id
+            && m_midway.peer == other.m_midway.peer
+            && m_midway.gateway == other.m_midway.gateway
+            && m_midway.service == other.m_midway.service
+            && m_midway.autostart == other.m_midway.autostart
+            && m_midway.obscure == other.m_midway.obscure
+            && m_midway.rendezvous.bootstrap == other.m_midway.rendezvous.bootstrap
+            && m_midway.rendezvous.network == other.m_midway.rendezvous.network;
+    }
+
     void Config::Store(bool tidy) noexcept(false)
     {
         Context::Switch(m_midway.host, tidy);
@@ -353,6 +365,28 @@ namespace WebPier
         return collection;
     }
 
+    bool GetLocalService(const wxString& id, Service& info) noexcept(false)
+    {
+        webpier::service raw;
+        if (Context::Get()->get_local_service(id.ToStdString(), raw))
+        {
+            info = Service(true, raw);
+            return true;
+        }
+        return false;
+    }
+
+    bool GetRemoteService(const wxString& peer, const wxString& id, Service& info) noexcept(false)
+    {
+        webpier::service raw;
+        if (Context::Get()->get_remote_service(peer.ToStdString(), id.ToStdString(), raw))
+        {
+            info = Service(false, raw);
+            return true;
+        }
+        return false;
+    }
+
     wxArrayString GetPeers() noexcept(false)
     {
         wxArrayString array;
@@ -363,7 +397,7 @@ namespace WebPier
         return array;
     }
 
-    bool IsUnusedPeer(const wxString& id) noexcept(false)
+    bool IsUselessPeer(const wxString& id) noexcept(false)
     {
         auto isUsedForRemote = [&]()
         {
@@ -388,6 +422,11 @@ namespace WebPier
         };
 
         return !isUsedForRemote() && !isUsedForLocal();
+    }
+
+    bool IsPeerExist(const wxString& id) noexcept(false)
+    {
+        return Context::Get()->is_peer_exist(id.ToStdString());
     }
 
     void AddPeer(const wxString& id, const wxString& cert) noexcept(false)
@@ -444,6 +483,7 @@ namespace WebPier
         {
             Service service(false);
             service.SetId(item.second.get<std::string>("id"));
+            service.SetPeer(data.pier);
             service.SetObscure(item.second.get<bool>("obscure"));
             service.SetDhtBootstrap(item.second.get<std::string>("rendezvous.dht.bootstrap", ""));
             service.SetDhtNetwork(item.second.get<uint32_t>("rendezvous.dht.network", 0));

@@ -357,6 +357,20 @@ namespace webpier
             }
         }
 
+        bool get(const std::string& id, service& info) const noexcept(true)
+        {
+            auto iter = std::find_if(m_units.begin(), m_units.end(), [&id](const service& item)
+            {
+                return item.id == id;
+            });
+
+            if (iter == m_units.end())
+                return false;
+
+            info = *iter;
+            return true;
+        }
+
         void get(std::vector<service>& list) const noexcept(true)
         {
             std::copy(m_units.begin(), m_units.end(), std::back_inserter(list));
@@ -422,6 +436,15 @@ namespace webpier
                 iter->second.get(list);
         }
 
+        bool get_local_service(const std::string& id, service& info) const noexcept(true) override
+        {
+            auto iter = m_context.find(m_config.host());
+            if (iter == m_context.end())
+                return false;
+
+            return iter->second.get(id, info);
+        }
+
         void add_local_service(const service& info) noexcept(false) override
         {
             auto iter = m_context.find(m_config.host());
@@ -449,6 +472,15 @@ namespace webpier
             }
         }
 
+        bool get_remote_service(const std::string& peer, const std::string& id, service& info) const noexcept(true) override
+        {
+            auto iter = m_context.find(peer);
+            if (iter == m_context.end())
+                return false;
+
+            return iter->second.get(id, info);
+        }
+
         void add_remote_service(const service& info) noexcept(false) override
         {
             auto iter = m_context.find(info.peer);
@@ -474,6 +506,11 @@ namespace webpier
                 if (item.first != m_config.host())
                     list.push_back(item.first);
             }
+        }
+
+        bool is_peer_exist(const std::string& id) const noexcept(true) override
+        {
+            return m_context.find(id) != m_context.end();
         }
 
         void add_peer(const std::string& id, const std::string& cert) noexcept(false) override

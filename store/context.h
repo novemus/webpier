@@ -68,6 +68,7 @@ namespace webpier
         virtual std::string get_host() const noexcept(true) = 0;
 
         virtual void get_peers(std::vector<std::string>& list) const noexcept(true) = 0;
+        virtual bool is_peer_exist(const std::string& id) const noexcept(true) = 0;
         virtual void add_peer(const std::string& id, const std::string& cert) noexcept(false) = 0;
         virtual void del_peer(const std::string& id) noexcept(false) = 0;
 
@@ -75,10 +76,12 @@ namespace webpier
         virtual void set_config(const config& info) noexcept(false) = 0;
 
         virtual void get_local_services(std::vector<service>& list) const noexcept(true) = 0;
+        virtual bool get_local_service(const std::string& id, service& info) const noexcept(true) = 0;
         virtual void add_local_service(const service& info) noexcept(false) = 0;
         virtual void del_local_service(const std::string& id) noexcept(false) = 0;
 
         virtual void get_remote_services(std::vector<service>& list) const noexcept(true) = 0;
+        virtual bool get_remote_service(const std::string& peer, const std::string& id, service& info) const noexcept(true) = 0;
         virtual void add_remote_service(const service& info) noexcept(false) = 0;
         virtual void del_remote_service(const std::string& peer, const std::string& id) noexcept(false) = 0;
 

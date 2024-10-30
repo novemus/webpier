@@ -42,7 +42,7 @@ class CExportDialog : public wxDialog
 
 public:
 
-    CExportDialog( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Advertisement"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_DIALOG_STYLE );
+    CExportDialog( const wxVector<WebPier::Service>& locals, wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Advertise..."), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_DIALOG_STYLE );
     ~CExportDialog();
 
     wxVector<WebPier::Service> GetExport() const;
