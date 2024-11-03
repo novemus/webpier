@@ -31,7 +31,6 @@ class CSettingsDialog : public wxDialog
     wxTextCtrl* m_ownerCtrl;
     wxTextCtrl* m_pierCtrl;
     wxCheckBox* m_startupCheckBox;
-    wxCheckBox* m_trayCheckBox;
     wxTextCtrl* m_stunCtrl;
     wxTextCtrl* m_punchCtrl;
     wxTextCtrl* m_dhtBootCtrl;
@@ -53,6 +52,5 @@ class CSettingsDialog : public wxDialog
 public:
 
     CSettingsDialog( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Settings"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER );
-
     ~CSettingsDialog();
 };

@@ -36,42 +36,21 @@ class CMainFrame : public wxFrame
     wxBitmapButton* m_deleteBtn;
     wxDataViewListCtrl* m_serviceList;
     wxStatusBar* m_statusBar;
-    wxVector<WebPier::Service> m_services;
+    WebPier::ServiceList m_services;
 
 protected:
-
-    void onClose(wxCloseEvent& event)
-    {
-        if (event.CanVeto())
-        {
-            event.Veto();
-            this->Show(false);
-        }
-    }
 
     void onSettingsMenuSelection(wxCommandEvent& event);
     void onImportMenuSelection(wxCommandEvent& event);
     void onExportMenuSelection(wxCommandEvent& event);
-
-    void onExitMenuSelection(wxCommandEvent& event)
-    {
-        this->Show(false);
-    }
-
+    void onExitMenuSelection(wxCommandEvent& event);
     void onAboutMenuSelection(wxCommandEvent& event);
-
     void onRemoteRadioClick(wxCommandEvent& event);
     void onLocalRadioClick(wxCommandEvent& event);
-
     void onAddServiceButtonClick(wxCommandEvent& event);
     void onEditServiceButtonClick(wxCommandEvent& event);
-
     void onDeleteServiceButtonClick(wxCommandEvent& event);
-
-    void onServiceItemContextMenu(wxDataViewEvent& event)
-    {
-        event.Skip();
-    }
+    void onServiceItemContextMenu(wxDataViewEvent& event) { event.Skip(); }
 
     void populate();
 

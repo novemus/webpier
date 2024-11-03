@@ -37,7 +37,6 @@ namespace webpier
 
                 m_config.host = doc.get<std::string>("host");
                 m_config.daemon = doc.get<bool>("daemon", false);
-                m_config.tray = doc.get<bool>("tray", true);
                 m_config.traverse.stun = doc.get<std::string>("nat.traverse.stun", default_stun_server);
                 m_config.traverse.hops = doc.get<uint8_t>("nat.traverse.hops", 7);
                 m_config.rendezvous.bootstrap = doc.get<std::string>("rendezvous.dht.bootstrap", default_dht_bootstrap);
@@ -74,7 +73,6 @@ namespace webpier
 
                     doc.put("host", m_config.host);
                     doc.put("daemon", m_config.daemon);
-                    doc.put("tray", m_config.tray);
                     doc.put("nat.traverse.stun", m_config.traverse.stun);
                     doc.put("nat.traverse.hops", m_config.traverse.hops);
                     doc.put("rendezvous.dht.bootstrap", m_config.rendezvous.bootstrap);

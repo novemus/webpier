@@ -22,7 +22,6 @@ BOOST_AUTO_TEST_CASE(context)
     webpier::config in {
         peer,
         true,
-        false,
         {},
         {},
         {
@@ -46,7 +45,6 @@ BOOST_AUTO_TEST_CASE(context)
 
     BOOST_CHECK_EQUAL(out.host, in.host);
     BOOST_CHECK_EQUAL(out.daemon, in.daemon);
-    BOOST_CHECK_EQUAL(out.tray, in.tray);
     BOOST_CHECK_EQUAL(out.traverse.stun, in.traverse.stun);
     BOOST_CHECK_EQUAL(out.traverse.hops, in.traverse.hops);
     BOOST_CHECK_EQUAL(out.rendezvous.bootstrap, in.rendezvous.bootstrap);

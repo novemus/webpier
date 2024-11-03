@@ -374,31 +374,21 @@ class CTaskBarIcon : public wxTaskBarIcon
 
 public:
 
-    enum
-    {
-        PU_CONFIGURE = 10001,
-        PU_START,
-        PU_STOP,
-        PU_QUIT
-    };
-
 #if defined(__WXOSX__) && wxOSX_USE_COCOA
     CTaskBarIcon(wxTaskBarIconType iconType = wxTBI_DEFAULT_TYPE)
-    :   wxTaskBarIcon(iconType)
+        : wxTaskBarIcon(iconType)
 #else
     CTaskBarIcon()
 #endif
     {
         m_frame = new CMainFrame();
-        m_frame->Show(false);
 
         wxIcon icon;
         icon.CopyFromBitmap(::GetLogo());
+        this->SetIcon(icon);
         m_frame->SetIcon(icon);
-        if (!this->SetIcon(icon))
-        {
-            wxLogError("Could not set icon.");
-        }
+        m_frame->Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( CTaskBarIcon::onFrameClose ), NULL, this);
+        m_frame->Show(!wxTaskBarIcon::IsAvailable());
     }
 
     ~CTaskBarIcon() override
@@ -432,19 +422,46 @@ public:
         this->Destroy();
     }
 
-    virtual wxMenu* CreatePopupMenu() wxOVERRIDE
+    void onFrameClose(wxCloseEvent& event)
     {
-        wxMenu *menu = new wxMenu();
-        menu->Append(PU_CONFIGURE, _("&Configure..."));
+        if (wxTaskBarIcon::IsAvailable())
+        {
+            if (event.CanVeto())
+            {
+                event.Veto();
+                m_frame->Show(false);
+            }
+        }
+        else
+        {
+            m_frame->Close(true);
+            this->Destroy();
+        }
+    }
+
+    wxMenu* CreatePopupMenu() wxOVERRIDE
+    {
+        wxMenu* menu = new wxMenu();
+        wxMenuItem* config = menu->Append(wxID_ANY, _("&Configure..."));
+        menu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CTaskBarIcon::OnMenuConfigure ), this, config->GetId());
+
         wxMenu* submenu = new wxMenu();
-        submenu->Append(PU_START, _("&Start"));
-        submenu->Append(PU_STOP, _("S&top"));
+
+        wxMenuItem* start = submenu->Append(wxID_ANY, _("&Start"));
+        submenu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CTaskBarIcon::OnMenuStart ), this, start->GetId());
+
+        wxMenuItem* stop = submenu->Append(wxID_ANY, _("S&top"));
+        submenu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CTaskBarIcon::OnMenuStop ), this, stop->GetId());
+
         menu->Append(wxID_ANY, "&Daemon", submenu);
 
-    #ifdef __WXOSX__
-        if ( OSXIsStatusItem() )
-    #endif
-        menu->Append(PU_QUIT, _("&Quit"));
+#ifdef __WXOSX__
+        if (OSXIsStatusItem())
+#endif
+        {
+            wxMenuItem* exit = menu->Append(wxID_ANY, _("&Quit"));
+            menu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CTaskBarIcon::OnMenuExit ), this, exit->GetId());
+        }
 
         return menu;
     }
@@ -453,10 +470,6 @@ public:
 };
 
 wxBEGIN_EVENT_TABLE(CTaskBarIcon, wxTaskBarIcon)
-    EVT_MENU(PU_CONFIGURE, CTaskBarIcon::OnMenuConfigure)
-    EVT_MENU(PU_START, CTaskBarIcon::OnMenuStart)
-    EVT_MENU(PU_STOP, CTaskBarIcon::OnMenuStop)
-    EVT_MENU(PU_QUIT, CTaskBarIcon::OnMenuExit)
     EVT_TASKBAR_LEFT_DCLICK(CTaskBarIcon::OnLeftButtonDClick)
 wxEND_EVENT_TABLE()
 
@@ -469,15 +482,7 @@ public:
             return false;
 
         wxImage::AddHandler(new wxPNGHandler);
-
-        if (!wxTaskBarIcon::IsAvailable())
-        {
-            wxMessageBox(
-                "There appears to be no system tray support in your current environment. This sample may not behave as expected.",
-                "Warning",
-                wxOK | wxICON_EXCLAMATION);
-        }
-
+        
         CTaskBarIcon* icon = new CTaskBarIcon();
         (void)icon;
 

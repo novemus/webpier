@@ -7,7 +7,7 @@ CSettingsDialog::CSettingsDialog(wxWindow* parent, wxWindowID id, const wxString
     : wxDialog(parent, id, title, pos, size, style)
     , m_config(WebPier::GetConfig())
 {
-    static constexpr const char* FORBIDDEN_PATH_CHARS = "*/\\<>:|? \t\n\r";
+    static constexpr const char* FORBIDDEN_PATH_CHARS = "*/\\<>:|? ";
 
     this->SetSizeHints( wxDefaultSize, wxDefaultSize );
 
@@ -63,10 +63,6 @@ CSettingsDialog::CSettingsDialog(wxWindow* parent, wxWindowID id, const wxString
     m_startupCheckBox = new wxCheckBox( basicPanel, wxID_ANY, _("Launch daemon on system startup"), wxDefaultPosition, wxDefaultSize, 0 );
     m_startupCheckBox->SetValue(m_config.IsDaemon());
     basicSizer->Add( m_startupCheckBox, 0, wxALL, 5 );
-
-    m_trayCheckBox = new wxCheckBox( basicPanel, wxID_ANY, _("Show tray icon"), wxDefaultPosition, wxDefaultSize, 0 );
-    m_trayCheckBox->SetValue(m_config.IsTray());
-    basicSizer->Add( m_trayCheckBox, 0, wxALL, 5 );
 
     basicPanel->SetSizer( basicSizer );
     basicPanel->Layout();
@@ -266,7 +262,6 @@ void CSettingsDialog::onOkButtonClick(wxCommandEvent& event)
 
     m_config.SetHost(m_ownerCtrl->GetValue(), m_pierCtrl->GetValue());
     m_config.SetDaemon(m_startupCheckBox->GetValue());
-    m_config.SetTray(m_trayCheckBox->GetValue());
     
     m_config.SetStunServer(m_stunCtrl->GetValue());
     uint32_t hops = m_config.GetPunchHops();

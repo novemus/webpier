@@ -221,20 +221,23 @@ namespace WebPier
 
     void Service::Store() noexcept(false)
     {
+        if (!IsDirty())
+            return;
+
         auto context = Context::Get();
         if (m_local)
         {
             if (!m_origin.id.empty())
                 context->del_local_service(m_origin.id);
-            context->add_local_service(m_midway);
+            context->add_local_service(m_actual);
         }
         else
         {
             if (!m_origin.id.empty() && !m_origin.peer.empty())
                 context->del_remote_service(m_origin.peer, m_origin.id);
-            context->add_remote_service(m_midway);
+            context->add_remote_service(m_actual);
         }
-        m_origin = m_midway;
+        m_origin = m_actual;
     }
 
     void Service::Purge() noexcept(false)
@@ -256,19 +259,19 @@ namespace WebPier
     wxVector<wxVariant> Service::ToListView() const noexcept(true)
     {
         wxVector<wxVariant> data;
-        data.push_back(wxVariant(wxDataViewIconText(m_midway.id, ::GetGreyCircleImage())));
-        data.push_back(wxVariant(wxString(m_midway.peer)));
-        data.push_back(wxVariant(wxString(m_midway.service)));
-        data.push_back(wxVariant(wxString(m_midway.gateway)));
-        data.push_back(wxVariant(wxString(m_midway.rendezvous.bootstrap.empty() ? wxT("Email") : wxT("DHT"))));
-        data.push_back(wxVariant(wxString(m_midway.autostart ? _("yes") : _("no"))));
+        data.push_back(wxVariant(wxDataViewIconText(m_actual.id, ::GetGreyCircleImage())));
+        data.push_back(wxVariant(wxString(m_actual.peer)));
+        data.push_back(wxVariant(wxString(m_actual.service)));
+        data.push_back(wxVariant(wxString(m_actual.gateway)));
+        data.push_back(wxVariant(wxString(m_actual.rendezvous.bootstrap.empty() ? wxT("Email") : wxT("DHT"))));
+        data.push_back(wxVariant(wxString(m_actual.autostart ? _("yes") : _("no"))));
         return data;
     }
 
-    wxArrayString Service::GetPees() noexcept(true)
+    wxArrayString Service::GetPees() const noexcept(true)
     {
         wxArrayString array;
-        std::istringstream stream(m_midway.peer);
+        std::istringstream stream(m_actual.peer);
         std::string line;    
         while (std::getline(stream, line, ' '))
             array.Add(line);
@@ -277,60 +280,133 @@ namespace WebPier
 
     void Service::SetPeers(const wxArrayString& peers) noexcept(true)
     {
+        m_actual.peer.clear();
         for (size_t i = 0; i < peers.Count(); ++i)
         {
-            m_midway.peer += peers[i].ToStdString();
+            m_actual.peer += peers[i].ToStdString();
             if (i < peers.Count() - 1)
-                m_midway.peer += " ";
+                m_actual.peer += " ";
         }
+    }
+
+    void Service::AddPeer(const wxString& peer) noexcept(true)
+    {
+        if (m_local)
+        {
+            auto beg = m_actual.peer.find(peer.ToStdString());
+            if (beg != std::string::npos)
+            {
+                auto end = beg + peer.size();
+                bool begGap = beg == 0 || m_actual.peer[beg - 1] == ' ';
+                bool endGap = end == m_actual.peer.size() || m_actual.peer[end] == ' ';
+                if (begGap && endGap)
+                    return;
+            }
+
+            if (!m_actual.peer.empty())
+                m_actual.peer += " ";
+
+            m_actual.peer += peer;
+        }
+        else
+            m_actual.peer = peer;
+    }
+
+    void Service::DelPeer(const wxString& peer) noexcept(true)
+    {
+        auto beg = m_actual.peer.find(peer.ToStdString());
+        if (beg != std::string::npos)
+        {
+            auto end = beg + peer.size();
+            bool begGap = beg == 0 || m_actual.peer[beg - 1] == ' ';
+            bool endGap = end == m_actual.peer.size() || m_actual.peer[end] == ' ';
+            if (begGap && endGap)
+            {
+                if (end < m_actual.peer.size())
+                    ++end;
+
+                m_actual.peer.erase(beg, end - beg);
+            }
+        }
+    }
+
+    bool Service::IsPeerPresent(const wxString& peer) const noexcept(true)
+    {
+        if (m_local)
+        {
+            auto beg = m_actual.peer.find(peer.ToStdString());
+            if (beg != std::string::npos)
+            {
+                auto end = beg + peer.size();
+                bool begGap = beg == 0 || m_actual.peer[beg - 1] == ' ';
+                bool endGap = end == m_actual.peer.size() || m_actual.peer[end] == ' ';
+                if (begGap && endGap)
+                    return true;
+            }
+            return false;
+        }
+
+        return m_actual.peer == peer.ToStdString();
     }
 
     void Service::UseDhtRendezvous() noexcept(true)
     { 
         if (!m_origin.rendezvous.bootstrap.empty())
         {
-            m_midway.rendezvous = m_origin.rendezvous;
+            m_actual.rendezvous = m_origin.rendezvous;
             return;
         }
         auto config = GetConfig();
-        m_midway.rendezvous.bootstrap = config.GetDhtBootstrap();
-        m_midway.rendezvous.network = config.GetDhtNetwork(); 
+        m_actual.rendezvous.bootstrap = config.GetDhtBootstrap();
+        m_actual.rendezvous.network = config.GetDhtNetwork(); 
     }
 
     void Service::UseEmailRendezvous() noexcept(true)
     {
-        m_midway.rendezvous.bootstrap.clear();
-        m_midway.rendezvous.network = 0;
+        m_actual.rendezvous.bootstrap.clear();
+        m_actual.rendezvous.network = 0;
     }
 
-    bool Service::IsEqual(const Service& other) noexcept(true)
+    bool Service::IsEqual(const Service& other) const noexcept(true)
     {
-        return m_midway.id == other.m_midway.id
-            && m_midway.peer == other.m_midway.peer
-            && m_midway.gateway == other.m_midway.gateway
-            && m_midway.service == other.m_midway.service
-            && m_midway.autostart == other.m_midway.autostart
-            && m_midway.obscure == other.m_midway.obscure
-            && m_midway.rendezvous.bootstrap == other.m_midway.rendezvous.bootstrap
-            && m_midway.rendezvous.network == other.m_midway.rendezvous.network;
+        return m_actual.id == other.m_actual.id
+            && m_actual.peer == other.m_actual.peer
+            && m_actual.gateway == other.m_actual.gateway
+            && m_actual.service == other.m_actual.service
+            && m_actual.autostart == other.m_actual.autostart
+            && m_actual.obscure == other.m_actual.obscure
+            && m_actual.rendezvous.bootstrap == other.m_actual.rendezvous.bootstrap
+            && m_actual.rendezvous.network == other.m_actual.rendezvous.network;
+    }
+
+    bool Service::IsDirty() const noexcept(true)
+    {
+        return m_actual.id != m_origin.id
+            || m_actual.peer == m_origin.peer
+            || m_actual.gateway == m_origin.gateway
+            || m_actual.service == m_origin.service
+            || m_actual.autostart == m_origin.autostart
+            || m_actual.obscure == m_origin.obscure
+            || m_actual.rendezvous.bootstrap == m_origin.rendezvous.bootstrap
+            || m_actual.rendezvous.network == m_origin.rendezvous.network;
     }
 
     void Config::Store(bool tidy) noexcept(false)
     {
-        Context::Switch(m_midway.host, tidy);
-        Context::Get()->set_config(m_midway);
+        Context::Switch(m_actual.host, tidy);
+        Context::Get()->set_config(m_actual);
     }
 
     const wxRegEx IDENTITY_PATTERN("([^/]+)/([^/]+)");
 
     wxString Config::GetOwner() const noexcept(true)
     {
-        return IDENTITY_PATTERN.Matches(m_midway.host) ? IDENTITY_PATTERN.GetMatch(m_midway.host, 1) : m_midway.host;
+        return IDENTITY_PATTERN.Matches(m_actual.host) ? IDENTITY_PATTERN.GetMatch(m_actual.host, 1) : m_actual.host;
     }
 
     wxString Config::GetPier() const noexcept(true)
     {
-        return IDENTITY_PATTERN.Matches(m_midway.host) ? IDENTITY_PATTERN.GetMatch(m_midway.host, 2) : m_midway.host;
+        return IDENTITY_PATTERN.Matches(m_actual.host) ? IDENTITY_PATTERN.GetMatch(m_actual.host, 2) : m_actual.host;
     }
 
     wxString GetHost() noexcept(false)
@@ -345,46 +421,47 @@ namespace WebPier
         return Config(config);
     }
 
-    wxVector<Service> GetLocalServices() noexcept(false)
+    ServiceList GetLocalServices() noexcept(false)
     {
-        wxVector<Service> collection;
+        ServiceList collection;
         std::vector<webpier::service> list;
         Context::Get()->get_local_services(list);
         for (const auto& item : list)
-            collection.push_back(Service(true, item));
+        {
+            ServicePtr ptr(new Service(true, item));
+            collection[wxUIntPtr(ptr.get())] = ptr;
+        }
         return collection;
     }
 
-    wxVector<Service> GetRemoteServices() noexcept(false)
+    ServiceList GetRemoteServices() noexcept(false)
     {
-        wxVector<Service> collection;
+        ServiceList collection;
         std::vector<webpier::service> list;
         Context::Get()->get_remote_services(list);
         for (const auto& item : list)
-            collection.push_back(Service(false, item));
+        {
+            ServicePtr ptr(new Service(false, item));
+            collection[wxUIntPtr(ptr.get())] = ptr;
+        }
+
         return collection;
     }
 
-    bool GetLocalService(const wxString& id, Service& info) noexcept(false)
+    ServicePtr GetLocalService(const wxString& id) noexcept(false)
     {
         webpier::service raw;
         if (Context::Get()->get_local_service(id.ToStdString(), raw))
-        {
-            info = Service(true, raw);
-            return true;
-        }
-        return false;
+            return ServicePtr(new Service(true, raw));
+        return ServicePtr();
     }
 
-    bool GetRemoteService(const wxString& peer, const wxString& id, Service& info) noexcept(false)
+    ServicePtr GetRemoteService(const wxString& peer, const wxString& id) noexcept(false)
     {
         webpier::service raw;
         if (Context::Get()->get_remote_service(peer.ToStdString(), id.ToStdString(), raw))
-        {
-            info = Service(false, raw);
-            return true;
-        }
-        return false;
+            return ServicePtr(new Service(false, raw));
+        return ServicePtr();
     }
 
     wxArrayString GetPeers() noexcept(false)
@@ -431,12 +508,12 @@ namespace WebPier
 
     void AddPeer(const wxString& id, const wxString& cert) noexcept(false)
     {
-        return Context::Get()->add_peer(id.ToStdString(), cert.ToStdString());
+        Context::Get()->add_peer(id.ToStdString(), cert.ToStdString());
     }
 
     void DelPeer(const wxString& id) noexcept(false)
     {
-        return Context::Get()->del_peer(id.ToStdString());
+        Context::Get()->del_peer(id.ToStdString());
     }
 
     wxString GetCertificate(const wxString& id) noexcept(false)
@@ -456,13 +533,13 @@ namespace WebPier
         doc.put("certificate", data.certificate.ToStdString());
 
         boost::property_tree::ptree array;
-        for (const auto& service : data.services)
+        for (const auto& pair : data.services)
         {
             boost::property_tree::ptree item;
-            item.put("id", service.GetId().ToStdString());
-            item.put("obscure", service.IsObscure());
-            item.put("rendezvous.dht.bootstrap", service.GetDhtBootstrap().ToStdString());
-            item.put("rendezvous.dht.network", service.GetDhtNetwork());
+            item.put("id", pair.second->GetId().ToStdString());
+            item.put("obscure", pair.second->IsObscure());
+            item.put("rendezvous.dht.bootstrap", pair.second->GetDhtBootstrap().ToStdString());
+            item.put("rendezvous.dht.network", pair.second->GetDhtNetwork());
             array.push_back(std::make_pair("", item));
         }
         doc.put_child("services", array);
@@ -481,13 +558,13 @@ namespace WebPier
         boost::property_tree::ptree array;
         for (auto& item : doc.get_child("services", array))
         {
-            Service service(false);
-            service.SetId(item.second.get<std::string>("id"));
-            service.SetPeer(data.pier);
-            service.SetObscure(item.second.get<bool>("obscure"));
-            service.SetDhtBootstrap(item.second.get<std::string>("rendezvous.dht.bootstrap", ""));
-            service.SetDhtNetwork(item.second.get<uint32_t>("rendezvous.dht.network", 0));
-            data.services.push_back(service);
+            ServicePtr service(new Service(false));
+            service->SetId(item.second.get<std::string>("id"));
+            service->SetPeer(data.pier);
+            service->SetObscure(item.second.get<bool>("obscure"));
+            service->SetDhtBootstrap(item.second.get<std::string>("rendezvous.dht.bootstrap", ""));
+            service->SetDhtNetwork(item.second.get<uint32_t>("rendezvous.dht.network", 0));
+            data.services[wxUIntPtr(service.get())] = service;
         }
     }
 }

@@ -43,7 +43,6 @@ namespace webpier
     {
         std::string host;
         bool daemon = false;
-        bool tray = true;
         nat traverse;
         dht rendezvous;
         email emailer;

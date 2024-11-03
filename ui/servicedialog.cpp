@@ -2,7 +2,7 @@
 #include "messagedialog.h"
 #include <wx/valnum.h>
 
-CServiceDialog::CServiceDialog(WebPier::Service* service, wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style)
+CServiceDialog::CServiceDialog(WebPier::ServicePtr service, wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style)
     : wxDialog(parent, id, title, pos, size, style), m_service(service)
 {
     this->SetSizeHints( wxDefaultSize, wxDefaultSize );

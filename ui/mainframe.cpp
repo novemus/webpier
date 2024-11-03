@@ -2,8 +2,7 @@
 #include "context.h"
 #include "servicedialog.h"
 #include "settingsdialog.h"
-#include "importdialog.h"
-#include "exportdialog.h"
+#include "exchangedialog.h"
 #include "aboutdialog.h"
 #include "messagedialog.h"
 #include <wx/stdpaths.h>
@@ -84,8 +83,6 @@ CMainFrame::CMainFrame() : wxFrame(nullptr, wxID_ANY, wxT("WebPier"), wxDefaultP
 
     this->Centre( wxBOTH );
 
-    // Connect Events
-    this->Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( CMainFrame::onClose ) );
     fileMenu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CMainFrame::onSettingsMenuSelection ), this, settingsItem->GetId());
     fileMenu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CMainFrame::onImportMenuSelection ), this, m_importItem->GetId());
     fileMenu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CMainFrame::onExportMenuSelection ), this, m_exportItem->GetId());
@@ -132,7 +129,7 @@ void CMainFrame::populate()
             : WebPier::GetLocalServices();
 
         for (auto& item : m_services)
-            m_serviceList->AppendItem(item.ToListView(), reinterpret_cast<wxUIntPtr>(&item));
+            m_serviceList->AppendItem(item.second->ToListView(), item.first);
 
         m_importItem->Enable(true);
         m_exportItem->Enable(true);
@@ -155,6 +152,13 @@ void CMainFrame::populate()
     this->Layout();
 }
 
+void CMainFrame::onExitMenuSelection(wxCommandEvent&)
+{
+    wxCloseEvent event(wxEVT_CLOSE_WINDOW, GetId());
+    event.SetEventObject(this);
+    ProcessWindowEvent(event);
+}
+
 void CMainFrame::onSettingsMenuSelection(wxCommandEvent& event)
 {
     try
@@ -175,16 +179,16 @@ void CMainFrame::onSettingsMenuSelection(wxCommandEvent& event)
 
 void CMainFrame::onAddServiceButtonClick(wxCommandEvent& event)
 {
-    WebPier::Service service(m_localBtn->GetValue());
+    WebPier::ServicePtr service(new WebPier::Service(m_localBtn->GetValue()));
 
-    CServiceDialog dialog(&service, this);
+    CServiceDialog dialog(service, this);
     if (dialog.ShowModal() == wxID_OK)
     {
         try
         {
-            service.Store();
-            m_services.push_back(service);
-            m_serviceList->AppendItem(service.ToListView(), reinterpret_cast<wxUIntPtr>(&m_services.back()));
+            service->Store();
+            m_services[wxUIntPtr(service.get())] = service;
+            m_serviceList->AppendItem(service->ToListView(), wxUIntPtr(service.get()));
         }
         catch(const std::exception& ex)
         {
@@ -198,25 +202,27 @@ void CMainFrame::onEditServiceButtonClick(wxCommandEvent& event)
 {
     if (!m_serviceList->HasSelection())
         return event.Skip();
-
-    WebPier::Service* service = reinterpret_cast<WebPier::Service*>(m_serviceList->GetItemData(m_serviceList->GetSelection()));
-
-    CServiceDialog dialog(service, this);
-    if (dialog.ShowModal() == wxID_OK)
+    try
     {
-        try
+        auto iter = m_services.find(m_serviceList->GetItemData(m_serviceList->GetSelection()));
+        if (iter == m_services.end())
+            throw std::runtime_error(_("service data is not found"));
+
+        auto service = iter->second;
+        CServiceDialog dialog(service, this);
+        if (dialog.ShowModal() == wxID_OK && service->IsDirty())
         {
             service->Store();
             auto row = m_serviceList->GetSelectedRow();
             m_serviceList->DeleteItem(row);
-            m_serviceList->InsertItem(row, service->ToListView(), reinterpret_cast<wxUIntPtr>(service));
+            m_serviceList->InsertItem(row, service->ToListView(), wxUIntPtr(service.get()));
             m_serviceList->SelectRow(row);
         }
-        catch (const std::exception& ex)
-        {
-            CMessageDialog dialog(this, _("Can't change service: ") + ex.what(), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
-            dialog.ShowModal();
-        }
+    }
+    catch (const std::exception& ex)
+    {
+        CMessageDialog dialog(this, _("Can't change service: ") + ex.what(), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
+        dialog.ShowModal();
     }
 }
 
@@ -229,63 +235,99 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
         if (fileDialog.ShowModal() == wxID_CANCEL)
             return;
 
-        WebPier::Exchange data {};
+        auto host = WebPier::GetHost();
+        WebPier::Exchange data;
         WebPier::ReadExchangeFile(fileDialog.GetPath(), data);
 
-        if (WebPier::GetHost() == data.pier)
+        if (host == data.pier)
         {
-            CMessageDialog dialog(this, _("Peer name is the same as the local pier."), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
+            CMessageDialog dialog(this, _("Peer name is the same as the local pier"), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
             dialog.ShowModal();
             return;
         }
 
-        if (WebPier::IsPeerExist(data.pier))
+        bool replacePeer = false;
+        bool creategPeer = !WebPier::IsPeerExist(data.pier);
+        if (!creategPeer)
         {
             if (data.certificate != WebPier::GetCertificate(data.pier))
             {
-                CMessageDialog dialog(this, _("Such peer is already exists, but has a different certificate. Do you want to replace existing peer and drop its services?"), wxDEFAULT_DIALOG_STYLE | wxICON_QUESTION);
+                CMessageDialog dialog(this, _("Such peer is already exists, but has a different certificate. Do you want to replace existing peer and its services?"), wxDEFAULT_DIALOG_STYLE | wxICON_QUESTION);
                 if (dialog.ShowModal() != wxID_YES)
                     return;
 
-                WebPier::DelPeer(data.pier);
-                WebPier::AddPeer(data.pier, data.certificate);
+                replacePeer = true;
             }
         }
-        else
-            WebPier::AddPeer(data.pier, data.certificate);
 
-        CImportDialog dialog(data.pier, data.services, this);
+        auto locals = WebPier::GetLocalServices();
+        if (replacePeer)
+        {
+            for (auto& item : locals)
+                item.second->DelPeer(data.pier);
+        }
+
+        CExchangeDialog dialog(data.pier, data.services, locals, this);
         if (dialog.ShowModal() != wxID_OK)
             return;
 
-        for (auto& item : dialog.GetImport())
+        if (replacePeer)
+            WebPier::DelPeer(data.pier);
+
+        if (creategPeer || replacePeer)
+            WebPier::AddPeer(data.pier, data.certificate);
+
+        for (auto& item : locals)
         {
-            WebPier::Service info;
-            if (WebPier::GetRemoteService(data.pier, item.GetId(), info))
+            if (item.second->IsDirty())
+                item.second->Store();
+        }
+
+        if (dialog.IsNeedImportMerge())
+        {
+            for (auto& item : dialog.GetImport())
             {
-                if (!info.IsEqual(item))
+                auto next = item.second;
+                if (auto curr = WebPier::GetRemoteService(data.pier, next->GetId()))
                 {
-                    CMessageDialog dialog(this, wxString::Format(_("Service '%s' is already exist, but differs from the new one. Do you want to replace it?"), item.GetId()), wxDEFAULT_DIALOG_STYLE | wxICON_QUESTION);
-                    if (dialog.ShowModal() == wxID_YES)
+                    if (!next->IsEqual(*curr))
                     {
-                        info.Purge();
-                        item.Store();
+                        CMessageDialog dialog(this, wxString::Format(_("Service '%s' is already exist, but differs from the new one. Do you want to replace it?"), next->GetId()), wxDEFAULT_DIALOG_STYLE | wxICON_QUESTION);
+                        if (dialog.ShowModal() == wxID_YES)
+                        {
+                            curr->Purge();
+                            next->Store();
+                        }
                     }
                 }
+                else
+                    next->Store();
             }
-            else
-                item.Store();
+        }
+        else
+        {
+            for (auto& item : WebPier::GetRemoteServices())
+            {
+                if (item.second->GetPeer() == data.pier)
+                    item.second->Purge();
+            }
+            for (auto& item : dialog.GetImport())
+                item.second->Store();
         }
 
         populate();
 
-        if (dialog.IsNeedBackAdvertising())
+        if (dialog.IsNeedExportReply())
         {
-            wxCommandEvent dummy;
-            onExportMenuSelection(dummy);
+            wxFileDialog fileDialog(this, _("Save advertisement file"), wxStandardPaths::Get().GetUserDir(wxStandardPathsBase::Dir_Desktop), "", "*.json", wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
+            if (fileDialog.ShowModal() == wxID_CANCEL)
+                return;
+
+            WebPier::Exchange data { host, WebPier::GetCertificate(host), dialog.GetExport() };
+            WebPier::WriteExchangeFile(fileDialog.GetPath(), data);
         }
     }
-    catch (const std::exception &ex)
+    catch (const std::exception& ex)
     {
         CMessageDialog dialog(this, _("Can't introduce peer: ") + ex.what(), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
         dialog.ShowModal();
@@ -296,7 +338,8 @@ void CMainFrame::onExportMenuSelection(wxCommandEvent& event)
 {
     try
     {
-        CExportDialog dialog(WebPier::GetLocalServices(), this);
+        auto host = WebPier::GetHost();
+        CExchangeDialog dialog(host, WebPier::GetLocalServices(), this);
         if (dialog.ShowModal() != wxID_OK)
             return;
 
@@ -304,10 +347,10 @@ void CMainFrame::onExportMenuSelection(wxCommandEvent& event)
         if (fileDialog.ShowModal() == wxID_CANCEL)
             return;
 
-        WebPier::Exchange data { WebPier::GetHost(), WebPier::GetCertificate(WebPier::GetHost()), dialog.GetExport() };
+        WebPier::Exchange data { host, WebPier::GetCertificate(host), dialog.GetExport() };
         WebPier::WriteExchangeFile(fileDialog.GetPath(), data);
     }
-    catch (const std::exception &ex)
+    catch (const std::exception& ex)
     {
         CMessageDialog dialog(this, _("Can't advertise host: ") + ex.what(), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
         dialog.ShowModal();
@@ -318,26 +361,26 @@ void CMainFrame::onDeleteServiceButtonClick(wxCommandEvent& event)
 {
     if (!m_serviceList->HasSelection())
         return event.Skip();
-
-    WebPier::Service* service = reinterpret_cast<WebPier::Service*>(m_serviceList->GetItemData(m_serviceList->GetSelection()));
-
-    CMessageDialog dialog(nullptr, _("Do you want to remove service ") + service->GetId(), wxDEFAULT_DIALOG_STYLE|wxICON_QUESTION);
-    if (dialog.ShowModal() == wxID_YES)
+    try
     {
-        try
+        auto iter = m_services.find(m_serviceList->GetItemData(m_serviceList->GetSelection()));
+        if (iter == m_services.end())
+            throw std::runtime_error(_("service data is not found"));
+
+        auto service = iter->second;
+        CMessageDialog dialog(this, _("Do you want to remove service ") + service->GetId(), wxDEFAULT_DIALOG_STYLE | wxICON_QUESTION);
+        if (dialog.ShowModal() == wxID_YES)
         {
             service->Purge();
 
             m_serviceList->DeleteItem(m_serviceList->GetSelectedRow());
-            m_services.erase(std::remove_if(m_services.begin(), m_services.end(), [service](const auto& item) {
-                return &item == service;
-            }), m_services.end());
+            m_services.erase(iter);
         }
-        catch (const std::exception& ex)
-        {
-            CMessageDialog dialog(this, _("Can't remove service: ") + ex.what(), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
-            dialog.ShowModal();
-        }
+    }
+    catch (const std::exception& ex)
+    {
+        CMessageDialog dialog(this, _("Can't remove service: ") + ex.what(), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
+        dialog.ShowModal();
     }
 }
 
