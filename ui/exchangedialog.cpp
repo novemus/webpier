@@ -1,7 +1,7 @@
 #include "exchangedialog.h"
 #include "messagedialog.h"
 
-CImportPage::CImportPage(const wxString& pier, const WebPier::ServiceList& remotes, wxWindow* parent) 
+CImportPage::CImportPage(const wxString& pier, const WebPier::ServiceList& forImport, wxWindow* parent) 
     : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxEmptyString)
 {
     this->SetLabel(_("Select services to import"));
@@ -17,10 +17,10 @@ CImportPage::CImportPage(const wxString& pier, const WebPier::ServiceList& remot
     listSizer = new wxBoxSizer( wxHORIZONTAL );
 
     wxArrayString choices;
-    for (const auto& item : remotes)
+    for (const auto& item : forImport)
     {
-        m_remotes.push_back(item.second);
-        choices.Add(item.second->GetId());
+        m_import.push_back(item.second);
+        choices.Add(item.second->Id);
     }
 
     m_serviceList = new wxCheckListBox( peerSizer->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize( -1,10 ), choices, wxLB_SINGLE );
@@ -35,7 +35,7 @@ CImportPage::CImportPage(const wxString& pier, const WebPier::ServiceList& remot
     serviceSizer->SetFlexibleDirection( wxHORIZONTAL );
     serviceSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-    m_idLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Id"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_idLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Service"), wxDefaultPosition, wxDefaultSize, 0 );
     m_idLabel->Wrap( -1 );
     serviceSizer->Add( m_idLabel, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 
@@ -43,16 +43,16 @@ CImportPage::CImportPage(const wxString& pier, const WebPier::ServiceList& remot
     m_idValue->Wrap( -1 );
     serviceSizer->Add( m_idValue, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 
-    m_serviceLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Service"), wxDefaultPosition, wxDefaultSize, 0 );
-    m_serviceLabel->Wrap( -1 );
-    m_serviceLabel->SetToolTip( _("Local endpoint to map remote service") );
+    m_addressLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Address"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_addressLabel->Wrap( -1 );
+    m_addressLabel->SetToolTip( _("Local endpoint to map remote service") );
 
-    serviceSizer->Add( m_serviceLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
+    serviceSizer->Add( m_addressLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
-    m_serviceCtrl = new wxTextCtrl( peerSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-    m_serviceCtrl->SetToolTip( _("Local endpoint to map remote service") );
+    m_addressCtrl = new wxTextCtrl( peerSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+    m_addressCtrl->SetToolTip( _("Local endpoint to map remote service") );
 
-    serviceSizer->Add( m_serviceCtrl, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
+    serviceSizer->Add( m_addressCtrl, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
     m_gateLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Gateway"), wxDefaultPosition, wxDefaultSize, 0 );
     m_gateLabel->Wrap( -1 );
@@ -120,11 +120,11 @@ CImportPage::CImportPage(const wxString& pier, const WebPier::ServiceList& remot
     this->Centre( wxBOTH );
 
     m_serviceList->Connect(wxEVT_COMMAND_LISTBOX_SELECTED, wxCommandEventHandler(CImportPage::onListItemSelected), NULL, this);
-    m_serviceCtrl->Connect(wxEVT_KILL_FOCUS, wxFocusEventHandler(CImportPage::onServiceCtrlKillFocus), NULL, this);
+    m_addressCtrl->Connect(wxEVT_KILL_FOCUS, wxFocusEventHandler(CImportPage::onServiceCtrlKillFocus), NULL, this);
     m_gateCtrl->Connect(wxEVT_KILL_FOCUS, wxFocusEventHandler(CImportPage::onGatewayCtrlKillFocus), NULL, this);
     m_startCtrl->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(CImportPage::onAutostartCheckBox), NULL, this);
 
-    if (!m_remotes.empty())
+    if (!m_import.empty())
     {
         m_serviceList->SetSelection(0);
         populate(0);
@@ -136,8 +136,8 @@ CImportPage::~CImportPage()
     delete m_serviceList;
     delete m_idLabel;
     delete m_idValue;
-    delete m_serviceLabel;
-    delete m_serviceCtrl;
+    delete m_addressLabel;
+    delete m_addressCtrl;
     delete m_gateLabel;
     delete m_gateCtrl;
     delete m_startLabel;
@@ -155,15 +155,15 @@ void CImportPage::populate(int line)
     if (line == wxNOT_FOUND)
         return;
 
-    const auto& service = m_remotes[line];
+    const auto& service = m_import[line];
 
-    m_idValue->SetLabel(service->GetId());
-    m_serviceCtrl->SetValue(service->GetService());
-    m_gateCtrl->SetValue(service->GetGateway());
-    m_startCtrl->SetValue(service->IsAutostart());
-    m_obscureValue->SetLabel(service->IsObscure() ? _("yes") : _("no"));
-    m_bootValue->SetLabel(service->GetDhtBootstrap());
-    m_netValue->SetLabel(wxString::Format(wxT("%d"), (int)service->GetDhtNetwork()));
+    m_idValue->SetLabel(service->Id);
+    m_addressCtrl->SetValue(service->Address);
+    m_gateCtrl->SetValue(service->Gateway);
+    m_startCtrl->SetValue(service->Autostart);
+    m_obscureValue->SetLabel(service->Obscure ? _("yes") : _("no"));
+    m_bootValue->SetLabel(service->DhtBootstrap);
+    m_netValue->SetLabel(wxString::Format(wxT("%d"), (int)service->DhtNetwork));
 
     this->Layout();
 }
@@ -176,7 +176,7 @@ void CImportPage::onListItemSelected(wxCommandEvent& event)
 
 void CImportPage::onServiceCtrlKillFocus(wxFocusEvent& event)
 {
-    if (m_remotes.empty())
+    if (m_import.empty())
         return;
 
     int line = m_serviceList->GetSelection();
@@ -186,13 +186,13 @@ void CImportPage::onServiceCtrlKillFocus(wxFocusEvent& event)
         m_serviceList->SetSelection(line);
     }
 
-    m_remotes[line]->SetService(m_serviceCtrl->GetValue());
+    m_import[line]->Address = m_addressCtrl->GetValue();
     event.Skip();
 }
 
 void CImportPage::onGatewayCtrlKillFocus(wxFocusEvent& event)
 {
-    if (m_remotes.empty())
+    if (m_import.empty())
         return;
 
     int line = m_serviceList->GetSelection();
@@ -202,13 +202,13 @@ void CImportPage::onGatewayCtrlKillFocus(wxFocusEvent& event)
         m_serviceList->SetSelection(line);
     }
 
-    m_remotes[line]->SetGateway(m_gateCtrl->GetValue());
+    m_import[line]->Gateway = m_gateCtrl->GetValue();
     event.Skip();
 }
 
 void CImportPage::onAutostartCheckBox(wxCommandEvent& event)
 {
-    if (m_remotes.empty())
+    if (m_import.empty())
         return;
 
     int line = m_serviceList->GetSelection();
@@ -218,7 +218,7 @@ void CImportPage::onAutostartCheckBox(wxCommandEvent& event)
         m_serviceList->SetSelection(line);
     }
 
-    m_remotes[line]->SetAutostart(m_startCtrl->IsChecked());
+    m_import[line]->Autostart = m_startCtrl->IsChecked();
     event.Skip();
 }
 
@@ -229,7 +229,7 @@ bool CImportPage::ValidateData()
 
     for(auto index : checked)
     {
-        if (m_remotes[index]->GetService().IsEmpty() || m_remotes[index]->GetGateway().IsEmpty())
+        if (m_import[index]->Address.IsEmpty() || m_import[index]->Gateway.IsEmpty())
         {
             CMessageDialog dialog(this, _("Define the 'service' and 'gateway' properties for all checked services"), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
             dialog.ShowModal();
@@ -247,16 +247,15 @@ WebPier::ServiceList CImportPage::GetImport() const
     WebPier::ServiceList imports;
     for(auto index : checked)
     {
-        WebPier::ServicePtr next = m_remotes.at(index);
+        WebPier::ServicePtr next = m_import.at(index);
         imports[wxUIntPtr(next.get())] = next;
     }
 
     return imports;
 }
 
-CExportPage::CExportPage(const wxString& pier, const WebPier::ServiceList& locals, wxWindow* parent)
+CExportPage::CExportPage(const wxString& pier, const WebPier::ServiceList& forExport, wxWindow* parent)
     : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxEmptyString)
-    , m_pier(pier)
 {
     this->SetLabel(_("Select services to export"));
 
@@ -271,17 +270,17 @@ CExportPage::CExportPage(const wxString& pier, const WebPier::ServiceList& local
     listSizer = new wxBoxSizer( wxHORIZONTAL );
 
     wxArrayString choices;
-    for (const auto& item : locals)
+    for (const auto& item : forExport)
     {
-        m_locals.push_back(item.second);
-        choices.Add(item.second->GetId());
+        m_export.push_back(item.second);
+        choices.Add(item.second->Id);
     }
 
     m_serviceList = new wxCheckListBox( peerSizer->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize( -1,10 ), choices, wxLB_SINGLE );
 
-    for (size_t i = 0; i < m_locals.size(); ++i)
+    for (size_t i = 0; i < m_export.size(); ++i)
     {
-        if (m_locals[i]->IsPeerPresent(pier))
+        if (m_export[i]->HasPeer(pier))
             m_serviceList->Check(i);
     }
 
@@ -296,7 +295,7 @@ CExportPage::CExportPage(const wxString& pier, const WebPier::ServiceList& local
     serviceSizer->SetFlexibleDirection( wxHORIZONTAL );
     serviceSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-    m_idLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Id"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_idLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Service"), wxDefaultPosition, wxDefaultSize, 0 );
     m_idLabel->Wrap( -1 );
     serviceSizer->Add( m_idLabel, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
@@ -304,15 +303,15 @@ CExportPage::CExportPage(const wxString& pier, const WebPier::ServiceList& local
     m_idValue->Wrap( -1 );
     serviceSizer->Add( m_idValue, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    m_serviceLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Service"), wxDefaultPosition, wxDefaultSize, 0 );
-    m_serviceLabel->Wrap( -1 );
-    m_serviceLabel->SetToolTip( _("Endpoint of the local service") );
+    m_addressLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Address"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_addressLabel->Wrap( -1 );
+    m_addressLabel->SetToolTip( _("Endpoint of the local service") );
 
-    serviceSizer->Add( m_serviceLabel, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    serviceSizer->Add( m_addressLabel, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    m_serviceValue = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("0.0.0.0:0"), wxDefaultPosition, wxDefaultSize, 0 );
-    m_serviceValue->Wrap( -1 );
-    serviceSizer->Add( m_serviceValue, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    m_addressValue = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("0.0.0.0:0"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_addressValue->Wrap( -1 );
+    serviceSizer->Add( m_addressValue, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     m_gateLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Gateway"), wxDefaultPosition, wxDefaultSize, 0 );
     m_gateLabel->Wrap( -1 );
@@ -381,10 +380,7 @@ CExportPage::CExportPage(const wxString& pier, const WebPier::ServiceList& local
 
     m_serviceList->Connect( wxEVT_COMMAND_LISTBOX_SELECTED, wxCommandEventHandler( CExportPage::onListItemSelected ), NULL, this );
 
-    if (m_pier != WebPier::GetHost())
-        m_serviceList->Connect( wxEVT_COMMAND_CHECKLISTBOX_TOGGLED, wxCommandEventHandler( CExportPage::onListItemToggled ), NULL, this );
-
-    if (!m_locals.empty())
+    if (!m_export.empty())
     {
         m_serviceList->SetSelection(0);
         populate(0);
@@ -396,8 +392,8 @@ CExportPage::~CExportPage()
     delete m_serviceList;
     delete m_idLabel;
     delete m_idValue;
-    delete m_serviceLabel;
-    delete m_serviceValue;
+    delete m_addressLabel;
+    delete m_addressValue;
     delete m_gateLabel;
     delete m_gateValue;
     delete m_startLabel;
@@ -415,15 +411,15 @@ void CExportPage::populate(int line)
     if (line == wxNOT_FOUND)
         return;
 
-    const auto& service = m_locals[line];
+    const auto& service = m_export[line];
 
-    m_idValue->SetLabel(service->GetId());
-    m_serviceValue->SetLabel(service->GetService());
-    m_gateValue->SetLabel(service->GetGateway());
-    m_startValue->SetLabel(service->IsAutostart() ? _("yes") : _("no"));
-    m_obscureValue->SetLabel(service->IsObscure() ? _("yes") : _("no"));
-    m_bootValue->SetLabel(service->GetDhtBootstrap());
-    m_netValue->SetLabel(wxString::Format(wxT("%d"), (int)service->GetDhtNetwork()));
+    m_idValue->SetLabel(service->Id);
+    m_addressValue->SetLabel(service->Address);
+    m_gateValue->SetLabel(service->Gateway);
+    m_startValue->SetLabel(service->Autostart ? _("yes") : _("no"));
+    m_obscureValue->SetLabel(service->Obscure ? _("yes") : _("no"));
+    m_bootValue->SetLabel(service->DhtBootstrap);
+    m_netValue->SetLabel(wxString::Format(wxT("%d"), (int)service->DhtNetwork));
 
     this->Layout();
 }
@@ -431,20 +427,6 @@ void CExportPage::populate(int line)
 void CExportPage::onListItemSelected(wxCommandEvent& event)
 {
     populate(event.GetSelection());
-    event.Skip();
-}
-
-void CExportPage::onListItemToggled(wxCommandEvent& event)
-{
-    auto line = event.GetSelection();
-    if (line == wxNOT_FOUND)
-        return;
-
-    if (m_serviceList->IsChecked(line))
-        m_locals[line]->AddPeer(m_pier);
-    else
-        m_locals[line]->DelPeer(m_pier);
-
     event.Skip();
 }
 
@@ -456,14 +438,14 @@ WebPier::ServiceList CExportPage::GetExport() const
     WebPier::ServiceList exports;
     for(auto index : checked)
     {
-        WebPier::ServicePtr next = m_locals.at(index);
+        WebPier::ServicePtr next = m_export.at(index);
         exports[wxUIntPtr(next.get())] = next;
     }
 
     return exports;
 }
 
-CExchangeDialog::CExchangeDialog(const wxString& host, const WebPier::ServiceList& remotes, const WebPier::ServiceList& locals, wxWindow* parent) 
+CExchangeDialog::CExchangeDialog(const wxString& pier, const WebPier::ServiceList& forImport, const WebPier::ServiceList& forExport, wxWindow* parent) 
     : wxDialog( parent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE )
 {
     this->SetSizeHints( wxDefaultSize, wxDefaultSize );
@@ -472,11 +454,11 @@ CExchangeDialog::CExchangeDialog(const wxString& host, const WebPier::ServiceLis
     mainSizer = new wxBoxSizer( wxVERTICAL );
 
     mainSizer->SetMinSize( wxSize( 500,-1 ) );
-    m_importPage = new CImportPage( host, remotes, this);
+    m_importPage = new CImportPage( pier, forImport, this);
     mainSizer->Add( m_importPage, 1, wxEXPAND, 0 );
     this->SetTitle(m_importPage->GetLabel());
 
-    m_exportPage = new CExportPage( host, locals, this);
+    m_exportPage = new CExportPage( pier, forExport, this);
     mainSizer->Add( m_exportPage, 1, wxEXPAND, 0 );
     m_exportPage->Hide();
 
@@ -520,8 +502,8 @@ CExchangeDialog::CExchangeDialog(const wxString& host, const WebPier::ServiceLis
     m_next->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CExchangeDialog::onNextButtonClick ), NULL, this );
 }
 
-CExchangeDialog::CExchangeDialog(const wxString& host, const WebPier::ServiceList& locals, wxWindow* parent)
-    : CExchangeDialog(host, WebPier::ServiceList(), locals, parent)
+CExchangeDialog::CExchangeDialog(const wxString& host, const WebPier::ServiceList& forExport, wxWindow* parent)
+    : CExchangeDialog(host, WebPier::ServiceList(), forExport, parent)
 {
     m_back->Hide();
     m_purge->Hide();

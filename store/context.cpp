@@ -36,7 +36,6 @@ namespace webpier
                 boost::property_tree::read_json(m_path.string(), doc);
 
                 m_config.host = doc.get<std::string>("host");
-                m_config.daemon = doc.get<bool>("daemon", false);
                 m_config.traverse.stun = doc.get<std::string>("nat.traverse.stun", default_stun_server);
                 m_config.traverse.hops = doc.get<uint8_t>("nat.traverse.hops", 7);
                 m_config.rendezvous.bootstrap = doc.get<std::string>("rendezvous.dht.bootstrap", default_dht_bootstrap);
@@ -72,7 +71,6 @@ namespace webpier
                     boost::property_tree::ptree doc;
 
                     doc.put("host", m_config.host);
-                    doc.put("daemon", m_config.daemon);
                     doc.put("nat.traverse.stun", m_config.traverse.stun);
                     doc.put("nat.traverse.hops", m_config.traverse.hops);
                     doc.put("rendezvous.dht.bootstrap", m_config.rendezvous.bootstrap);
@@ -192,7 +190,7 @@ namespace webpier
                     service unit;
                     unit.id = item.second.get<std::string>("id", "");
                     unit.peer = item.second.get<std::string>("peer", "");
-                    unit.service = item.second.get<std::string>("service", "");
+                    unit.address = item.second.get<std::string>("address", "");
                     unit.gateway = item.second.get<std::string>("gateway", "");
                     unit.autostart = item.second.get<bool>("autostart", false);
                     unit.obscure = item.second.get<bool>("obscure", true);
@@ -227,7 +225,7 @@ namespace webpier
                         boost::property_tree::ptree item;
                         item.put("id", unit.id);
                         item.put("peer", unit.peer);
-                        item.put("service", unit.service);
+                        item.put("address", unit.address);
                         item.put("gateway", unit.gateway);
                         item.put("autostart", unit.autostart);
                         item.put("obscure", unit.obscure);
@@ -427,14 +425,14 @@ namespace webpier
             m_config.set_config(info);
         }
 
-        void get_local_services(std::vector<service>& list) const noexcept(true) override
+        void get_export_services(std::vector<service>& list) const noexcept(true) override
         {
             auto iter = m_context.find(m_config.host());
             if (iter != m_context.end())
                 iter->second.get(list);
         }
 
-        bool get_local_service(const std::string& id, service& info) const noexcept(true) override
+        bool get_export_service(const std::string& id, service& info) const noexcept(true) override
         {
             auto iter = m_context.find(m_config.host());
             if (iter == m_context.end())
@@ -443,7 +441,7 @@ namespace webpier
             return iter->second.get(id, info);
         }
 
-        void add_local_service(const service& info) noexcept(false) override
+        void add_export_service(const service& info) noexcept(false) override
         {
             auto iter = m_context.find(m_config.host());
             if (iter == m_context.end())
@@ -452,7 +450,7 @@ namespace webpier
             iter->second.add(info);
         }
 
-        void del_local_service(const std::string& id) noexcept(false) override
+        void del_export_service(const std::string& id) noexcept(false) override
         {
             auto iter = m_context.find(m_config.host());
             if (iter == m_context.end())
@@ -461,7 +459,7 @@ namespace webpier
             iter->second.del(id);
         }
 
-        void get_remote_services(std::vector<service>& list) const noexcept(true) override
+        void get_import_services(std::vector<service>& list) const noexcept(true) override
         {
             for (const auto& item : m_context)
             {
@@ -470,7 +468,7 @@ namespace webpier
             }
         }
 
-        bool get_remote_service(const std::string& peer, const std::string& id, service& info) const noexcept(true) override
+        bool get_import_service(const std::string& peer, const std::string& id, service& info) const noexcept(true) override
         {
             auto iter = m_context.find(peer);
             if (iter == m_context.end())
@@ -479,7 +477,7 @@ namespace webpier
             return iter->second.get(id, info);
         }
 
-        void add_remote_service(const service& info) noexcept(false) override
+        void add_import_service(const service& info) noexcept(false) override
         {
             auto iter = m_context.find(info.peer);
             if (iter == m_context.end())
@@ -488,7 +486,7 @@ namespace webpier
             iter->second.add(info);
         }
 
-        void del_remote_service(const std::string& peer, const std::string& id) noexcept(false) override
+        void del_import_service(const std::string& peer, const std::string& id) noexcept(false) override
         {
             auto iter = m_context.find(peer);
             if (iter == m_context.end())
@@ -506,7 +504,7 @@ namespace webpier
             }
         }
 
-        bool is_peer_exist(const std::string& id) const noexcept(true) override
+        bool has_peer(const std::string& id) const noexcept(true) override
         {
             return m_context.find(id) != m_context.end();
         }

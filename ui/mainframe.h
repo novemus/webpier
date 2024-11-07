@@ -28,15 +28,17 @@ class CMainFrame : public wxFrame
 {
     wxMenuItem* m_importItem;
     wxMenuItem* m_exportItem;
-    wxRadioButton* m_remoteBtn;
-    wxRadioButton* m_localBtn;
+    wxRadioButton* m_importBtn;
+    wxRadioButton* m_exportBtn;
     wxStaticText* m_hostLabel;
     wxBitmapButton* m_addBtn;
     wxBitmapButton* m_editBtn;
     wxBitmapButton* m_deleteBtn;
     wxDataViewListCtrl* m_serviceList;
     wxStatusBar* m_statusBar;
-    WebPier::ServiceList m_services;
+    WebPier::ConfigPtr m_config;
+    WebPier::ServiceList m_export;
+    WebPier::ServiceList m_import;
 
 protected:
 
@@ -45,8 +47,8 @@ protected:
     void onExportMenuSelection(wxCommandEvent& event);
     void onExitMenuSelection(wxCommandEvent& event);
     void onAboutMenuSelection(wxCommandEvent& event);
-    void onRemoteRadioClick(wxCommandEvent& event);
-    void onLocalRadioClick(wxCommandEvent& event);
+    void onImportRadioClick(wxCommandEvent& event);
+    void onExportRadioClick(wxCommandEvent& event);
     void onAddServiceButtonClick(wxCommandEvent& event);
     void onEditServiceButtonClick(wxCommandEvent& event);
     void onDeleteServiceButtonClick(wxCommandEvent& event);

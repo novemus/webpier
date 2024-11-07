@@ -2,8 +2,10 @@
 #include "messagedialog.h"
 #include <wx/valnum.h>
 
-CServiceDialog::CServiceDialog(WebPier::ServicePtr service, wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style)
-    : wxDialog(parent, id, title, pos, size, style), m_service(service)
+CServiceDialog::CServiceDialog(WebPier::ConfigPtr config, WebPier::ServicePtr service, wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style)
+    : wxDialog(parent, id, title, pos, size, style)
+    , m_config(config)
+    , m_service(service)
 {
     this->SetSizeHints( wxDefaultSize, wxDefaultSize );
 
@@ -18,33 +20,33 @@ CServiceDialog::CServiceDialog(WebPier::ServicePtr service, wxWindow* parent, wx
 
     mainSizer->SetMinSize( wxSize( 400,-1 ) );
     m_propGrid = new wxPropertyGrid(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPG_BOLD_MODIFIED|wxPG_HIDE_MARGIN);
-    m_idItem = m_propGrid->Append( new wxStringProperty( _("Id"), wxPG_LABEL, m_service->GetId() ) );
-    if (m_service->IsLocal())
+    m_idItem = m_propGrid->Append( new wxStringProperty( _("Id"), wxPG_LABEL, m_service->Id ) );
+    if (m_service->IsExport())
     {
-        m_peerItem = m_propGrid->Append( new wxMultiChoiceProperty( _("Peer"), wxPG_LABEL, peerChoice, m_service->GetPees()));
+        m_peerItem = m_propGrid->Append(new wxMultiChoiceProperty( _("Peer"), wxPG_LABEL, peerChoice, wxSplit(m_service->Peer, ' ')));
     }
     else
     {
         int value = 0;
         for(auto& peer : peerChoice)
         {
-            if (peer == m_service->GetPeer())
+            if (peer == m_service->Peer)
                 break;
             ++value;
         }
         m_peerItem = m_propGrid->Append( new wxEnumProperty( _("Peer"), wxPG_LABEL, peerChoice, wxArrayInt(), value ) );
     }
 
-    m_servItem = m_propGrid->Append( new wxStringProperty( _("Service"), wxPG_LABEL, m_service->GetService() ) );
-    m_gateItem = m_propGrid->Append( new wxStringProperty( _("Gateway"), wxPG_LABEL, m_service->GetGateway() ) );
-    m_startItem = m_propGrid->Append( new wxBoolProperty( _("Autostart"), wxPG_LABEL, m_service->IsAutostart() ) );
-    m_obsItem = m_propGrid->Append( new wxBoolProperty( _("Obscure"), wxPG_LABEL, m_service->IsObscure() ) );
-    m_rendItem = m_propGrid->Append( new wxEnumProperty( _("Rendezvous"), wxPG_LABEL, rendChoice, wxArrayInt(), m_service->IsDhtRendezvous() ? 0 : 1 ) );
+    m_addrItem = m_propGrid->Append( new wxStringProperty( _("Address"), wxPG_LABEL, m_service->Address ) );
+    m_gateItem = m_propGrid->Append( new wxStringProperty( _("Gateway"), wxPG_LABEL, m_service->Gateway ) );
+    m_startItem = m_propGrid->Append( new wxBoolProperty( _("Autostart"), wxPG_LABEL, m_service->Autostart ) );
+    m_obsItem = m_propGrid->Append( new wxBoolProperty( _("Obscure"), wxPG_LABEL, m_service->Obscure ) );
+    m_rendItem = m_propGrid->Append( new wxEnumProperty( _("Rendezvous"), wxPG_LABEL, rendChoice, wxArrayInt(), m_service->DhtBootstrap.IsEmpty() ? 1 : 0 ) );
 
-    if (m_service->IsDhtRendezvous())
+    if (!m_service->DhtBootstrap.IsEmpty())
     {
-        m_bootItem = m_rendItem->InsertChild( 0, new wxStringProperty( _("Bootstrap"), wxPG_LABEL, m_service->GetDhtBootstrap() ) );
-        m_netItem = m_rendItem->InsertChild( 1, new wxUIntProperty( _("Network"), wxPG_LABEL, m_service->GetDhtNetwork() ) );
+        m_bootItem = m_rendItem->InsertChild( 0, new wxStringProperty( _("Bootstrap"), wxPG_LABEL, m_service->DhtBootstrap ) );
+        m_netItem = m_rendItem->InsertChild( 1, new wxUIntProperty( _("Network"), wxPG_LABEL, m_service->DhtNetwork ) );
     }
 
     mainSizer->Add( m_propGrid, 1, wxALL|wxEXPAND, 5 );
@@ -67,7 +69,6 @@ CServiceDialog::CServiceDialog(WebPier::ServicePtr service, wxWindow* parent, wx
 
     m_propGrid->Connect( wxEVT_PG_CHANGED, wxPropertyGridEventHandler( CServiceDialog::onPropertyChanged ), NULL, this );
     m_ok->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CServiceDialog::onOKButtonClick ), NULL, this );
-    m_cancel->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CServiceDialog::onCancelButtonClick ), NULL, this );
 }
 
 CServiceDialog::~CServiceDialog()
@@ -85,80 +86,45 @@ void CServiceDialog::onPropertyChanged( wxPropertyGridEvent& event )
         int choice = m_rendItem->GetChoiceSelection();
         if (choice == 0)
         {
-            m_service->UseDhtRendezvous();
-            m_bootItem = m_rendItem->InsertChild( 0, new wxStringProperty( _("Bootstrap"), wxPG_LABEL, m_service->GetDhtBootstrap() ) );
-            m_netItem = m_rendItem->InsertChild( 1, new wxUIntProperty( _("Network"), wxPG_LABEL, m_service->GetDhtNetwork() ) );
+            auto bootstrap = m_service->DhtBootstrap.IsEmpty() ? m_config->DhtBootstrap : m_service->DhtBootstrap;
+            auto network = m_service->DhtBootstrap.IsEmpty() ? m_config->DhtNetwork : m_service->DhtNetwork;
+
+            m_bootItem = m_rendItem->InsertChild( 0, new wxStringProperty( _("Bootstrap"), wxPG_LABEL, bootstrap ) );
+            m_netItem = m_rendItem->InsertChild( 1, new wxUIntProperty( _("Network"), wxPG_LABEL, network ) );
         }
         else
         {
-            m_service->UseEmailRendezvous();
             m_rendItem->DeleteChildren();
             m_bootItem = nullptr;
             m_netItem = nullptr;
         }
     }
-    else if (prop == m_idItem)
-    {
-        m_service->SetId(m_idItem->GetValueAsString());
-    }
-    else if (prop == m_peerItem)
-    {
-        if (m_service->IsLocal())
-            m_service->SetPeers(m_peerItem->GetValue().GetArrayString());
-        else
-            m_service->SetPeer(m_peerItem->GetValueAsString());
-    }
-    else if (prop == m_servItem)
-    {
-        m_service->SetService(m_servItem->GetValueAsString());
-    }
-    else if (prop == m_gateItem)
-    {
-        m_service->SetGateway(m_gateItem->GetValueAsString());
-    }
-    else if (prop == m_obsItem)
-    {
-        m_service->SetObscure(m_obsItem->GetValue().GetBool());
-    }
-    else if (prop == m_startItem)
-    {
-        m_service->SetAutostart(m_startItem->GetValue().GetBool());
-    }
-    else if (prop == m_bootItem && m_bootItem)
-    {
-        auto bootstrap = m_bootItem->GetValueAsString();
-        if (bootstrap.IsEmpty())
-            m_bootItem->SetValueFromString(m_service->GetDhtBootstrap());
-        else
-            m_service->SetDhtBootstrap(bootstrap);
-    }
-    else if (prop == m_netItem && m_netItem)
-    {
-        auto network = m_netItem->GetValueAsString();
-        if (network.IsEmpty())
-            m_netItem->SetValueFromInt(0);
-        else
-            m_service->SetDhtNetwork(m_netItem->GetValue().GetULongLong().GetLo());
-    }
+
     this->Layout();
 }
 
 void CServiceDialog::onOKButtonClick( wxCommandEvent& event )
 {
-    if (m_service->GetId().IsEmpty() || m_service->GetService().IsEmpty() || m_service->GetGateway().IsEmpty() || (m_service->IsRemote() && m_service->GetPeer().IsEmpty()))
+    m_service->Id = m_idItem->GetValueAsString();
+    if (m_service->IsExport())
+        m_service->Peer = wxJoin(m_peerItem->GetValue().GetArrayString(), ' ');
+    else
+        m_service->Peer = m_peerItem->GetValueAsString();
+    m_service->Address = m_addrItem->GetValueAsString();
+    m_service->Gateway = m_gateItem->GetValueAsString();
+    m_service->Obscure = m_obsItem->GetValue().GetBool();
+    m_service->Autostart = m_startItem->GetValue().GetBool();
+    m_service->DhtBootstrap = m_bootItem ? m_bootItem->GetValueAsString() : "";
+    m_service->DhtNetwork = m_netItem ? m_netItem->GetValue().GetULongLong().GetLo() : 0;
+
+    if (m_service->Id.IsEmpty() || m_service->Address.IsEmpty() || m_service->Gateway.IsEmpty() || (m_service->IsImport() && m_service->Peer.IsEmpty()) || (m_bootItem && m_service->DhtBootstrap.IsEmpty()))
     {
-        wxString message = m_service->IsRemote() 
-            ? _("Define the 'id', 'service', 'gateway' and 'peer' properties") 
-            : _("Define the 'id', 'service' and 'gateway' properties");
+        wxString message = m_service->IsImport() 
+            ? (m_bootItem ? _("Define the 'id', 'peer', 'address', 'gateway', 'bootstrap' properties") : _("Define the 'id', 'peer', 'address', 'gateway' properties"))
+            : (m_bootItem ? _("Define the 'id', 'address', 'gateway', 'bootstrap' properties") : _("Define the 'id', 'address', 'gateway' properties"));
         CMessageDialog dialog(this, message, wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
         dialog.ShowModal();
     }
     else
         event.Skip();
-}
-
-void CServiceDialog::onCancelButtonClick( wxCommandEvent& event )
-{
-    m_service->Revert();
-    event.Skip(); 
 }

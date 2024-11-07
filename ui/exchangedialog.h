@@ -27,8 +27,8 @@ class CImportPage : public wxPanel
     wxCheckListBox* m_serviceList;
     wxStaticText* m_idLabel;
     wxStaticText* m_idValue;
-    wxStaticText* m_serviceLabel;
-    wxTextCtrl* m_serviceCtrl;
+    wxStaticText* m_addressLabel;
+    wxTextCtrl* m_addressCtrl;
     wxStaticText* m_gateLabel;
     wxTextCtrl* m_gateCtrl;
     wxStaticText* m_startLabel;
@@ -40,7 +40,7 @@ class CImportPage : public wxPanel
     wxStaticText* m_netLabel;
     wxStaticText* m_netValue;
 
-    wxVector<WebPier::ServicePtr> m_remotes;
+    wxVector<WebPier::ServicePtr> m_import;
 
     void onListItemSelected( wxCommandEvent& event );
     void onServiceCtrlKillFocus( wxFocusEvent& event );
@@ -50,7 +50,7 @@ class CImportPage : public wxPanel
 
 public:
 
-    CImportPage(const wxString& pier, const WebPier::ServiceList& remotes, wxWindow* parent);
+    CImportPage(const wxString& pier, const WebPier::ServiceList& forImport, wxWindow* parent);
     ~CImportPage();
 
     bool ValidateData();
@@ -62,8 +62,8 @@ class CExportPage : public wxPanel
     wxCheckListBox* m_serviceList;
     wxStaticText* m_idLabel;
     wxStaticText* m_idValue;
-    wxStaticText* m_serviceLabel;
-    wxStaticText* m_serviceValue;
+    wxStaticText* m_addressLabel;
+    wxStaticText* m_addressValue;
     wxStaticText* m_gateLabel;
     wxStaticText* m_gateValue;
     wxStaticText* m_startLabel;
@@ -75,16 +75,14 @@ class CExportPage : public wxPanel
     wxStaticText* m_netLabel;
     wxStaticText* m_netValue;
 
-    wxString m_pier;
-    wxVector<WebPier::ServicePtr> m_locals;
+    wxVector<WebPier::ServicePtr> m_export;
 
     void onListItemSelected( wxCommandEvent& event );
-    void onListItemToggled( wxCommandEvent& event );
     void populate(int line);
 
 public:
 
-    CExportPage(const wxString& pier, const WebPier::ServiceList& locals, wxWindow* parent);
+    CExportPage(const wxString& pier, const WebPier::ServiceList& forExport, wxWindow* parent);
     ~CExportPage();
 
     WebPier::ServiceList GetExport() const;
@@ -105,13 +103,13 @@ class CExchangeDialog : public wxDialog
 
 public:
 
-    CExchangeDialog(const wxString& pier, const WebPier::ServiceList& remotes, const WebPier::ServiceList& locals, wxWindow* parent);
-    CExchangeDialog(const wxString& pier, const WebPier::ServiceList& locals, wxWindow* parent);
+    CExchangeDialog(const wxString& pier, const WebPier::ServiceList& forImport, const WebPier::ServiceList& forExport, wxWindow* parent);
+    CExchangeDialog(const wxString& pier, const WebPier::ServiceList& forExport, wxWindow* parent);
 
     ~CExchangeDialog();
 
-    bool IsNeedImportMerge() const { return !m_purge->IsChecked(); }
-    bool IsNeedExportReply() const { return m_reply->IsChecked(); }
+    bool NeedImportMerge() const { return !m_purge->IsChecked(); }
+    bool NeedExportReply() const { return m_reply->IsChecked(); }
     WebPier::ServiceList GetImport() const { return m_importPage->GetImport(); }
     WebPier::ServiceList GetExport() const { return m_exportPage->GetExport(); }
 };

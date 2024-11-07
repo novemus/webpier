@@ -30,7 +30,6 @@ class CSettingsDialog : public wxDialog
     wxNotebook* m_notebook;
     wxTextCtrl* m_ownerCtrl;
     wxTextCtrl* m_pierCtrl;
-    wxCheckBox* m_startupCheckBox;
     wxTextCtrl* m_stunCtrl;
     wxTextCtrl* m_punchCtrl;
     wxTextCtrl* m_dhtBootCtrl;
@@ -44,13 +43,12 @@ class CSettingsDialog : public wxDialog
     wxFilePickerCtrl* m_caPicker;
     wxButton* m_cancelBtn;
     wxButton* m_okBtn;
-    WebPier::Config m_config;
+    WebPier::ConfigPtr m_config;
 
-    void onCancelButtonClick( wxCommandEvent& event ) { event.Skip(); }
     void onOkButtonClick( wxCommandEvent& event );
 
 public:
 
-    CSettingsDialog( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Settings"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER );
+    CSettingsDialog( WebPier::ConfigPtr config, wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Settings"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER );
     ~CSettingsDialog();
 };
