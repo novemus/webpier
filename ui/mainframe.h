@@ -54,12 +54,12 @@ protected:
     void onDeleteServiceButtonClick(wxCommandEvent& event);
     void onServiceItemContextMenu(wxDataViewEvent& event) { event.Skip(); }
 
-    void populate();
-
 public:
 
     CMainFrame();
     ~CMainFrame();
 
-    bool Show(bool show = true) wxOVERRIDE;
+    void Populate();
+    wxMenu* BuildImportMenu();
+    wxMenu* BuildExportMenu();
 };

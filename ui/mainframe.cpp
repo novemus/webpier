@@ -121,15 +121,7 @@ CMainFrame::~CMainFrame()
     delete m_statusBar;
 }
 
-bool CMainFrame::Show(bool show)
-{
-    if (show && m_hostLabel->GetLabel().IsEmpty())
-        populate();
-
-    return wxFrame::Show(show);
-}
-
-void CMainFrame::populate()
+void CMainFrame::Populate()
 {
     try
     {
@@ -165,6 +157,16 @@ void CMainFrame::populate()
     this->Layout();
 }
 
+wxMenu* CMainFrame::BuildImportMenu()
+{
+    return new wxMenu();
+}
+
+wxMenu* CMainFrame::BuildExportMenu()
+{
+    return new wxMenu();
+}
+
 void CMainFrame::onExitMenuSelection(wxCommandEvent&)
 {
     wxCloseEvent event(wxEVT_CLOSE_WINDOW, GetId());
@@ -181,7 +183,7 @@ void CMainFrame::onSettingsMenuSelection(wxCommandEvent& event)
         {
             m_config->Store();
             if (m_config->Host != m_hostLabel->GetLabel())
-                populate();
+                Populate();
         }
     }
     catch (const std::exception &ex)
@@ -301,9 +303,13 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
         auto exports = dialog.GetExport();
         auto imports = dialog.GetImport();
 
-        for (auto& item : exports)
+        for (auto& item : m_export)
         {
-            item.second->AddPeer(data.Pier);
+            if (exports.find(item.first) == exports.end())
+                item.second->DelPeer(data.Pier);
+            else
+                item.second->AddPeer(data.Pier);
+
             item.second->Store();
         }
 
@@ -312,7 +318,6 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
             for (auto& item : imports)
             {
                 WebPier::ServicePtr next = item.second;
-                
                 WebPier::ServicePtr curr;
                 for (auto& pair : m_import)
                 {
@@ -350,7 +355,7 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
                 item.second->Store();
         }
 
-        populate();
+        Populate();
 
         if (dialog.NeedExportReply())
         {
@@ -430,10 +435,10 @@ void CMainFrame::onAboutMenuSelection(wxCommandEvent& event)
 
 void CMainFrame::onImportRadioClick(wxCommandEvent& event)
 {
-    populate();
+    Populate();
 }
 
 void CMainFrame::onExportRadioClick(wxCommandEvent& event)
 {
-    populate();
+    Populate();
 }

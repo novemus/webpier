@@ -494,7 +494,8 @@ public:
         icon.CopyFromBitmap(::GetLogo());
         this->SetIcon(icon);
         m_frame->SetIcon(icon);
-        m_frame->Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( CTaskBarIcon::onFrameClose ), NULL, this);
+        m_frame->Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( CTaskBarIcon::OnFrameClose ), NULL, this);
+        m_frame->Populate();
         m_frame->Show(!wxTaskBarIcon::IsAvailable());
     }
 
@@ -502,6 +503,8 @@ public:
     {
         delete m_frame;
     }
+
+protected:
 
     void OnLeftButtonDClick(wxTaskBarIconEvent&)
     {
@@ -513,23 +516,13 @@ public:
         m_frame->Show(true);
     }
 
-    void OnMenuStart(wxCommandEvent&)
-    {
-
-    }
-
-    void OnMenuStop(wxCommandEvent&)
-    {
-
-    }
-
     void OnMenuExit(wxCommandEvent&)
     {
         m_frame->Close(true);
         this->Destroy();
     }
 
-    void onFrameClose(wxCloseEvent& event)
+    void OnFrameClose(wxCloseEvent& event)
     {
         if (wxTaskBarIcon::IsAvailable())
         {
@@ -550,17 +543,11 @@ public:
     {
         wxMenu* menu = new wxMenu();
         wxMenuItem* config = menu->Append(wxID_ANY, _("&Configure..."));
+
         menu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CTaskBarIcon::OnMenuConfigure ), this, config->GetId());
 
-        wxMenu* submenu = new wxMenu();
-
-        wxMenuItem* start = submenu->Append(wxID_ANY, _("&Start"));
-        submenu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CTaskBarIcon::OnMenuStart ), this, start->GetId());
-
-        wxMenuItem* stop = submenu->Append(wxID_ANY, _("S&top"));
-        submenu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CTaskBarIcon::OnMenuStop ), this, stop->GetId());
-
-        menu->Append(wxID_ANY, "&Daemon", submenu);
+        menu->Append(wxID_ANY, "&Import", m_frame->BuildImportMenu());
+        menu->Append(wxID_ANY, "&Export", m_frame->BuildExportMenu());
 
 #ifdef __WXOSX__
         if (OSXIsStatusItem())

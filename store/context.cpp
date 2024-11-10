@@ -161,11 +161,6 @@ namespace webpier
         {
             return m_config.host;
         }
-
-        std::filesystem::path path() const noexcept(true)
-        {
-            return m_path;
-        }
     };
 
     class node
@@ -511,7 +506,7 @@ namespace webpier
 
         void add_peer(const std::string& id, const std::string& cert) noexcept(false) override
         {
-            auto home = m_config.path().parent_path() / repo_dir_name / id;
+            auto home = m_home / repo_dir_name / id;
 
             if (std::filesystem::exists(home))
                 throw usage_error("such node already exists");
@@ -528,7 +523,7 @@ namespace webpier
 
             try
             {
-                std::filesystem::remove_all(m_config.path().parent_path() / repo_dir_name / id);
+                std::filesystem::remove_all(m_home / repo_dir_name / id);
             }
             catch(const std::exception& e)
             {
@@ -538,17 +533,22 @@ namespace webpier
 
         std::string get_fingerprint(const std::string& id) const noexcept(false) override
         {
-            return get_x509_public_sha1(m_config.path().parent_path() / repo_dir_name / id / cert_file_name);
+            return get_x509_public_sha1(m_home / repo_dir_name / id / cert_file_name);
         }
 
         std::string get_certificate(const std::string& id) const noexcept(false) override
         {
-            return load_x509_cert(m_config.path().parent_path() / repo_dir_name / id / cert_file_name);
+            return load_x509_cert(m_home / repo_dir_name / id / cert_file_name);
         }
 
         std::string get_home() const noexcept(true) override
         {
             return m_home.string();
+        }
+
+        std::string get_repo() const noexcept(true) override
+        {
+            return (m_home / repo_dir_name).string();
         }
 
         std::string get_host() const noexcept(true) override
