@@ -25,8 +25,8 @@
 class CImportPage : public wxPanel
 {
     wxCheckListBox* m_serviceList;
-    wxStaticText* m_idLabel;
-    wxStaticText* m_idValue;
+    wxStaticText* m_nameLabel;
+    wxStaticText* m_nameValue;
     wxStaticText* m_addressLabel;
     wxTextCtrl* m_addressCtrl;
     wxStaticText* m_gateLabel;
@@ -60,8 +60,8 @@ public:
 class CExportPage : public wxPanel
 {
     wxCheckListBox* m_serviceList;
-    wxStaticText* m_idLabel;
-    wxStaticText* m_idValue;
+    wxStaticText* m_nameLabel;
+    wxStaticText* m_nameValue;
     wxStaticText* m_addressLabel;
     wxStaticText* m_addressValue;
     wxStaticText* m_gateLabel;

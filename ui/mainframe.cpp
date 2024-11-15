@@ -12,7 +12,7 @@
 wxVector<wxVariant> ToVariantList(WebPier::ServicePtr service)
 {
     wxVector<wxVariant> data;
-    data.push_back(wxVariant(wxDataViewIconText(service->Id, ::GetGreyCircleImage())));
+    data.push_back(wxVariant(wxDataViewIconText(service->Name, ::GetGreyCircleImage())));
     data.push_back(wxVariant(wxString(service->Peer)));
     data.push_back(wxVariant(wxString(service->Address)));
     data.push_back(wxVariant(wxString(service->Gateway)));
@@ -181,7 +181,6 @@ void CMainFrame::onSettingsMenuSelection(wxCommandEvent& event)
         CSettingsDialog dialog(m_config, this);
         if (dialog.ShowModal() == wxID_OK)
         {
-            m_config->Store();
             if (m_config->Host != m_hostLabel->GetLabel())
                 Populate();
         }
@@ -321,7 +320,7 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
                 WebPier::ServicePtr curr;
                 for (auto& pair : m_import)
                 {
-                    if (pair.second->Id == next->Id)
+                    if (pair.second->Name == next->Name)
                     {
                         curr = pair.second;
                         break;
@@ -332,7 +331,7 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
                 {
                     if (!WebPier::IsEqual(curr, next))
                     {
-                        CMessageDialog dialog(this, wxString::Format(_("Service '%s' is already exist, but differs from the new one. Do you want to replace it?"), next->Id), wxDEFAULT_DIALOG_STYLE | wxICON_QUESTION);
+                        CMessageDialog dialog(this, wxString::Format(_("Service '%s' is already exist, but differs from the new one. Do you want to replace it?"), next->Name), wxDEFAULT_DIALOG_STYLE | wxICON_QUESTION);
                         if (dialog.ShowModal() == wxID_YES)
                         {
                             curr->Purge();
@@ -411,7 +410,7 @@ void CMainFrame::onDeleteServiceButtonClick(wxCommandEvent& event)
             throw std::runtime_error(_("service data is not found"));
 
         auto service = iter->second;
-        CMessageDialog dialog(this, _("Do you want to remove service ") + service->Id, wxDEFAULT_DIALOG_STYLE | wxICON_QUESTION);
+        CMessageDialog dialog(this, _("Do you want to remove service ") + service->Name, wxDEFAULT_DIALOG_STYLE | wxICON_QUESTION);
         if (dialog.ShowModal() == wxID_YES)
         {
             service->Purge();

@@ -7,6 +7,9 @@
 BOOST_AUTO_TEST_CASE(context)
 {
     auto dest = std::filesystem::current_path() / std::to_string(std::time(0));
+    auto link = dest / "webier";
+
+    BOOST_REQUIRE_NO_THROW(std::filesystem::create_directory(dest));
 
     BOOST_SCOPE_EXIT(&dest) 
     {
@@ -17,7 +20,11 @@ BOOST_AUTO_TEST_CASE(context)
     std::string host = "host@mail.box/test";
     std::string peer = "peer@mail.box/test";
 
-    auto context = webpier::open_context(dest.string(), host);
+    auto context = webpier::open_context(link.string(), host);
+    
+    BOOST_REQUIRE(std::filesystem::is_symlink(link));
+    BOOST_REQUIRE(std::filesystem::is_directory(std::filesystem::read_symlink(link)));
+    BOOST_CHECK_EQUAL(std::filesystem::read_symlink(link).parent_path(), dest);
 
     webpier::config in {
         peer,
@@ -54,6 +61,7 @@ BOOST_AUTO_TEST_CASE(context)
     BOOST_CHECK_EQUAL(out.emailer.cert, in.emailer.cert);
     BOOST_CHECK_EQUAL(out.emailer.key, in.emailer.key);
     BOOST_CHECK_EQUAL(out.emailer.ca, in.emailer.ca);
+    BOOST_CHECK_EQUAL(out.autostart, in.autostart);
 
     webpier::service service {
         "foo",
@@ -71,7 +79,6 @@ BOOST_AUTO_TEST_CASE(context)
 
     BOOST_REQUIRE_NO_THROW(context->add_peer(peer, peer_certificate));
     BOOST_REQUIRE_THROW(context->add_peer(peer, peer_certificate), webpier::usage_error);
-    BOOST_CHECK(context->has_peer(peer));
 
     std::vector<std::string> list;
     context->get_peers(list);
@@ -88,7 +95,7 @@ BOOST_AUTO_TEST_CASE(context)
     BOOST_REQUIRE_NO_THROW(context->add_import_service(service));
     BOOST_REQUIRE_THROW(context->add_import_service(service), webpier::usage_error);
 
-    service.id = "bar";
+    service.name = "bar";
 
     BOOST_REQUIRE_NO_THROW(context->add_export_service(service));
     BOOST_REQUIRE_THROW(context->add_export_service(service), webpier::usage_error);
@@ -103,8 +110,7 @@ BOOST_AUTO_TEST_CASE(context)
     context->get_export_services(locals);
 
     BOOST_REQUIRE_EQUAL(locals.size(), 1);
-    BOOST_CHECK(context->get_export_service(service.id, service));
-    BOOST_CHECK_EQUAL(service.id, locals[0].id);
+    BOOST_CHECK_EQUAL(service.name, locals[0].name);
     BOOST_CHECK_EQUAL(service.peer, locals[0].peer);
     BOOST_CHECK_EQUAL(service.address, locals[0].address);
     BOOST_CHECK_EQUAL(service.gateway, locals[0].gateway);
@@ -117,8 +123,7 @@ BOOST_AUTO_TEST_CASE(context)
     context->get_import_services(remotes);
 
     BOOST_REQUIRE_EQUAL(remotes.size(), 1);
-    BOOST_CHECK(context->get_import_service(peer, service.id, service));
-    BOOST_CHECK_EQUAL(service.id, remotes[0].id);
+    BOOST_CHECK_EQUAL(service.name, remotes[0].name);
     BOOST_CHECK_EQUAL(service.peer, remotes[0].peer);
     BOOST_CHECK_EQUAL(service.address, remotes[0].address);
     BOOST_CHECK_EQUAL(service.gateway, remotes[0].gateway);
@@ -128,8 +133,6 @@ BOOST_AUTO_TEST_CASE(context)
     BOOST_CHECK_EQUAL(service.obscure, remotes[0].obscure);
 
     BOOST_REQUIRE_NO_THROW(context->del_peer(peer));
-    BOOST_CHECK(!context->has_peer(peer));
-    BOOST_CHECK(!context->get_import_service(peer, service.id, service));
 
     remotes.clear();
     context->get_import_services(remotes);

@@ -20,7 +20,7 @@ CServiceDialog::CServiceDialog(WebPier::ConfigPtr config, WebPier::ServicePtr se
 
     mainSizer->SetMinSize( wxSize( 400,-1 ) );
     m_propGrid = new wxPropertyGrid(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPG_BOLD_MODIFIED|wxPG_HIDE_MARGIN);
-    m_idItem = m_propGrid->Append( new wxStringProperty( _("Id"), wxPG_LABEL, m_service->Id ) );
+    m_nameItem = m_propGrid->Append( new wxStringProperty( _("Name"), wxPG_LABEL, m_service->Name ) );
     if (m_service->IsExport())
     {
         m_peerItem = m_propGrid->Append(new wxMultiChoiceProperty( _("Peer"), wxPG_LABEL, peerChoice, wxSplit(m_service->Peer, ' ')));
@@ -105,7 +105,7 @@ void CServiceDialog::onPropertyChanged( wxPropertyGridEvent& event )
 
 void CServiceDialog::onOKButtonClick( wxCommandEvent& event )
 {
-    m_service->Id = m_idItem->GetValueAsString();
+    m_service->Name = m_nameItem->GetValueAsString();
     if (m_service->IsExport())
         m_service->Peer = wxJoin(m_peerItem->GetValue().GetArrayString(), ' ');
     else
@@ -117,11 +117,11 @@ void CServiceDialog::onOKButtonClick( wxCommandEvent& event )
     m_service->DhtBootstrap = m_bootItem ? m_bootItem->GetValueAsString() : "";
     m_service->DhtNetwork = m_netItem ? m_netItem->GetValue().GetULongLong().GetLo() : 0;
 
-    if (m_service->Id.IsEmpty() || m_service->Address.IsEmpty() || m_service->Gateway.IsEmpty() || (m_service->IsImport() && m_service->Peer.IsEmpty()) || (m_bootItem && m_service->DhtBootstrap.IsEmpty()))
+    if (m_service->Name.IsEmpty() || m_service->Address.IsEmpty() || m_service->Gateway.IsEmpty() || (m_service->IsImport() && m_service->Peer.IsEmpty()) || (m_bootItem && m_service->DhtBootstrap.IsEmpty()))
     {
         wxString message = m_service->IsImport() 
-            ? (m_bootItem ? _("Define the 'id', 'peer', 'address', 'gateway', 'bootstrap' properties") : _("Define the 'id', 'peer', 'address', 'gateway' properties"))
-            : (m_bootItem ? _("Define the 'id', 'address', 'gateway', 'bootstrap' properties") : _("Define the 'id', 'address', 'gateway' properties"));
+            ? (m_bootItem ? _("Define the 'name', 'peer', 'address', 'gateway', 'bootstrap' properties") : _("Define the 'name', 'peer', 'address', 'gateway' properties"))
+            : (m_bootItem ? _("Define the 'name', 'address', 'gateway', 'bootstrap' properties") : _("Define the 'name', 'address', 'gateway' properties"));
         CMessageDialog dialog(this, message, wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
         dialog.ShowModal();
     }

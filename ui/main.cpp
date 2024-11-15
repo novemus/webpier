@@ -534,7 +534,6 @@ protected:
         }
         else
         {
-            m_frame->Close(true);
             this->Destroy();
         }
     }
@@ -576,7 +575,7 @@ public:
             return false;
 
         wxImage::AddHandler(new wxPNGHandler);
-        
+
         CTaskBarIcon* icon = new CTaskBarIcon();
         (void)icon;
 

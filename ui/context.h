@@ -11,7 +11,7 @@ namespace WebPier
 {
     struct Service
     {
-        wxString Id;
+        wxString Name;
         wxString Peer;
         wxString Address;
         wxString Gateway;
@@ -54,10 +54,10 @@ namespace WebPier
         wxString EmailX509Cert;
         wxString EmailX509Key;
         wxString EmailX509Ca;
+        bool Autostart;
 
         virtual ~Config() {}
-        virtual void Store() noexcept(false) = 0;
-        virtual void Purge() noexcept(false) = 0;
+        virtual void Store(bool tidy) noexcept(false) = 0;
         virtual void Revert() noexcept(true) = 0;
     };
 

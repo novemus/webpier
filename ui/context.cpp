@@ -34,38 +34,6 @@ namespace WebPier
             return home;
         }
 
-        static wxString readRoute(const wxString& home)
-        {
-            wxString host;
-            wxString route = home + "/webpier";
-
-            if (wxFileName::Exists(route))
-            {
-                wxFile in(route, wxFile::read);
-                if (!in.ReadAll(&host))
-                {
-                    CMessageDialog dialog(nullptr, _("Can't read context reference ") + route, wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
-                    dialog.ShowModal();
-                    throw webpier::usage_error("no context");
-                }
-            }
-
-            return host;
-        }
-
-        static void writeRoute(const wxString& home, const wxString& host)
-        {
-            wxString route = home + "/webpier";
-
-            wxFile out(route, wxFile::write);
-            if (!out.Write(host))
-            {
-                CMessageDialog dialog(nullptr, _("Can't write context reference ") + route, wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
-                dialog.ShowModal();
-                throw webpier::usage_error("no context");
-            }
-        }
-
     public:
 
         static std::shared_ptr<webpier::context> Get()
@@ -74,56 +42,48 @@ namespace WebPier
             if (impl)
                 return impl;
 
-            wxString home = getHome();
-            wxString host = readRoute(home);
-
-            if (host.IsEmpty())
+            wxString link(getHome() + "/context");
+            if (!wxFileName::Exists(link))
             {
+                wxString host;
                 CStartupDialog dialog(nullptr);
                 if (dialog.ShowModal() == wxID_OK)
-                {
                     host = dialog.GetIdentity();
-                    writeRoute(home, host);
-                }
+
+                if (host.IsEmpty())
+                    throw webpier::usage_error("can't create context");
+
+                impl = webpier::open_context(link.ToStdString(), host.ToStdString());
             }
-
-            if (!host.IsEmpty())
-                impl = webpier::open_context(home.ToStdString(), host.ToStdString());
-
-            if (!impl)
-                throw webpier::usage_error("no context");
+            else
+            {
+                impl = webpier::open_context(link.ToStdString());
+            }
 
             return impl;
         }
 
-        static void Switch(const wxString& host)
+        static std::shared_ptr<webpier::context> Switch(const wxString& host, bool tidy)
         {
             auto& impl = getImpl();
 
-            if (impl && impl->get_host() == host)
-               return;
+            wxString link(getHome() + "/context");
+            auto next = webpier::open_context(link.ToStdString(), host.ToStdString());
 
-            impl.reset();
-
-            writeRoute(getHome(), host);
-        }
-
-        static void Clear(const wxString& host)
-        {
-            auto& impl = getImpl();
-            if (impl && impl->get_host() == host)
+            if (tidy && impl && impl->get_home() != next->get_home())
             {
                 wxFileName::Rmdir(impl->get_home(), wxPATH_RMDIR_FULL|wxPATH_RMDIR_RECURSIVE);
-                impl.reset();
-                writeRoute(getHome(), "");
             }
+
+            impl = next;
+            return impl;
         }
     };
 
     bool IsEqual(ServicePtr lhs, ServicePtr rhs)
     {
         return lhs && rhs 
-            && lhs->Id == rhs->Id
+            && lhs->Name == rhs->Name
             && lhs->Peer == rhs->Peer
             && lhs->Address == rhs->Address
             && lhs->Gateway == rhs->Gateway
@@ -151,7 +111,7 @@ namespace WebPier
                 return;
 
             webpier::service actual {
-                Id.ToStdString(),
+                Name.ToStdString(),
                 Peer.ToStdString(),
                 Address.ToStdString(),
                 Gateway.ToStdString(),
@@ -163,14 +123,14 @@ namespace WebPier
             auto context = Context::Get();
             if (IsExport())
             {
-                if (!m_origin.id.empty())
-                    context->del_export_service(m_origin.id);
+                if (!m_origin.name.empty())
+                    context->del_export_service(m_origin.name);
                 context->add_export_service(actual);
             }
             else
             {
-                if (!m_origin.id.empty() && !m_origin.peer.empty())
-                    context->del_import_service(m_origin.peer, m_origin.id);
+                if (!m_origin.name.empty() && !m_origin.peer.empty())
+                    context->del_import_service(m_origin.peer, m_origin.name);
                 context->add_import_service(actual);
             }
             m_origin = actual;
@@ -181,20 +141,20 @@ namespace WebPier
             auto context = Context::Get();
             if (IsExport())
             {
-                if (!m_origin.id.empty())
-                    context->del_export_service(m_origin.id);
+                if (!m_origin.name.empty())
+                    context->del_export_service(m_origin.name);
             }
             else
             {
-                if (!m_origin.id.empty() && !m_origin.peer.empty())
-                    context->del_import_service(m_origin.peer, m_origin.id);
+                if (!m_origin.name.empty() && !m_origin.peer.empty())
+                    context->del_import_service(m_origin.peer, m_origin.name);
             }
             m_origin = {};
         }
 
         void Revert() noexcept(true) override
         {
-            Id = m_origin.id;
+            Name = m_origin.name;
             Peer = m_origin.peer;
             Address = m_origin.address;
             Gateway = m_origin.gateway;
@@ -242,7 +202,7 @@ namespace WebPier
 
         bool IsDirty() const noexcept(true) override
         {
-            return Id != m_origin.id
+            return Name != m_origin.name
                 || Peer != m_origin.peer
                 || Address != m_origin.address
                 || Gateway != m_origin.gateway
@@ -288,7 +248,7 @@ namespace WebPier
             Revert();
         }
 
-        void Store() noexcept(false) override
+        void Store(bool tidy) noexcept(false) override
         {
             webpier::config actual {
                 Host.ToStdString(),
@@ -302,16 +262,11 @@ namespace WebPier
                     EmailX509Cert.ToStdString(), 
                     EmailX509Key.ToStdString(), 
                     EmailX509Ca.ToStdString() 
-                }
+                },
+                Autostart
             };
 
-            Context::Switch(Host);
-            Context::Get()->set_config(actual);
-        }
-
-        void Purge() noexcept(false) override
-        {
-            Context::Clear(m_origin.host);
+            Context::Switch(Host, tidy)->set_config(actual);
         }
 
         void Revert() noexcept(true) override
@@ -328,6 +283,7 @@ namespace WebPier
             EmailX509Cert = m_origin.emailer.cert;
             EmailX509Key = m_origin.emailer.key;
             EmailX509Ca = m_origin.emailer.ca;
+            Autostart = m_origin.autostart;
         }
     };
 
@@ -404,7 +360,7 @@ namespace WebPier
 
     bool IsUnknownPeer(const wxString& id) noexcept(false)
     {
-        return !Context::Get()->has_peer(id.ToStdString());
+        return GetPeers().Index(id) == wxNOT_FOUND;
     }
 
     void AddPeer(const wxString& id, const wxString& cert) noexcept(false)
@@ -437,7 +393,7 @@ namespace WebPier
         for (const auto& pair : data.Services)
         {
             boost::property_tree::ptree item;
-            item.put("id", pair.second->Id.ToStdString());
+            item.put("name", pair.second->Name.ToStdString());
             item.put("obscure", pair.second->Obscure);
             item.put("rendezvous.dht.bootstrap", pair.second->DhtBootstrap.ToStdString());
             item.put("rendezvous.dht.network", pair.second->DhtNetwork);
@@ -460,7 +416,7 @@ namespace WebPier
         for (auto& item : doc.get_child("services", array))
         {
             ServicePtr service(new ImportService());
-            service->Id = item.second.get<std::string>("id");
+            service->Name = item.second.get<std::string>("name");
             service->Peer = data.Pier;
             service->Obscure = item.second.get<bool>("obscure");
             service->DhtBootstrap = item.second.get<std::string>("rendezvous.dht.bootstrap", "");

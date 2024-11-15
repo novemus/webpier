@@ -21,7 +21,7 @@
 class CServiceDialog : public wxDialog
 {
     wxPropertyGrid* m_propGrid;
-    wxPGProperty* m_idItem;
+    wxPGProperty* m_nameItem;
     wxPGProperty* m_peerItem;
     wxPGProperty* m_addrItem;
     wxPGProperty* m_gateItem;

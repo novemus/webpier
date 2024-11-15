@@ -2,14 +2,7 @@
 #include "utils.h"
 #include <map>
 #include <filesystem>
-#include <openssl/x509v3.h>
-#include <openssl/evp.h>
-#include <openssl/pem.h>
-#include <openssl/rand.h>
-#include <openssl/err.h>
 #include <boost/property_tree/json_parser.hpp>
-#include <boost/interprocess/sync/scoped_lock.hpp>
-#include <boost/interprocess/sync/file_lock.hpp>
 
 namespace webpier
 {
@@ -19,19 +12,36 @@ namespace webpier
     constexpr const char* lock_file_name = "lock";
     constexpr const char* repo_dir_name = "repo";
 
-    class webpier
+    class locker
+    {
+        std::string m_path;
+        FILE* m_lock = nullptr;
+
+    public:
+
+        locker(const std::filesystem::path& file) : m_path(file.string()), m_lock(std::fopen(m_path.c_str(), "wx"))
+        {
+            if (!m_lock)
+                throw file_error("can't acquire lock");
+        }
+
+        ~locker()
+        {
+            std::fclose(m_lock);
+            std::remove(m_path.c_str());
+        }
+    };
+
+    class master
     {
         config m_config;
         std::filesystem::path m_path;
-        boost::interprocess::file_lock m_locker;
         std::filesystem::file_time_type m_timestamp;
 
         void load() noexcept(false)
         {
             try
             {
-                boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(m_locker, boost::interprocess::try_to_lock_type());
-
                 boost::property_tree::ptree doc;
                 boost::property_tree::read_json(m_path.string(), doc);
 
@@ -47,12 +57,9 @@ namespace webpier
                 m_config.emailer.cert = doc.get<std::string>("emailer.cert", "");
                 m_config.emailer.key = doc.get<std::string>("emailer.key", "");
                 m_config.emailer.ca = doc.get<std::string>("emailer.ca", "");
+                m_config.autostart = doc.get<bool>("autostart", false);
 
                 m_timestamp = std::filesystem::last_write_time(m_path);
-            }
-            catch(const boost::interprocess::interprocess_exception& e)
-            {
-                throw lock_error(e.what());
             }
             catch(const std::exception& e)
             {
@@ -64,8 +71,6 @@ namespace webpier
         {
             try
             {
-                boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(m_locker, boost::interprocess::try_to_lock_type());
-
                 if (m_timestamp == std::filesystem::file_time_type() || std::filesystem::last_write_time(m_path) == m_timestamp)
                 {
                     boost::property_tree::ptree doc;
@@ -82,16 +87,13 @@ namespace webpier
                     doc.put("emailer.cert", m_config.emailer.cert);
                     doc.put("emailer.key", m_config.emailer.key);
                     doc.put("emailer.ca", m_config.emailer.ca);
+                    doc.put("autostart", m_config.autostart);
 
                     boost::property_tree::write_json(m_path.string(), doc);
                     m_timestamp = std::filesystem::last_write_time(m_path);
 
                     return;
                 }
-            }
-            catch(const boost::interprocess::interprocess_exception& e)
-            {
-                throw lock_error(e.what());
             }
             catch(const std::exception& e)
             {
@@ -103,19 +105,16 @@ namespace webpier
 
     public:
 
-        webpier(const std::filesystem::path& home)
+        master(const std::filesystem::path& home)
             : m_path(home / conf_file_name)
         {
             if (!std::filesystem::exists(m_path))
-                throw usage_error("context is not exist");
-
-            auto locker = home / lock_file_name;
-            m_locker = boost::interprocess::file_lock(locker.string().c_str());
+                throw usage_error("context config does not exist");
 
             load();
         }
 
-        webpier(const std::filesystem::path& home, const std::string& host)
+        master(const std::filesystem::path& home, const std::string& host)
             : m_path(home / conf_file_name)
         {
             if (std::filesystem::exists(home) && !std::filesystem::is_empty(home))
@@ -125,15 +124,7 @@ namespace webpier
 
             try
             {
-                {
-                    std::filesystem::create_directories(home);
-
-                    auto locker = home / lock_file_name;
-                    std::ofstream(locker).close();
-
-                    m_locker = boost::interprocess::file_lock(locker.string().c_str());
-                }
-
+                std::filesystem::create_directories(home);
                 save();
             }
             catch (...)
@@ -151,7 +142,7 @@ namespace webpier
         void set_config(const config& info) noexcept(false)
         {
             if (info.host != m_config.host)
-                throw usage_error("renaming the hosting is forbidden");
+                throw usage_error("renaming host node is forbidden");
 
             m_config = info;
             save();
@@ -166,16 +157,13 @@ namespace webpier
     class node
     {
         std::filesystem::path m_path;
-        std::vector<service> m_units;
-        boost::interprocess::file_lock m_locker;
+        std::vector<service> m_list;
         std::filesystem::file_time_type m_timestamp;
 
         void load() noexcept(false)
         {
             try
             {
-                boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(m_locker, boost::interprocess::try_to_lock_type());
-
                 boost::property_tree::ptree doc;
                 boost::property_tree::read_json(m_path.string(), doc);
 
@@ -183,7 +171,7 @@ namespace webpier
                 for (auto& item : doc.get_child("services", array))
                 {
                     service unit;
-                    unit.id = item.second.get<std::string>("id", "");
+                    unit.name = item.second.get<std::string>("name", "");
                     unit.peer = item.second.get<std::string>("peer", "");
                     unit.address = item.second.get<std::string>("address", "");
                     unit.gateway = item.second.get<std::string>("gateway", "");
@@ -191,14 +179,10 @@ namespace webpier
                     unit.obscure = item.second.get<bool>("obscure", true);
                     unit.rendezvous.bootstrap = item.second.get<std::string>("rendezvous.dht.bootstrap", "");
                     unit.rendezvous.network = item.second.get<uint32_t>("rendezvous.dht.network", 0);
-                    m_units.emplace_back(std::move(unit));
+                    m_list.emplace_back(std::move(unit));
                 }
 
                 m_timestamp = std::filesystem::last_write_time(m_path);
-            }
-            catch(const boost::interprocess::interprocess_exception& e)
-            {
-                throw lock_error(e.what());
             }
             catch(const std::exception& e)
             {
@@ -210,15 +194,13 @@ namespace webpier
         {
             try
             {
-                boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(m_locker, boost::interprocess::try_to_lock_type());
-
                 if (m_timestamp == std::filesystem::file_time_type() || std::filesystem::last_write_time(m_path) == m_timestamp)
                 {
                     boost::property_tree::ptree array;
-                    for (auto& unit : m_units)
+                    for (auto& unit : m_list)
                     {
                         boost::property_tree::ptree item;
-                        item.put("id", unit.id);
+                        item.put("name", unit.name);
                         item.put("peer", unit.peer);
                         item.put("address", unit.address);
                         item.put("gateway", unit.gateway);
@@ -237,10 +219,6 @@ namespace webpier
 
                     return;
                 }
-            }
-            catch(const boost::interprocess::interprocess_exception& e)
-            {
-                throw lock_error(e.what());
             }
             catch(const std::exception& e)
             {
@@ -262,17 +240,8 @@ namespace webpier
 
                 try
                 {
-                    {
-                        std::filesystem::create_directories(home);
-
-                        auto locker = home / lock_file_name;
-                        std::ofstream(locker).close();
-
-                        m_locker = boost::interprocess::file_lock(locker.string().c_str());
-                        boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(m_locker, boost::interprocess::try_to_lock_type());
-                        generate_x509_pair(home / cert_file_name, home / key_file_name, home.parent_path().filename().string() + "/" + home.filename().string());
-                    }
-
+                    std::filesystem::create_directories(home);
+                    generate_x509_pair(home / cert_file_name, home / key_file_name, home.parent_path().filename().string() + "/" + home.filename().string());
                     save();
                 }
                 catch(...)
@@ -286,9 +255,6 @@ namespace webpier
                 if (!std::filesystem::exists(m_path))
                     throw usage_error("bad node directory");
 
-                auto locker = home / lock_file_name;
-                m_locker = boost::interprocess::file_lock(locker.string().c_str());
-
                 load();
             }
         }
@@ -301,16 +267,8 @@ namespace webpier
 
             try
             {
-                {
-                    std::filesystem::create_directories(home);
-
-                    auto locker = home / lock_file_name;
-                    std::ofstream(locker).close();
-
-                    m_locker = boost::interprocess::file_lock(locker.string().c_str());
-                    boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(m_locker, boost::interprocess::try_to_lock_type());
-                    save_x509_cert(home / cert_file_name, cert);
-                }
+                std::filesystem::create_directories(home);
+                save_x509_cert(home / cert_file_name, cert);
                 save();
             }
             catch(...)
@@ -322,40 +280,40 @@ namespace webpier
 
         void add(const service& info) noexcept(false)
         {
-            auto iter = std::find_if(m_units.begin(), m_units.end(), [&info](const service& item)
+            auto iter = std::find_if(m_list.begin(), m_list.end(), [&info](const service& item)
             {
-                return item.id == info.id;
+                return item.name == info.name;
             });
 
-            if (iter != m_units.end())
-                throw usage_error("such service already exists");
+            if (iter != m_list.end())
+                throw usage_error("service already exists");
 
-            m_units.push_back(info);
+            m_list.push_back(info);
             save();
         }
 
-        void del(const std::string& id) noexcept(false)
+        void del(const std::string& name) noexcept(false)
         {
-            auto iter = std::remove_if(m_units.begin(), m_units.end(), [&id](const service& item)
+            auto iter = std::remove_if(m_list.begin(), m_list.end(), [&name](const service& item)
             {
-                return item.id == id;
+                return item.name == name;
             });
 
-            if (iter != m_units.end())
+            if (iter != m_list.end())
             {
-                m_units.erase(iter, m_units.end());
+                m_list.erase(iter, m_list.end());
                 save();
             }
         }
 
-        bool get(const std::string& id, service& info) const noexcept(true)
+        bool get(const std::string& name, service& info) const noexcept(true)
         {
-            auto iter = std::find_if(m_units.begin(), m_units.end(), [&id](const service& item)
+            auto iter = std::find_if(m_list.begin(), m_list.end(), [&name](const service& item)
             {
-                return item.id == id;
+                return item.name == name;
             });
 
-            if (iter == m_units.end())
+            if (iter == m_list.end())
                 return false;
 
             info = *iter;
@@ -364,162 +322,152 @@ namespace webpier
 
         void get(std::vector<service>& list) const noexcept(true)
         {
-            std::copy(m_units.begin(), m_units.end(), std::back_inserter(list));
+            std::copy(m_list.begin(), m_list.end(), std::back_inserter(list));
         }
     };
 
     class context_impl : public context
     {
         std::filesystem::path m_home;
-        webpier m_config;
-        std::map<std::string, node> m_context;
+        master m_info;
+        std::map<std::string, node> m_bundle;
 
     public:
 
         context_impl(const std::filesystem::path& home)
             : m_home(home)
-            , m_config(home)
+            , m_info(home)
         {
             for (auto const& owner : std::filesystem::directory_iterator(home / repo_dir_name))
             {
                 if (!owner.is_directory())
                     continue;
 
-                for (auto const& pier : std::filesystem::directory_iterator(owner.path()))
+                for (auto const& child : std::filesystem::directory_iterator(owner.path()))
                 {
-                    if (!pier.is_directory())
+                    if (!child.is_directory())
                         continue;
 
-                    if (!std::filesystem::exists(pier.path() / cert_file_name))
+                    if (!std::filesystem::exists(child.path() / cert_file_name))
                         continue;
 
-                    auto id = owner.path().filename().string() + "/" + pier.path().filename().string();
-                    m_context.emplace(std::make_pair(id, node(pier)));
+                    auto id = owner.path().filename().string() + "/" + child.path().filename().string();
+                    m_bundle.emplace(std::make_pair(id, node(child)));
                 }
             }
 
-            auto iter = m_context.find(m_config.host());
-            if (iter == m_context.end())
+            auto iter = m_bundle.find(m_info.host());
+            if (iter == m_bundle.end())
                 throw usage_error("host node is not found");
         }
 
         context_impl(const std::filesystem::path& home, const std::string& host)
             : m_home(home)
-            , m_config(home, host)
+            , m_info(home, host)
         {
-            m_context.emplace(std::make_pair(host, node(home / repo_dir_name / host, true)));
+            m_bundle.emplace(std::make_pair(host, node(home / repo_dir_name / host, true)));
+        }
+
+        std::string get_home() const noexcept(true) override
+        {
+            return m_home;
         }
 
         void get_config(config& info) const noexcept(true) override
         {
-            m_config.get_config(info);
+            m_info.get_config(info);
         }
 
         void set_config(const config& info) noexcept(false) override
         {
-            m_config.set_config(info);
+            locker lock(m_home.parent_path() / lock_file_name);
+            m_info.set_config(info);
         }
 
         void get_export_services(std::vector<service>& list) const noexcept(true) override
         {
-            auto iter = m_context.find(m_config.host());
-            if (iter != m_context.end())
+            auto iter = m_bundle.find(m_info.host());
+            if (iter != m_bundle.end())
                 iter->second.get(list);
-        }
-
-        bool get_export_service(const std::string& id, service& info) const noexcept(true) override
-        {
-            auto iter = m_context.find(m_config.host());
-            if (iter == m_context.end())
-                return false;
-
-            return iter->second.get(id, info);
         }
 
         void add_export_service(const service& info) noexcept(false) override
         {
-            auto iter = m_context.find(m_config.host());
-            if (iter == m_context.end())
+            auto iter = m_bundle.find(m_info.host());
+            if (iter == m_bundle.end())
                 throw usage_error("host node is not found");
 
+            locker lock(m_home.parent_path() / lock_file_name);
             iter->second.add(info);
         }
 
-        void del_export_service(const std::string& id) noexcept(false) override
+        void del_export_service(const std::string& name) noexcept(false) override
         {
-            auto iter = m_context.find(m_config.host());
-            if (iter == m_context.end())
+            auto iter = m_bundle.find(m_info.host());
+            if (iter == m_bundle.end())
                 throw usage_error("host node is not found");
 
-            iter->second.del(id);
+            locker lock(m_home.parent_path() / lock_file_name);
+            iter->second.del(name);
         }
 
         void get_import_services(std::vector<service>& list) const noexcept(true) override
         {
-            for (const auto& item : m_context)
+            for (const auto& item : m_bundle)
             {
-                if (item.first != m_config.host())
+                if (item.first != m_info.host())
                     item.second.get(list);
             }
         }
 
-        bool get_import_service(const std::string& peer, const std::string& id, service& info) const noexcept(true) override
-        {
-            auto iter = m_context.find(peer);
-            if (iter == m_context.end())
-                return false;
-
-            return iter->second.get(id, info);
-        }
-
         void add_import_service(const service& info) noexcept(false) override
         {
-            auto iter = m_context.find(info.peer);
-            if (iter == m_context.end())
+            auto iter = m_bundle.find(info.peer);
+            if (iter == m_bundle.end())
                 throw usage_error("peer node is not found");
 
+            locker lock(m_home.parent_path() / lock_file_name);
             iter->second.add(info);
         }
 
         void del_import_service(const std::string& peer, const std::string& id) noexcept(false) override
         {
-            auto iter = m_context.find(peer);
-            if (iter == m_context.end())
+            auto iter = m_bundle.find(peer);
+            if (iter == m_bundle.end())
                 throw usage_error("peer node is not found");
 
+            locker lock(m_home.parent_path() / lock_file_name);
             iter->second.del(id);
         }
 
         void get_peers(std::vector<std::string>& list) const noexcept(true) override
         {
-            for (const auto& item : m_context)
+            for (const auto& item : m_bundle)
             {
-                if (item.first != m_config.host())
+                if (item.first != m_info.host())
                     list.push_back(item.first);
             }
         }
 
-        bool has_peer(const std::string& id) const noexcept(true) override
-        {
-            return m_context.find(id) != m_context.end();
-        }
-
         void add_peer(const std::string& id, const std::string& cert) noexcept(false) override
         {
+            locker lock(m_home.parent_path() / lock_file_name);
+
             auto home = m_home / repo_dir_name / id;
 
             if (std::filesystem::exists(home))
-                throw usage_error("such node already exists");
+                throw usage_error("such peer node already exists");
 
-            m_context.emplace(std::make_pair(id, node(home, cert)));
+            m_bundle.emplace(std::make_pair(id, node(home, cert)));
         }
 
         void del_peer(const std::string& id) noexcept(false) override
         {
-            if (m_config.host() == id)
+            if (m_info.host() == id)
                 throw usage_error("can't delete host node");
 
-            m_context.erase(id);
+            locker lock(m_home.parent_path() / lock_file_name);
+            m_bundle.erase(id);
 
             try
             {
@@ -533,33 +481,52 @@ namespace webpier
 
         std::string get_fingerprint(const std::string& id) const noexcept(false) override
         {
+            locker lock(m_home.parent_path() / lock_file_name);
             return get_x509_public_sha1(m_home / repo_dir_name / id / cert_file_name);
         }
 
         std::string get_certificate(const std::string& id) const noexcept(false) override
         {
+            locker lock(m_home.parent_path() / lock_file_name);
             return load_x509_cert(m_home / repo_dir_name / id / cert_file_name);
-        }
-
-        std::string get_home() const noexcept(true) override
-        {
-            return m_home.string();
-        }
-
-        std::string get_repo() const noexcept(true) override
-        {
-            return (m_home / repo_dir_name).string();
-        }
-
-        std::string get_host() const noexcept(true) override
-        {
-            return m_config.host();
         }
     };
 
-    std::shared_ptr<context> open_context(const std::string& dir, const std::string& host) noexcept(false)
+    std::shared_ptr<context> open_context(const std::string& link) noexcept(false)
     {
-        auto home = std::filesystem::path(dir) / to_hexadecimal(host.data(), host.size());
+        auto root = std::filesystem::path(link).parent_path();
+        locker lock(root / lock_file_name);
+
+        if (!std::filesystem::exists(link) || !std::filesystem::is_symlink(link))
+            throw usage_error("wrong symlink file: " + link);
+
+        auto home = std::filesystem::read_symlink(link);
+        if (!std::filesystem::is_directory(home) || root != home.parent_path())
+            throw usage_error("wrong symlink: " + link);
+
+        return std::make_shared<context_impl>(home);
+    }
+
+    std::shared_ptr<context> open_context(const std::string& link, const std::string& host, bool tidy) noexcept(false)
+    {
+        auto root = std::filesystem::path(link).parent_path();
+        locker lock(root / lock_file_name);
+
+        if (std::filesystem::exists(link))
+        {
+            if (!std::filesystem::is_symlink(link))
+                throw usage_error("wrong symlink file: " + link);
+
+            auto home = std::filesystem::read_symlink(link);
+            if (tidy && std::filesystem::is_directory(home) && root == home.parent_path())
+                std::filesystem::remove_all(home);
+
+            std::filesystem::remove(link);
+        }
+
+        auto home = std::filesystem::path(root) / to_hexadecimal(host.data(), host.size());
+        std::filesystem::create_directory_symlink(home, link);
+
         return std::filesystem::exists(home) ? std::make_shared<context_impl>(home) : std::make_shared<context_impl>(home, host);
     }
 }

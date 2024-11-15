@@ -45,11 +45,12 @@ namespace webpier
         nat traverse;
         dht rendezvous;
         email emailer;
+        bool autostart = false;
     };
 
     struct service
     {
-        std::string id;
+        std::string name;
         std::string peer;
         std::string address;
         std::string gateway = default_gateway;
@@ -62,31 +63,28 @@ namespace webpier
     {
         virtual ~context() {}
 
-        virtual std::string get_host() const noexcept(true) = 0;
         virtual std::string get_home() const noexcept(true) = 0;
-        virtual std::string get_repo() const noexcept(true) = 0;
 
         virtual void get_config(config& info) const noexcept(true) = 0;
         virtual void set_config(const config& info) noexcept(false) = 0;
 
         virtual void get_peers(std::vector<std::string>& list) const noexcept(true) = 0;
-        virtual bool has_peer(const std::string& id) const noexcept(true) = 0;
         virtual void add_peer(const std::string& id, const std::string& cert) noexcept(false) = 0;
         virtual void del_peer(const std::string& id) noexcept(false) = 0;
 
         virtual void get_export_services(std::vector<service>& list) const noexcept(true) = 0;
-        virtual bool get_export_service(const std::string& id, service& info) const noexcept(true) = 0;
-        virtual void add_export_service(const service& info) noexcept(false) = 0;
-        virtual void del_export_service(const std::string& id) noexcept(false) = 0;
-
         virtual void get_import_services(std::vector<service>& list) const noexcept(true) = 0;
-        virtual bool get_import_service(const std::string& peer, const std::string& id, service& info) const noexcept(true) = 0;
-        virtual void add_import_service(const service& info) noexcept(false) = 0;
-        virtual void del_import_service(const std::string& peer, const std::string& id) noexcept(false) = 0;
 
-        virtual std::string get_certificate(const std::string& id) const noexcept(false) = 0;
-        virtual std::string get_fingerprint(const std::string& id) const noexcept(false) = 0;
+        virtual void add_export_service(const service& info) noexcept(false) = 0;
+        virtual void del_export_service(const std::string& name) noexcept(false) = 0;
+
+        virtual void add_import_service(const service& info) noexcept(false) = 0;
+        virtual void del_import_service(const std::string& peer, const std::string& name) noexcept(false) = 0;
+
+        virtual std::string get_certificate(const std::string& peer) const noexcept(false) = 0;
+        virtual std::string get_fingerprint(const std::string& peer) const noexcept(false) = 0;
     };
 
-    std::shared_ptr<context> open_context(const std::string& dir, const std::string& host) noexcept(false);
+    std::shared_ptr<context> open_context(const std::string& link) noexcept(false);
+    std::shared_ptr<context> open_context(const std::string& link, const std::string& host, bool tidy = false) noexcept(false);
 }

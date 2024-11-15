@@ -20,7 +20,7 @@ CImportPage::CImportPage(const wxString& pier, const WebPier::ServiceList& forIm
     for (const auto& item : forImport)
     {
         m_import.push_back(item.second);
-        choices.Add(item.second->Id);
+        choices.Add(item.second->Name);
     }
 
     m_serviceList = new wxCheckListBox( peerSizer->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize( -1,10 ), choices, wxLB_SINGLE );
@@ -35,13 +35,13 @@ CImportPage::CImportPage(const wxString& pier, const WebPier::ServiceList& forIm
     serviceSizer->SetFlexibleDirection( wxHORIZONTAL );
     serviceSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-    m_idLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Service"), wxDefaultPosition, wxDefaultSize, 0 );
-    m_idLabel->Wrap( -1 );
-    serviceSizer->Add( m_idLabel, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+    m_nameLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Service"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_nameLabel->Wrap( -1 );
+    serviceSizer->Add( m_nameLabel, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 
-    m_idValue = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, 0 );
-    m_idValue->Wrap( -1 );
-    serviceSizer->Add( m_idValue, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+    m_nameValue = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, 0 );
+    m_nameValue->Wrap( -1 );
+    serviceSizer->Add( m_nameValue, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 
     m_addressLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Address"), wxDefaultPosition, wxDefaultSize, 0 );
     m_addressLabel->Wrap( -1 );
@@ -134,8 +134,8 @@ CImportPage::CImportPage(const wxString& pier, const WebPier::ServiceList& forIm
 CImportPage::~CImportPage()
 {
     delete m_serviceList;
-    delete m_idLabel;
-    delete m_idValue;
+    delete m_nameLabel;
+    delete m_nameValue;
     delete m_addressLabel;
     delete m_addressCtrl;
     delete m_gateLabel;
@@ -157,7 +157,7 @@ void CImportPage::populate(int line)
 
     const auto& service = m_import[line];
 
-    m_idValue->SetLabel(service->Id);
+    m_nameValue->SetLabel(service->Name);
     m_addressCtrl->SetValue(service->Address);
     m_gateCtrl->SetValue(service->Gateway);
     m_startCtrl->SetValue(service->Autostart);
@@ -273,7 +273,7 @@ CExportPage::CExportPage(const wxString& pier, const WebPier::ServiceList& forEx
     for (const auto& item : forExport)
     {
         m_export.push_back(item.second);
-        choices.Add(item.second->Id);
+        choices.Add(item.second->Name);
     }
 
     m_serviceList = new wxCheckListBox( peerSizer->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize( -1,10 ), choices, wxLB_SINGLE );
@@ -295,13 +295,13 @@ CExportPage::CExportPage(const wxString& pier, const WebPier::ServiceList& forEx
     serviceSizer->SetFlexibleDirection( wxHORIZONTAL );
     serviceSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-    m_idLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Service"), wxDefaultPosition, wxDefaultSize, 0 );
-    m_idLabel->Wrap( -1 );
-    serviceSizer->Add( m_idLabel, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    m_nameLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Service"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_nameLabel->Wrap( -1 );
+    serviceSizer->Add( m_nameLabel, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    m_idValue = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, 0 );
-    m_idValue->Wrap( -1 );
-    serviceSizer->Add( m_idValue, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    m_nameValue = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, 0 );
+    m_nameValue->Wrap( -1 );
+    serviceSizer->Add( m_nameValue, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     m_addressLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Address"), wxDefaultPosition, wxDefaultSize, 0 );
     m_addressLabel->Wrap( -1 );
@@ -390,8 +390,8 @@ CExportPage::CExportPage(const wxString& pier, const WebPier::ServiceList& forEx
 CExportPage::~CExportPage()
 {
     delete m_serviceList;
-    delete m_idLabel;
-    delete m_idValue;
+    delete m_nameLabel;
+    delete m_nameValue;
     delete m_addressLabel;
     delete m_addressValue;
     delete m_gateLabel;
@@ -413,7 +413,7 @@ void CExportPage::populate(int line)
 
     const auto& service = m_export[line];
 
-    m_idValue->SetLabel(service->Id);
+    m_nameValue->SetLabel(service->Name);
     m_addressValue->SetLabel(service->Address);
     m_gateValue->SetLabel(service->Gateway);
     m_startValue->SetLabel(service->Autostart ? _("yes") : _("no"));
