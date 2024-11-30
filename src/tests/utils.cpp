@@ -33,3 +33,24 @@ BOOST_AUTO_TEST_CASE(x509)
     BOOST_REQUIRE_NO_THROW(BOOST_CHECK_EQUAL(webpier::get_x509_public_sha1(cert), webpier::get_x509_public_sha1(copy)));
     BOOST_REQUIRE_NO_THROW(BOOST_CHECK_EQUAL(webpier::load_x509_cert(cert), webpier::load_x509_cert(copy)));
 }
+
+BOOST_AUTO_TEST_CASE(locker)
+{
+    auto dest = std::filesystem::current_path() / std::to_string(std::time(0));
+
+    BOOST_SCOPE_EXIT(&dest) 
+    {
+        std::filesystem::remove_all(dest);
+    } 
+    BOOST_SCOPE_EXIT_END
+
+    BOOST_REQUIRE(std::filesystem::create_directory(dest));
+
+    BOOST_REQUIRE_NO_THROW
+    (
+        webpier::locker lock(dest / "lock");
+        BOOST_REQUIRE_THROW(webpier::locker(dest / "lock"), webpier::lock_error);
+    );
+
+    BOOST_REQUIRE(!std::filesystem::exists(dest / "lock"));
+}

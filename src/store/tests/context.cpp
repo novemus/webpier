@@ -1,5 +1,5 @@
 #include "../context.h"
-#include "../utils.h"
+#include "../../utils.h"
 #include <boost/test/unit_test.hpp>
 #include <boost/scope_exit.hpp>
 #include <filesystem>
@@ -21,7 +21,7 @@ BOOST_AUTO_TEST_CASE(context)
     std::string peer = "peer@mail.box/test";
 
     auto context = webpier::open_context(link.string(), host);
-    
+
     BOOST_REQUIRE(std::filesystem::is_symlink(link));
     BOOST_REQUIRE(std::filesystem::is_directory(std::filesystem::read_symlink(link)));
     BOOST_CHECK_EQUAL(std::filesystem::read_symlink(link).parent_path(), dest);

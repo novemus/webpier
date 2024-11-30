@@ -14,7 +14,6 @@ namespace webpier
     struct stale_error : public std::runtime_error { stale_error(const std::string& what) : std::runtime_error(what) {} };
     struct usage_error : public std::runtime_error { usage_error(const std::string& what) : std::runtime_error(what) {} };
     struct file_error : public std::runtime_error { file_error(const std::string& what) : std::runtime_error(what) {} };
-    struct lock_error : public std::runtime_error { lock_error(const std::string& what) : std::runtime_error(what) {} };
 
     struct nat
     {

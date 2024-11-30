@@ -44,17 +44,17 @@ message("*** OpenSSL Include: ${OPENSSL_INCLUDE_DIR}")
 message("*** OpenSSL Libraries: ${OPENSSL_LIBRARIES}")
 
 add_executable(${PROJECT_NAME} WIN32 
-    ui/main.cpp
-    ui/mainframe.cpp
-    ui/servicedialog.cpp
-    ui/settingsdialog.cpp
-    ui/exchangedialog.cpp
-    ui/aboutdialog.cpp
-    ui/messagedialog.cpp
-    ui/startupdialog.cpp
-    ui/context.cpp
-    store/context.cpp
-    store/utils.cpp
+    src/ui/main.cpp
+    src/ui/mainframe.cpp
+    src/ui/servicedialog.cpp
+    src/ui/settingsdialog.cpp
+    src/ui/exchangedialog.cpp
+    src/ui/aboutdialog.cpp
+    src/ui/messagedialog.cpp
+    src/ui/startupdialog.cpp
+    src/ui/context.cpp
+    src/store/context.cpp
+    src/utils.cpp
     )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE BOOST_BIND_GLOBAL_PLACEHOLDERS)
@@ -66,9 +66,11 @@ else()
 endif()
 set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "d")
 
+add_executable(slipway WIN32 src/slipway/server.cpp src/slipway/message.cpp)
+
 if(BUILD_TESTING)
     set(WEBPIER_UT webpier_ut)
-    add_executable(${WEBPIER_UT} store/tests/utils.cpp store/tests/context.cpp store/context.cpp store/utils.cpp)
+    add_executable(${WEBPIER_UT} src/tests/utils.cpp src/store/tests/context.cpp src/store/context.cpp src/utils.cpp)
     target_compile_definitions(${WEBPIER_UT} PRIVATE BOOST_BIND_GLOBAL_PLACEHOLDERS)
     target_include_directories(${WEBPIER_UT} PRIVATE ${Boost_INCLUDE_DIRS})
     if(WIN32)

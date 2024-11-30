@@ -1,5 +1,5 @@
 #include "context.h"
-#include "utils.h"
+#include "../utils.h"
 #include <map>
 #include <filesystem>
 #include <boost/property_tree/json_parser.hpp>
@@ -11,26 +11,6 @@ namespace webpier
     constexpr const char* conf_file_name = "webpier.json";
     constexpr const char* lock_file_name = "lock";
     constexpr const char* repo_dir_name = "repo";
-
-    class locker
-    {
-        std::string m_path;
-        FILE* m_lock = nullptr;
-
-    public:
-
-        locker(const std::filesystem::path& file) : m_path(file.string()), m_lock(std::fopen(m_path.c_str(), "wx"))
-        {
-            if (!m_lock)
-                throw file_error("can't acquire lock");
-        }
-
-        ~locker()
-        {
-            std::fclose(m_lock);
-            std::remove(m_path.c_str());
-        }
-    };
 
     class master
     {
