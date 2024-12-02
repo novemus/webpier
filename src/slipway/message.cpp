@@ -99,7 +99,7 @@ namespace slipway
             }
             case 2:
             {
-                doc.put_child("outline", convert_handle(std::get<2>(msg.payload)));
+                doc.put_child("outline", convert_outline(std::get<2>(msg.payload)));
                 break;
             }
             case 3:
@@ -128,8 +128,7 @@ namespace slipway
         }
 
         std::ostream stream(&buffer);
-        boost::property_tree::write_json(stream, doc);
-        stream << '\0';
+        boost::property_tree::write_json(stream, doc, false);
     }
 
     void get_message(boost::asio::streambuf& buffer, message& msg) noexcept(false)
@@ -150,7 +149,7 @@ namespace slipway
         else if (doc.count("outline"))
         {
             boost::property_tree::ptree outline;
-            doc.get_child("outline", outline);
+            outline = doc.get_child("outline", outline);
             if (outline.count(""))
             {
                 std::vector<slipway::outline> list;
@@ -166,7 +165,7 @@ namespace slipway
         else if (doc.count("snapshot"))
         {
             boost::property_tree::ptree snapshot;
-            doc.get_child("snapshot", snapshot);
+            snapshot = doc.get_child("snapshot", snapshot);
             if (snapshot.count(""))
             {
                 std::vector<slipway::snapshot> list;

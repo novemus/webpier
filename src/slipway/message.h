@@ -14,6 +14,8 @@ namespace slipway
     {
         std::string node;
         std::string service;
+
+        bool operator==(const handle& other) const { return node == other.node && service == other.service; }
     };
 
     struct outline : public handle
@@ -26,6 +28,8 @@ namespace slipway
         };
 
         status state;
+
+        bool operator==(const outline& other) const { return handle::operator==(other) && state == other.state; }
     };
 
     struct snapshot : public outline
@@ -35,10 +39,14 @@ namespace slipway
             std::string peer;
             std::string logfile;
             int pid;
+
+            bool operator==(const linkage& other) const { return peer == other.peer && logfile == other.logfile && pid == other.pid; }
         };
 
         std::string logfile;
         std::vector<linkage> context;
+
+        bool operator==(const snapshot& other) const { return outline::operator==(other) && logfile == other.logfile && context == other.context; }
     };
 
     struct message
