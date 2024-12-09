@@ -3,6 +3,7 @@
 #include <vector>
 #include <variant>
 #include <stdexcept>
+#include <memory>
 #include <boost/asio.hpp>
 
 namespace slipway
@@ -18,7 +19,7 @@ namespace slipway
         bool operator==(const handle& other) const { return node == other.node && service == other.service; }
     };
 
-    struct outline : public handle
+    struct wealth : public handle
     {
         enum status
         {
@@ -29,10 +30,10 @@ namespace slipway
 
         status state;
 
-        bool operator==(const outline& other) const { return handle::operator==(other) && state == other.state; }
+        bool operator==(const wealth& other) const { return handle::operator==(other) && state == other.state; }
     };
 
-    struct snapshot : public outline
+    struct report : public wealth
     {
         struct linkage
         {
@@ -46,7 +47,7 @@ namespace slipway
         std::string logfile;
         std::vector<linkage> context;
 
-        bool operator==(const snapshot& other) const { return outline::operator==(other) && logfile == other.logfile && context == other.context; }
+        bool operator==(const report& other) const { return wealth::operator==(other) && logfile == other.logfile && context == other.context; }
     };
 
     struct message
@@ -57,15 +58,15 @@ namespace slipway
             launch,
             finish,
             status,
-            report
+            review
         };
 
-        using content = std::variant<std::string,
+        using content = std::variant<std::string, // error
                                      slipway::handle,
-                                     slipway::outline,
-                                     slipway::snapshot,
-                                     std::vector<slipway::outline>,
-                                     std::vector<slipway::snapshot>>;
+                                     slipway::wealth,
+                                     slipway::report,
+                                     std::vector<slipway::wealth>,
+                                     std::vector<slipway::report>>;
 
         command action;
         content payload;
@@ -82,10 +83,19 @@ namespace slipway
 
         bool ok() const noexcept(true)
         {
-            return payload.index() != 0 || std::get<0>(payload).empty();
+            return payload.index() != 0 || std::get<std::string>(payload).empty();
         }
     };
 
     void put_message(boost::asio::streambuf& buffer, const message& message) noexcept(true);
     void get_message(boost::asio::streambuf& buffer, message& message) noexcept(false);
+
+    struct channel
+    {
+        virtual ~channel() {}
+        virtual void push(const message& data) noexcept(false) = 0;
+        virtual void pull(message& data) noexcept(false) = 0;
+    };
+
+    std::shared_ptr<channel> create_channel(const std::string& source, const std::string& sink) noexcept(false);
 }
