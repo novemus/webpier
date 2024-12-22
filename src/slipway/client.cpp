@@ -1,29 +1,32 @@
 #include "client.h"
 #include "channel.h"
-#include "../utils.h"
+#include <fstream>
+#include <filesystem>
 #include <boost/asio.hpp>
 #include <boost/asio/spawn.hpp>
 #include <boost/process/async_pipe.hpp>
+#include <boost/interprocess/sync/file_lock.hpp>
+#include <boost/interprocess/sync/scoped_lock.hpp>
 
 namespace slipway
 {
-    constexpr const char* req_pipe_name = "slipway.0";
-    constexpr const char* res_pipe_name = "slipway.1";
-    constexpr const char* lock_file_name = "lock";
+    constexpr const char* push_pipe_name = "client.pipe";
+    constexpr const char* pull_pipe_name = "server.pipe";
+    constexpr const char* lock_file_name = "client.lock";
 
     class client_impl : public client
     {
-        std::string m_locker;
+        boost::interprocess::file_lock m_locker;
         std::shared_ptr<channel> m_channel;
 
         template<class result = std::string>
-        result transmit(const message& info)
+        result submit(const message& data)
         {
-            webpier::locker lock(m_locker);
+            boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(m_locker);
 
             message back;
 
-            m_channel->push(info);
+            m_channel->push(data);
             m_channel->pull(back);
 
             if (!back.ok())
@@ -32,67 +35,75 @@ namespace slipway
             return std::get<result>(back.payload);
         }
 
+        static boost::interprocess::file_lock open_lock_file(const std::string& file)
+        {
+            if (!std::filesystem::exists(file))
+                std::ofstream(file).close();
+
+            return boost::interprocess::file_lock(file.c_str());
+        }
+
     public:
 
-        client_impl(const std::string& context)
-            : m_locker(context + "/" + lock_file_name)
-            , m_channel(create_channel(context + "/" + res_pipe_name, context + "/" + req_pipe_name))
+        client_impl(const std::string& home)
+            : m_locker(open_lock_file(home + "/" + lock_file_name))
+            , m_channel(create_channel(home + "/" + pull_pipe_name, home + "/" + push_pipe_name))
         {
         }
 
         void launch() noexcept(false) override
         {
-            transmit(message::make(message::launch));
+            submit(message::make(message::launch));
         }
 
         void finish() noexcept(false) override
         {
-            transmit(message::make(message::finish));
+            submit(message::make(message::finish));
         }
 
         void reboot() noexcept(false) override
         {
-            transmit(message::make(message::reboot));
+            submit(message::make(message::reboot));
         }
 
         void status(std::vector<slipway::wealth>& result) noexcept(false) override
         {
-            result = transmit<std::vector<slipway::wealth>>(message::make(message::status));
+            result = submit<std::vector<slipway::wealth>>(message::make(message::status));
         }
 
         void review(std::vector<slipway::report>& result) noexcept(false) override
         {
-            result = transmit<std::vector<slipway::report>>(message::make(message::review));
+            result = submit<std::vector<slipway::report>>(message::make(message::review));
         }
 
         void launch(const handle& service) noexcept(false) override
         {
-            transmit(message::make(message::launch, service));
+            submit(message::make(message::launch, service));
         }
 
         void finish(const handle& service) noexcept(false) override
         {
-            transmit(message::make(message::finish, service));
+            submit(message::make(message::finish, service));
         }
 
         void reboot(const handle& service) noexcept(false) override
         {
-            transmit(message::make(message::reboot, service));
+            submit(message::make(message::reboot, service));
         }
 
         void status(const handle& service, slipway::wealth& result) noexcept(false) override
         {
-            result = transmit<slipway::wealth>(message::make(message::status, service));
+            result = submit<slipway::wealth>(message::make(message::status, service));
         }
 
         void review(const handle& service, slipway::report& result) noexcept(false) override
         {
-            result = transmit<slipway::report>(message::make(message::review, service));
+            result = submit<slipway::report>(message::make(message::review, service));
         }
     };
 
-    std::shared_ptr<client> open_client(const std::string& context) noexcept(false)
+    std::shared_ptr<client> open_client(const std::string& home) noexcept(false)
     {
-        return std::make_shared<client_impl>(context);
+        return std::make_shared<client_impl>(home);
     }
 }

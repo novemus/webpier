@@ -54,9 +54,9 @@ add_executable(${PROJECT_NAME} WIN32
     src/ui/startupdialog.cpp
     src/ui/context.cpp
     src/store/context.cpp
+    src/store/utils.cpp
     src/slipway/channel.cpp
     src/slipway/client.cpp
-    src/utils.cpp
     )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE BOOST_BIND_GLOBAL_PLACEHOLDERS)
@@ -79,7 +79,7 @@ set_target_properties(${SLIPWAY_MODULE} PROPERTIES DEBUG_POSTFIX "d")
 
 if(BUILD_TESTING)
     set(WEBPIER_UT webpier_ut)
-    add_executable(${WEBPIER_UT} src/tests/utils.cpp src/store/tests/context.cpp src/slipway/tests/channel.cpp src/store/context.cpp src/slipway/channel.cpp src/utils.cpp)
+    add_executable(${WEBPIER_UT} src/store/tests/utils.cpp src/store/tests/context.cpp src/slipway/tests/channel.cpp src/store/context.cpp src/slipway/channel.cpp src/store/utils.cpp)
     target_compile_definitions(${WEBPIER_UT} PRIVATE BOOST_BIND_GLOBAL_PLACEHOLDERS)
     target_include_directories(${WEBPIER_UT} PRIVATE ${Boost_INCLUDE_DIRS})
     if(WIN32)

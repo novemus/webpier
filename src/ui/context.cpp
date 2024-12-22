@@ -1,7 +1,7 @@
 #include "../store/context.h"
 #include "context.h"
-#include "startupdialog.h"
 #include "messagedialog.h"
+#include "startupdialog.h"
 #include <boost/property_tree/json_parser.hpp>
 #include <wx/utils.h> 
 #include <wx/stdpaths.h>
@@ -10,75 +10,44 @@
 
 namespace WebPier
 {
-    class Context
+    std::shared_ptr<webpier::context> GetContext()
     {
-        static std::shared_ptr<webpier::context>& getImpl()
-        {
-            static std::shared_ptr<webpier::context> s_context;
+        static std::shared_ptr<webpier::context> s_context;
+
+        if (s_context)
             return s_context;
-        }
 
-        static wxString getHome()
+        wxString home;
+        if (!wxGetEnv("WEBPIER_HOME", &home))
+            home = wxStandardPaths::Get().GetUserLocalDataDir();
+
+        if (!wxFileName::Exists(home) && !wxFileName::Mkdir(home))
         {
-            wxString home;
-            if (!wxGetEnv("WEBPIER_HOME", &home))
-                home = wxStandardPaths::Get().GetUserLocalDataDir();
-
-            if (!wxFileName::Exists(home) && !wxFileName::Mkdir(home))
-            {
-                CMessageDialog dialog(nullptr, _("Can't create home directory ") + home, wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
-                dialog.ShowModal();
-                throw webpier::usage_error("no context");
-            }
-
-            return home;
+            CMessageDialog dialog(nullptr, _("can't create home directory ") + home, wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
+            dialog.ShowModal();
+            throw webpier::usage_error("no context");
         }
 
-    public:
+        auto context = webpier::open_context(home.ToStdString());
 
-        static std::shared_ptr<webpier::context> Get()
+        webpier::config config;
+        context->get_config(config);
+
+        if (config.host.empty())
         {
-            auto& impl = getImpl();
-            if (impl)
-                return impl;
+            CStartupDialog dialog(nullptr);
+            if (dialog.ShowModal() == wxID_OK)
+                config.host = dialog.GetIdentity().ToStdString();
 
-            wxString link(getHome() + "/context");
-            if (!wxFileName::Exists(link))
-            {
-                wxString host;
-                CStartupDialog dialog(nullptr);
-                if (dialog.ShowModal() == wxID_OK)
-                    host = dialog.GetIdentity();
+            if (config.host.empty())
+                throw webpier::usage_error("can't init context");
 
-                if (host.IsEmpty())
-                    throw webpier::usage_error("can't create context");
-
-                impl = webpier::open_context(link.ToStdString(), host.ToStdString());
-            }
-            else
-            {
-                impl = webpier::open_context(link.ToStdString());
-            }
-
-            return impl;
+            context->set_config(config);
         }
 
-        static std::shared_ptr<webpier::context> Switch(const wxString& host, bool tidy)
-        {
-            auto& impl = getImpl();
-
-            wxString link(getHome() + "/context");
-            auto next = webpier::open_context(link.ToStdString(), host.ToStdString());
-
-            if (tidy && impl && impl->get_home() != next->get_home())
-            {
-                wxFileName::Rmdir(impl->get_home(), wxPATH_RMDIR_FULL|wxPATH_RMDIR_RECURSIVE);
-            }
-
-            impl = next;
-            return impl;
-        }
-    };
+        s_context = context;
+        return context;
+    }
 
     bool IsEqual(ServicePtr lhs, ServicePtr rhs)
     {
@@ -120,7 +89,7 @@ namespace WebPier
                 Obscure
             };
 
-            auto context = Context::Get();
+            auto context = GetContext();
             if (IsExport())
             {
                 if (!m_origin.name.empty())
@@ -138,7 +107,7 @@ namespace WebPier
 
         void Purge() noexcept(false) override
         {
-            auto context = Context::Get();
+            auto context = GetContext();
             if (IsExport())
             {
                 if (!m_origin.name.empty())
@@ -248,7 +217,7 @@ namespace WebPier
             Revert();
         }
 
-        void Store(bool tidy) noexcept(false) override
+        void Store() noexcept(false) override
         {
             webpier::config actual {
                 Host.ToStdString(),
@@ -266,7 +235,9 @@ namespace WebPier
                 Autostart
             };
 
-            Context::Switch(Host, tidy)->set_config(actual);
+            GetContext()->set_config(actual);
+
+            m_origin = actual;
         }
 
         void Revert() noexcept(true) override
@@ -290,7 +261,7 @@ namespace WebPier
     ConfigPtr GetConfig() noexcept(false)
     {
         webpier::config config;
-        Context::Get()->get_config(config);
+        GetContext()->get_config(config);
         return ConfigPtr(new ConfigImpl(config));
     }
 
@@ -298,7 +269,7 @@ namespace WebPier
     {
         ServiceList collection;
         std::vector<webpier::service> list;
-        Context::Get()->get_export_services(list);
+        GetContext()->get_export_services(list);
         for (const auto& item : list)
         {
             ServicePtr ptr(new ExportService(item));
@@ -311,7 +282,7 @@ namespace WebPier
     {
         ServiceList collection;
         std::vector<webpier::service> list;
-        Context::Get()->get_import_services(list);
+        GetContext()->get_import_services(list);
         for (const auto& item : list)
         {
             ServicePtr ptr(new ImportService(item));
@@ -325,7 +296,7 @@ namespace WebPier
     {
         wxArrayString array;
         std::vector<std::string> list;
-        Context::Get()->get_peers(list);
+        GetContext()->get_peers(list);
         for (const auto& item : list)
             array.Add(item);
         return array;
@@ -336,7 +307,7 @@ namespace WebPier
         auto isUsedForRemote = [&]()
         {
             std::vector<webpier::service> list;
-            Context::Get()->get_import_services(list);
+            GetContext()->get_import_services(list);
             auto iter = std::find_if(list.begin(), list.end(), [&id](const auto& item)
             {
                 return item.peer == id;
@@ -347,7 +318,7 @@ namespace WebPier
         auto isUsedForLocal = [&]()
         {
             std::vector<webpier::service> list;
-            Context::Get()->get_export_services(list);
+            GetContext()->get_export_services(list);
             auto iter = std::find_if(list.begin(), list.end(), [peer = id.ToStdString()](const auto& item)
             {
                 return item.peer.find(peer) != std::string::npos;
@@ -365,22 +336,22 @@ namespace WebPier
 
     void AddPeer(const wxString& id, const wxString& cert) noexcept(false)
     {
-        Context::Get()->add_peer(id.ToStdString(), cert.ToStdString());
+        GetContext()->add_peer(id.ToStdString(), cert.ToStdString());
     }
 
     void DelPeer(const wxString& id) noexcept(false)
     {
-        Context::Get()->del_peer(id.ToStdString());
+        GetContext()->del_peer(id.ToStdString());
     }
 
     wxString GetCertificate(const wxString& id) noexcept(false)
     {
-        return Context::Get()->get_certificate(id.ToStdString());
+        return GetContext()->get_certificate(id.ToStdString());
     }
 
     wxString GetFingerprint(const wxString& id) noexcept(false)
     {
-        return Context::Get()->get_fingerprint(id.ToStdString());
+        return GetContext()->get_fingerprint(id.ToStdString());
     }
 
     void WriteExchangeFile(const wxString& file, const Exchange& data) noexcept(false)

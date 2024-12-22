@@ -21,5 +21,5 @@ namespace slipway
         virtual void review(const slipway::handle& service, slipway::report& result) noexcept(false) = 0;
     };
 
-    std::shared_ptr<client> open_client(const std::string& context) noexcept(false);
+    std::shared_ptr<client> open_client(const std::string& home) noexcept(false);
 }

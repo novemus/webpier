@@ -1,6 +1,5 @@
 #include "../channel.h"
 #include <filesystem>
-#include <thread>
 #include <boost/asio.hpp>
 #include <boost/scope_exit.hpp>
 #include <boost/test/unit_test.hpp>

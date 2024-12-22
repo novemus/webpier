@@ -263,13 +263,11 @@ void CSettingsDialog::onOkButtonClick(wxCommandEvent& event)
         return;
     }
 
-    bool tidy = false;
     auto host = m_ownerCtrl->GetValue() + '/' + m_pierCtrl->GetValue();
     if (!m_config->Host.IsEmpty() && host != m_config->Host)
     {
-        CMessageDialog dialog(this, _("You have changed your WebPier identity. This will cause the service context to\nswitch. The current services will become unavailable. You can delete the current\ncontext permanently or retain it to switch back later by restoring the identity.\n\nDo you want to delete the current context?"), wxDEFAULT_DIALOG_STYLE|wxICON_QUESTION);
-        if (dialog.ShowModal() == wxID_YES)
-            tidy = true;
+        CMessageDialog dialog(this, _("You have changed your WebPier identity. This will cause the service\ncontext to switch. The current services will become unavailable. To\nswitch context back you must restore WebPier identity."), wxDEFAULT_DIALOG_STYLE|wxICON_WARNING);
+        dialog.ShowModal();
     }
 
     m_config->Host = host;
@@ -292,6 +290,6 @@ void CSettingsDialog::onOkButtonClick(wxCommandEvent& event)
     m_config->EmailX509Key = m_keyPicker->GetPath();
     m_config->EmailX509Ca = m_caPicker->GetPath();
 
-    m_config->Store(tidy);
+    m_config->Store();
     event.Skip();
 }

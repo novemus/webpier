@@ -62,8 +62,6 @@ namespace webpier
     {
         virtual ~context() {}
 
-        virtual std::string get_home() const noexcept(true) = 0;
-
         virtual void get_config(config& info) const noexcept(true) = 0;
         virtual void set_config(const config& info) noexcept(false) = 0;
 
@@ -84,6 +82,5 @@ namespace webpier
         virtual std::string get_fingerprint(const std::string& peer) const noexcept(false) = 0;
     };
 
-    std::shared_ptr<context> open_context(const std::string& link) noexcept(false);
-    std::shared_ptr<context> open_context(const std::string& link, const std::string& host, bool tidy = false) noexcept(false);
+    std::shared_ptr<context> open_context(const std::string& home) noexcept(false);
 }

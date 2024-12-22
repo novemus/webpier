@@ -57,7 +57,7 @@ namespace WebPier
         bool Autostart;
 
         virtual ~Config() {}
-        virtual void Store(bool tidy) noexcept(false) = 0;
+        virtual void Store() noexcept(false) = 0;
         virtual void Revert() noexcept(true) = 0;
     };
 

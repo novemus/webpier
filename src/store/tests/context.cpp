@@ -1,5 +1,5 @@
 #include "../context.h"
-#include "../../utils.h"
+#include "../utils.h"
 #include <boost/test/unit_test.hpp>
 #include <boost/scope_exit.hpp>
 #include <filesystem>
@@ -7,7 +7,7 @@
 BOOST_AUTO_TEST_CASE(context)
 {
     auto dest = std::filesystem::current_path() / std::to_string(std::time(0));
-    auto link = dest / "webier";
+    auto link = dest / "context";
 
     BOOST_REQUIRE_NO_THROW(std::filesystem::create_directory(dest));
 
@@ -20,11 +20,7 @@ BOOST_AUTO_TEST_CASE(context)
     std::string host = "host@mail.box/test";
     std::string peer = "peer@mail.box/test";
 
-    auto context = webpier::open_context(link.string(), host);
-
-    BOOST_REQUIRE(std::filesystem::is_symlink(link));
-    BOOST_REQUIRE(std::filesystem::is_directory(std::filesystem::read_symlink(link)));
-    BOOST_CHECK_EQUAL(std::filesystem::read_symlink(link).parent_path(), dest);
+    auto context = webpier::open_context(dest);
 
     webpier::config in {
         peer,
@@ -40,7 +36,10 @@ BOOST_AUTO_TEST_CASE(context)
             "/some/path/ca.pem"
         }};
 
-    BOOST_REQUIRE_THROW(context->set_config(in), webpier::usage_error);
+    BOOST_REQUIRE_NO_THROW(context->set_config(in));
+
+    BOOST_REQUIRE(std::filesystem::is_symlink(link));
+    BOOST_REQUIRE(std::filesystem::is_directory(std::filesystem::read_symlink(link)));
 
     in.host = host;
 
