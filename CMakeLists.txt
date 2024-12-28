@@ -55,7 +55,7 @@ add_executable(${PROJECT_NAME} WIN32
     src/ui/context.cpp
     src/store/context.cpp
     src/store/utils.cpp
-    src/slipway/channel.cpp
+    src/slipway/message.cpp
     src/slipway/client.cpp
     )
 
@@ -69,7 +69,7 @@ endif()
 set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "d")
 
 set(SLIPWAY_MODULE slipway)
-add_executable(${SLIPWAY_MODULE} WIN32 src/slipway/server.cpp src/slipway/channel.cpp)
+add_executable(${SLIPWAY_MODULE} WIN32 src/slipway/message.cpp src/slipway/server.cpp)
 if(WIN32)
     target_link_libraries(${SLIPWAY_MODULE} PRIVATE ${wxWidgets_LIBRARIES} Boost::property_tree Boost::coroutine)
 else()
@@ -79,7 +79,7 @@ set_target_properties(${SLIPWAY_MODULE} PROPERTIES DEBUG_POSTFIX "d")
 
 if(BUILD_TESTING)
     set(WEBPIER_UT webpier_ut)
-    add_executable(${WEBPIER_UT} src/store/tests/utils.cpp src/store/tests/context.cpp src/slipway/tests/channel.cpp src/store/context.cpp src/slipway/channel.cpp src/store/utils.cpp)
+    add_executable(${WEBPIER_UT} src/store/tests/utils.cpp src/store/tests/context.cpp src/slipway/tests/message.cpp src/store/context.cpp src/slipway/message.cpp src/store/utils.cpp)
     target_compile_definitions(${WEBPIER_UT} PRIVATE BOOST_BIND_GLOBAL_PLACEHOLDERS)
     target_include_directories(${WEBPIER_UT} PRIVATE ${Boost_INCLUDE_DIRS})
     if(WIN32)

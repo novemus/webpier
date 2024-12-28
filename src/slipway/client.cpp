@@ -1,109 +1,163 @@
-#include "client.h"
-#include "channel.h"
-#include <fstream>
-#include <filesystem>
+#include "slipway.h"
+#include <iostream>
 #include <boost/asio.hpp>
 #include <boost/asio/spawn.hpp>
-#include <boost/process/async_pipe.hpp>
-#include <boost/interprocess/sync/file_lock.hpp>
-#include <boost/interprocess/sync/scoped_lock.hpp>
 
 namespace slipway
 {
-    constexpr const char* push_pipe_name = "client.pipe";
-    constexpr const char* pull_pipe_name = "server.pipe";
-    constexpr const char* lock_file_name = "client.lock";
+    constexpr const char* slipway_jack_name = "slipway.jack";
 
-    class client_impl : public client
+    class client : public daemon
     {
-        boost::interprocess::file_lock m_locker;
-        std::shared_ptr<channel> m_channel;
+        boost::asio::io_context m_io;
+        boost::asio::local::stream_protocol::socket m_socket;
 
-        template<class result = std::string>
-        result submit(const message& data)
+        void execute(const std::function<void(boost::asio::yield_context yield)>& function) noexcept(false)
         {
-            boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(m_locker);
+            m_io.restart();
 
-            message back;
+            boost::asio::spawn(m_io, [&](boost::asio::yield_context yield)
+            {
+                boost::asio::deadline_timer timer(m_io);
 
-            m_channel->push(data);
-            m_channel->pull(back);
+                timer.expires_from_now(boost::posix_time::seconds(30));
+                timer.async_wait([&](const boost::system::error_code& error)
+                {
+                    if(error)
+                    {
+                        if (error == boost::asio::error::operation_aborted)
+                            return;
 
-            if (!back.ok())
-                throw task_error(std::get<std::string>(back.payload));
+                        std::cerr << error.message() << std::endl;
+                    }
 
-            return std::get<result>(back.payload);
+                    try
+                    {
+                        m_socket.cancel();
+                    }
+                    catch (const std::exception &ex)
+                    {
+                        std::cerr << ex.what() << std::endl;
+                    }
+                });
+
+                function(yield);
+
+                boost::system::error_code ec;
+                timer.cancel(ec);
+            });
+
+            m_io.run();
         }
 
-        static boost::interprocess::file_lock open_lock_file(const std::string& file)
+        template<class result = std::string>
+        result perform(const message& request)
         {
-            if (!std::filesystem::exists(file))
-                std::ofstream(file).close();
+            message response;
 
-            return boost::interprocess::file_lock(file.c_str());
+            execute([&](boost::asio::yield_context yield)
+            {
+                boost::asio::streambuf buffer;
+                push_message(buffer, request);
+
+                boost::system::error_code ec;
+                boost::asio::async_write(m_socket, buffer, yield[ec]);
+
+                if (ec)
+                    throw pipe_error(ec.message());
+
+                boost::asio::async_read_until(m_socket, buffer, '\n', yield[ec]);
+
+                if (ec)
+                    throw pipe_error(ec.message());
+
+                pull_message(buffer, response);
+            });
+
+            if (!response.ok())
+                throw task_error(std::get<std::string>(response.payload));
+
+            return std::get<result>(response.payload);
         }
 
     public:
 
-        client_impl(const std::string& home)
-            : m_locker(open_lock_file(home + "/" + lock_file_name))
-            , m_channel(create_channel(home + "/" + pull_pipe_name, home + "/" + push_pipe_name))
+        client(const std::string& home)
+            : m_socket(m_io)
         {
+            execute([&](boost::asio::yield_context yield)
+            {
+                boost::system::error_code ec;
+                m_socket.async_connect(home + "/" + slipway_jack_name, yield[ec]);
+
+                if (ec)
+                    throw pipe_error(ec.message());
+            });
         }
 
-        void launch() noexcept(false) override
+        void adjust() noexcept(false) override
         {
-            submit(message::make(message::launch));
+            perform(message::make(message::adjust));
         }
 
-        void finish() noexcept(false) override
+        void unplug() noexcept(false) override
         {
-            submit(message::make(message::finish));
+            perform(message::make(message::unplug));
+        }
+
+        void engage() noexcept(false) override
+        {
+            perform(message::make(message::engage));
         }
 
         void reboot() noexcept(false) override
         {
-            submit(message::make(message::reboot));
+            perform(message::make(message::reboot));
         }
 
-        void status(std::vector<slipway::wealth>& result) noexcept(false) override
+        void status(std::vector<slipway::health>& result) noexcept(false) override
         {
-            result = submit<std::vector<slipway::wealth>>(message::make(message::status));
+            perform<std::vector<slipway::health>>(message::make(message::status));
         }
 
         void review(std::vector<slipway::report>& result) noexcept(false) override
         {
-            result = submit<std::vector<slipway::report>>(message::make(message::review));
+            perform<std::vector<slipway::report>>(message::make(message::review));
         }
 
-        void launch(const handle& service) noexcept(false) override
+        void adjust(const handle& service) noexcept(false) override
         {
-            submit(message::make(message::launch, service));
+            perform(message::make(message::adjust, service));
         }
 
-        void finish(const handle& service) noexcept(false) override
+        void unplug(const handle& service) noexcept(false) override
         {
-            submit(message::make(message::finish, service));
+            perform(message::make(message::unplug, service));
+        }
+
+        void engage(const handle& service) noexcept(false) override
+        {
+            perform(message::make(message::engage, service));
         }
 
         void reboot(const handle& service) noexcept(false) override
         {
-            submit(message::make(message::reboot, service));
+            perform(message::make(message::reboot, service));
         }
 
-        void status(const handle& service, slipway::wealth& result) noexcept(false) override
+        void status(const handle& service, slipway::health& result) noexcept(false) override
         {
-            result = submit<slipway::wealth>(message::make(message::status, service));
+            perform<slipway::health>(message::make(message::status, service));
         }
 
         void review(const handle& service, slipway::report& result) noexcept(false) override
         {
-            result = submit<slipway::report>(message::make(message::review, service));
+            perform<slipway::report>(message::make(message::review, service));
         }
     };
 
-    std::shared_ptr<client> open_client(const std::string& home) noexcept(false)
+    std::shared_ptr<daemon> create_client(const std::string& home) noexcept(false)
     {
-        return std::make_shared<client_impl>(home);
+        return std::make_shared<client>(home);
     }
 }

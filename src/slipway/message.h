@@ -3,7 +3,6 @@
 #include <vector>
 #include <variant>
 #include <stdexcept>
-#include <memory>
 #include <boost/asio.hpp>
 
 namespace slipway
@@ -16,10 +15,11 @@ namespace slipway
         std::string node;
         std::string service;
 
+        bool operator<(const handle& other) const { return node < other.node || service < other.service; }
         bool operator==(const handle& other) const { return node == other.node && service == other.service; }
     };
 
-    struct wealth : public handle
+    struct health : public handle
     {
         enum status
         {
@@ -30,45 +30,48 @@ namespace slipway
 
         status state;
 
-        bool operator==(const wealth& other) const { return handle::operator==(other) && state == other.state; }
+        bool operator<(const health& other) const { return handle::operator<(other) || state < other.state; }
+        bool operator==(const health& other) const { return handle::operator==(other) && state == other.state; }
     };
 
-    struct report : public wealth
+    struct report : public health
     {
         struct linkage
         {
             std::string peer;
-            std::string logfile;
             int pid;
 
-            bool operator==(const linkage& other) const { return peer == other.peer && logfile == other.logfile && pid == other.pid; }
+            bool operator<(const linkage& other) const { return peer < other.peer || pid < other.pid; }
+            bool operator==(const linkage& other) const { return peer == other.peer && pid == other.pid; }
         };
 
-        std::string logfile;
         std::vector<linkage> context;
 
-        bool operator==(const report& other) const { return wealth::operator==(other) && logfile == other.logfile && context == other.context; }
+        bool operator<(const report& other) const { return health::operator<(other) || context < other.context; }
+        bool operator==(const report& other) const { return health::operator==(other) && context == other.context; }
     };
 
     struct message
     {
         enum command
         {
+            naught,
+            adjust,
+            unplug,
+            engage,
             reboot,
-            launch,
-            finish,
             status,
             review
         };
 
         using content = std::variant<std::string, // error
                                      slipway::handle,
-                                     slipway::wealth,
+                                     slipway::health,
                                      slipway::report,
-                                     std::vector<slipway::wealth>,
+                                     std::vector<slipway::health>,
                                      std::vector<slipway::report>>;
 
-        command action;
+        command action = command::naught;
         content payload;
 
         static message make(command action) noexcept(true)
@@ -83,19 +86,10 @@ namespace slipway
 
         bool ok() const noexcept(true)
         {
-            return payload.index() != 0 || std::get<std::string>(payload).empty();
+            return action != command::naught && (payload.index() != 0 || std::get<std::string>(payload).empty());
         }
     };
 
-    void put_message(boost::asio::streambuf& buffer, const message& message) noexcept(true);
-    void get_message(boost::asio::streambuf& buffer, message& message) noexcept(false);
-
-    struct channel
-    {
-        virtual ~channel() {}
-        virtual void push(const message& data) noexcept(false) = 0;
-        virtual void pull(message& data) noexcept(false) = 0;
-    };
-
-    std::shared_ptr<channel> create_channel(const std::string& source, const std::string& sink) noexcept(false);
+    void push_message(boost::asio::streambuf& buffer, const message& message) noexcept(true);
+    void pull_message(boost::asio::streambuf& buffer, message& message) noexcept(false);
 }

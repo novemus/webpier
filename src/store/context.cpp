@@ -12,7 +12,7 @@ namespace webpier
     constexpr const char* cert_file_name = "cert.crt";
     constexpr const char* key_file_name = "private.key";
     constexpr const char* conf_file_name = "webpier.json";
-    constexpr const char* lock_file_name = "client.lock";
+    constexpr const char* lock_file_name = "context.lock";
     constexpr const char* link_dir_name = "context";
     constexpr const char* repo_dir_name = "repo";
 
@@ -145,7 +145,7 @@ namespace webpier
                     boost::property_tree::read_json(file.string(), doc);
 
                     auto& services = m_bundle[id];
-                    
+
                     boost::property_tree::ptree array;
                     for (auto& item : doc.get_child("services", array))
                     {
