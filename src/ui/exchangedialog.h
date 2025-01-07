@@ -29,22 +29,17 @@ class CImportPage : public wxPanel
     wxStaticText* m_nameValue;
     wxStaticText* m_addressLabel;
     wxTextCtrl* m_addressCtrl;
-    wxStaticText* m_gateLabel;
-    wxTextCtrl* m_gateCtrl;
     wxStaticText* m_startLabel;
     wxCheckBox* m_startCtrl;
     wxStaticText* m_obscureLabel;
     wxStaticText* m_obscureValue;
-    wxStaticText* m_bootLabel;
-    wxStaticText* m_bootValue;
-    wxStaticText* m_netLabel;
-    wxStaticText* m_netValue;
+    wxStaticText* m_rendLabel;
+    wxStaticText* m_rendValue;
 
     wxVector<WebPier::ServicePtr> m_import;
 
     void onListItemSelected( wxCommandEvent& event );
     void onServiceCtrlKillFocus( wxFocusEvent& event );
-	void onGatewayCtrlKillFocus( wxFocusEvent& event );
 	void onAutostartCheckBox( wxCommandEvent& event );
     void populate(int line);
 
@@ -64,16 +59,12 @@ class CExportPage : public wxPanel
     wxStaticText* m_nameValue;
     wxStaticText* m_addressLabel;
     wxStaticText* m_addressValue;
-    wxStaticText* m_gateLabel;
-    wxStaticText* m_gateValue;
     wxStaticText* m_startLabel;
     wxStaticText* m_startValue;
     wxStaticText* m_obscureLabel;
     wxStaticText* m_obscureValue;
-    wxStaticText* m_bootLabel;
-    wxStaticText* m_bootValue;
-    wxStaticText* m_netLabel;
-    wxStaticText* m_netValue;
+    wxStaticText* m_rendLabel;
+    wxStaticText* m_rendValue;
 
     wxVector<WebPier::ServicePtr> m_export;
 

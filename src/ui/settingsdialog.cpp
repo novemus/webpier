@@ -37,8 +37,8 @@ CSettingsDialog::CSettingsDialog(WebPier::ConfigPtr config, wxWindow* parent, wx
     ownerLabel->Wrap( -1 );
     idGridSizer->Add( ownerLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
-    m_ownerCtrl = new wxTextCtrl( idSizer->GetStaticBox(), wxID_ANY, m_config->Host.Before('/'), wxDefaultPosition, wxDefaultSize, 0);
-    m_ownerCtrl->SetToolTip( _("Email address to represent you to your peers and use it for email rendezvous") );
+    m_ownerCtrl = new wxTextCtrl( idSizer->GetStaticBox(), wxID_ANY, m_config->Pier.Before('/'), wxDefaultPosition, wxDefaultSize, 0);
+    m_ownerCtrl->SetToolTip( _("Email address to represent you to owners of remote piers") );
     m_ownerCtrl->SetValidator(wxTextValidator(wxFILTER_EXCLUDE_CHAR_LIST));
     ((wxTextValidator*)m_ownerCtrl->GetValidator())->SetCharExcludes(FORBIDDEN_PATH_CHARS);
 
@@ -49,7 +49,7 @@ CSettingsDialog::CSettingsDialog(WebPier::ConfigPtr config, wxWindow* parent, wx
     pierLabel->Wrap( -1 );
     idGridSizer->Add( pierLabel, 0, wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
 
-    m_pierCtrl = new wxTextCtrl( idSizer->GetStaticBox(), wxID_ANY, m_config->Host.After('/'), wxDefaultPosition, wxDefaultSize, 0 );
+    m_pierCtrl = new wxTextCtrl( idSizer->GetStaticBox(), wxID_ANY, m_config->Pier.After('/'), wxDefaultPosition, wxDefaultSize, 0 );
     m_pierCtrl->SetToolTip( _("Identifier of this pier") );
     m_pierCtrl->SetValidator(wxTextValidator(wxFILTER_EXCLUDE_CHAR_LIST));
     ((wxTextValidator*)m_pierCtrl->GetValidator())->SetCharExcludes(FORBIDDEN_PATH_CHARS);
@@ -105,7 +105,7 @@ CSettingsDialog::CSettingsDialog(WebPier::ConfigPtr config, wxWindow* parent, wx
     m_notebook->AddPage( natPanel, _("NAT"), false );
     wxPanel* dhtPanel;
     dhtPanel = new wxPanel( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-    dhtPanel->SetToolTip( _("DHT rendezvous settings") );
+    dhtPanel->SetToolTip( _("DHT node settings") );
 
     wxBoxSizer* dhtSizer;
     dhtSizer = new wxBoxSizer( wxVERTICAL );
@@ -124,14 +124,14 @@ CSettingsDialog::CSettingsDialog(WebPier::ConfigPtr config, wxWindow* parent, wx
     m_dhtBootCtrl = new wxTextCtrl( dhtPanel, wxID_ANY, m_config->DhtBootstrap, wxDefaultPosition, wxSize( -1,-1 ), 0 );
     dhtGridSizer->Add( m_dhtBootCtrl, 0, wxEXPAND|wxTOP|wxRIGHT|wxLEFT|wxALIGN_CENTER_VERTICAL, 5 );
 
-    wxStaticText* dhtNetLabel;
-    dhtNetLabel = new wxStaticText( dhtPanel, wxID_ANY, _("Network"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
-    dhtNetLabel->Wrap( -1 );
-    dhtGridSizer->Add( dhtNetLabel, 0, wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
+    wxStaticText* dhtPortLabel;
+    dhtPortLabel = new wxStaticText( dhtPanel, wxID_ANY, _("Port"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
+    dhtPortLabel->Wrap( -1 );
+    dhtGridSizer->Add( dhtPortLabel, 0, wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
 
-    m_dhtNetCtrl = new wxTextCtrl( dhtPanel, wxID_ANY, wxString::Format(wxT("%d"), (int)m_config->DhtNetwork), wxDefaultPosition, wxDefaultSize, 0 );
-    m_dhtNetCtrl->SetValidator( wxIntegerValidator<unsigned int>() );
-    dhtGridSizer->Add( m_dhtNetCtrl, 0, wxALIGN_CENTER_VERTICAL|wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
+    m_dhtPortCtrl = new wxTextCtrl( dhtPanel, wxID_ANY, wxString::Format(wxT("%d"), (int)m_config->DhtPort), wxDefaultPosition, wxDefaultSize, 0 );
+    m_dhtPortCtrl->SetValidator( wxIntegerValidator<unsigned int>() );
+    dhtGridSizer->Add( m_dhtPortCtrl, 0, wxALIGN_CENTER_VERTICAL|wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
 
     dhtSizer->Add( dhtGridSizer, 0, wxALL|wxEXPAND, 5 );
 
@@ -263,14 +263,14 @@ void CSettingsDialog::onOkButtonClick(wxCommandEvent& event)
         return;
     }
 
-    auto host = m_ownerCtrl->GetValue() + '/' + m_pierCtrl->GetValue();
-    if (!m_config->Host.IsEmpty() && host != m_config->Host)
+    auto pier = m_ownerCtrl->GetValue() + '/' + m_pierCtrl->GetValue();
+    if (!m_config->Pier.IsEmpty() && pier != m_config->Pier)
     {
         CMessageDialog dialog(this, _("You have changed your WebPier identity. This will cause the service\ncontext to switch. The current services will become unavailable. To\nswitch context back you must restore WebPier identity."), wxDEFAULT_DIALOG_STYLE|wxICON_WARNING);
         dialog.ShowModal();
     }
 
-    m_config->Host = host;
+    m_config->Pier = pier;
 
     m_config->StunServer = m_stunCtrl->GetValue();
     uint32_t hops = m_config->PunchHops;
@@ -278,9 +278,9 @@ void CSettingsDialog::onOkButtonClick(wxCommandEvent& event)
     m_config->PunchHops = static_cast<uint8_t>(hops);
 
     m_config->DhtBootstrap = m_dhtBootCtrl->GetValue();
-    uint32_t net = m_config->DhtNetwork;
-    m_dhtNetCtrl->GetValue().ToUInt(&net);
-    m_config->DhtNetwork = net;
+    uint32_t port = m_config->DhtPort;
+    m_dhtPortCtrl->GetValue().ToUInt(&port);
+    m_config->DhtPort = port;
 
     m_config->SmtpServer = m_smtpCtrl->GetValue();
     m_config->ImapServer = m_imapCtrl->GetValue();

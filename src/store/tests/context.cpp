@@ -41,33 +41,32 @@ BOOST_AUTO_TEST_CASE(context)
     BOOST_REQUIRE(std::filesystem::is_symlink(link));
     BOOST_REQUIRE(std::filesystem::is_directory(std::filesystem::read_symlink(link)));
 
-    in.host = host;
+    in.pier = host;
 
     BOOST_REQUIRE_NO_THROW(context->set_config(in));
 
     webpier::config out;
     context->get_config(out);
 
-    BOOST_CHECK_EQUAL(out.host, in.host);
-    BOOST_CHECK_EQUAL(out.traverse.stun, in.traverse.stun);
-    BOOST_CHECK_EQUAL(out.traverse.hops, in.traverse.hops);
-    BOOST_CHECK_EQUAL(out.rendezvous.bootstrap, in.rendezvous.bootstrap);
-    BOOST_CHECK_EQUAL(out.rendezvous.network, in.rendezvous.network);
-    BOOST_CHECK_EQUAL(out.emailer.smtp, in.emailer.smtp);
-    BOOST_CHECK_EQUAL(out.emailer.imap, in.emailer.imap);
-    BOOST_CHECK_EQUAL(out.emailer.login, in.emailer.login);
-    BOOST_CHECK_EQUAL(out.emailer.password, in.emailer.password);
-    BOOST_CHECK_EQUAL(out.emailer.cert, in.emailer.cert);
-    BOOST_CHECK_EQUAL(out.emailer.key, in.emailer.key);
-    BOOST_CHECK_EQUAL(out.emailer.ca, in.emailer.ca);
+    BOOST_CHECK_EQUAL(out.pier, in.pier);
+    BOOST_CHECK_EQUAL(out.nat.stun, in.nat.stun);
+    BOOST_CHECK_EQUAL(out.nat.hops, in.nat.hops);
+    BOOST_CHECK_EQUAL(out.dht.bootstrap, in.dht.bootstrap);
+    BOOST_CHECK_EQUAL(out.dht.port, in.dht.port);
+    BOOST_CHECK_EQUAL(out.email.smtp, in.email.smtp);
+    BOOST_CHECK_EQUAL(out.email.imap, in.email.imap);
+    BOOST_CHECK_EQUAL(out.email.login, in.email.login);
+    BOOST_CHECK_EQUAL(out.email.password, in.email.password);
+    BOOST_CHECK_EQUAL(out.email.cert, in.email.cert);
+    BOOST_CHECK_EQUAL(out.email.key, in.email.key);
+    BOOST_CHECK_EQUAL(out.email.ca, in.email.ca);
     BOOST_CHECK_EQUAL(out.autostart, in.autostart);
 
     webpier::service service {
         "foo",
         peer,
         "127.0.0.1:1234",
-        "127.0.0.1:5678",
-        {},
+        "bootstrap.dht",
         true,
         false
         };
@@ -76,11 +75,11 @@ BOOST_AUTO_TEST_CASE(context)
     auto peer_certificate = webpier::load_x509_cert(dest / "cert.crt");
     auto peer_fingerprint = webpier::get_x509_public_sha1(dest / "cert.crt");
 
-    BOOST_REQUIRE_NO_THROW(context->add_peer(peer, peer_certificate));
-    BOOST_REQUIRE_THROW(context->add_peer(peer, peer_certificate), webpier::usage_error);
+    BOOST_REQUIRE_NO_THROW(context->add_pier(peer, peer_certificate));
+    BOOST_REQUIRE_THROW(context->add_pier(peer, peer_certificate), webpier::usage_error);
 
     std::vector<std::string> list;
-    context->get_peers(list);
+    context->get_piers(list);
 
     BOOST_REQUIRE_EQUAL(list.size(), 1);
     BOOST_REQUIRE_EQUAL(list[0], peer);
@@ -103,18 +102,16 @@ BOOST_AUTO_TEST_CASE(context)
     BOOST_REQUIRE_THROW(context->add_import_service(service), webpier::usage_error);
 
     BOOST_REQUIRE_NO_THROW(context->del_export_service("foo"));
-    BOOST_REQUIRE_NO_THROW(context->del_import_service(service.peer, "foo"));
+    BOOST_REQUIRE_NO_THROW(context->del_import_service(service.pier, "foo"));
 
     std::vector<webpier::service> locals;
     context->get_export_services(locals);
 
     BOOST_REQUIRE_EQUAL(locals.size(), 1);
     BOOST_CHECK_EQUAL(service.name, locals[0].name);
-    BOOST_CHECK_EQUAL(service.peer, locals[0].peer);
+    BOOST_CHECK_EQUAL(service.pier, locals[0].pier);
     BOOST_CHECK_EQUAL(service.address, locals[0].address);
-    BOOST_CHECK_EQUAL(service.gateway, locals[0].gateway);
-    BOOST_CHECK_EQUAL(service.rendezvous.bootstrap, locals[0].rendezvous.bootstrap);
-    BOOST_CHECK_EQUAL(service.rendezvous.network, locals[0].rendezvous.network);
+    BOOST_CHECK_EQUAL(service.rendezvous, locals[0].rendezvous);
     BOOST_CHECK_EQUAL(service.autostart, locals[0].autostart);
     BOOST_CHECK_EQUAL(service.obscure, locals[0].obscure);
 
@@ -123,15 +120,13 @@ BOOST_AUTO_TEST_CASE(context)
 
     BOOST_REQUIRE_EQUAL(remotes.size(), 1);
     BOOST_CHECK_EQUAL(service.name, remotes[0].name);
-    BOOST_CHECK_EQUAL(service.peer, remotes[0].peer);
+    BOOST_CHECK_EQUAL(service.pier, remotes[0].pier);
     BOOST_CHECK_EQUAL(service.address, remotes[0].address);
-    BOOST_CHECK_EQUAL(service.gateway, remotes[0].gateway);
-    BOOST_CHECK_EQUAL(service.rendezvous.bootstrap, remotes[0].rendezvous.bootstrap);
-    BOOST_CHECK_EQUAL(service.rendezvous.network, remotes[0].rendezvous.network);
+    BOOST_CHECK_EQUAL(service.rendezvous, remotes[0].rendezvous);
     BOOST_CHECK_EQUAL(service.autostart, remotes[0].autostart);
     BOOST_CHECK_EQUAL(service.obscure, remotes[0].obscure);
 
-    BOOST_REQUIRE_NO_THROW(context->del_peer(peer));
+    BOOST_REQUIRE_NO_THROW(context->del_pier(peer));
 
     remotes.clear();
     context->get_import_services(remotes);

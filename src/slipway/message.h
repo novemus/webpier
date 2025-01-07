@@ -12,11 +12,11 @@ namespace slipway
 
     struct handle
     {
-        std::string node;
+        std::string pier;
         std::string service;
 
-        bool operator<(const handle& other) const { return node < other.node || service < other.service; }
-        bool operator==(const handle& other) const { return node == other.node && service == other.service; }
+        bool operator<(const handle& other) const { return pier < other.pier || service < other.service; }
+        bool operator==(const handle& other) const { return pier == other.pier && service == other.service; }
     };
 
     struct health : public handle
@@ -38,11 +38,11 @@ namespace slipway
     {
         struct linkage
         {
-            std::string peer;
+            std::string pier;
             int pid;
 
-            bool operator<(const linkage& other) const { return peer < other.peer || pid < other.pid; }
-            bool operator==(const linkage& other) const { return peer == other.peer && pid == other.pid; }
+            bool operator<(const linkage& other) const { return pier < other.pier || pid < other.pid; }
+            bool operator==(const linkage& other) const { return pier == other.pier && pid == other.pid; }
         };
 
         std::vector<linkage> context;

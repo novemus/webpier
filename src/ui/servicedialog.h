@@ -22,14 +22,12 @@ class CServiceDialog : public wxDialog
 {
     wxPropertyGrid* m_propGrid;
     wxPGProperty* m_nameItem;
-    wxPGProperty* m_peerItem;
+    wxPGProperty* m_pierItem;
     wxPGProperty* m_addrItem;
-    wxPGProperty* m_gateItem;
     wxPGProperty* m_obsItem;
     wxPGProperty* m_startItem;
     wxPGProperty* m_rendItem;
     wxPGProperty* m_bootItem;
-    wxPGProperty* m_netItem;
     wxButton* m_ok;
     wxButton* m_cancel;
     WebPier::ConfigPtr m_config;

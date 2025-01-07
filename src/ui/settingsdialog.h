@@ -34,7 +34,7 @@ class CSettingsDialog : public wxDialog
     wxTextCtrl* m_stunCtrl;
     wxTextCtrl* m_punchCtrl;
     wxTextCtrl* m_dhtBootCtrl;
-    wxTextCtrl* m_dhtNetCtrl;
+    wxTextCtrl* m_dhtPortCtrl;
     wxTextCtrl* m_smtpCtrl;
     wxTextCtrl* m_imapCtrl;
     wxTextCtrl* m_loginCtrl;

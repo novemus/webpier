@@ -33,19 +33,27 @@ CStartupDialog::CStartupDialog(wxWindow* parent, wxWindowID id, const wxString& 
     m_message = new wxStaticText(
         idSizer->GetStaticBox(),
         wxID_ANY,
-        _("The WebPier program is designed to forward TCP services running on machines located behind the NAT. This\n"
-          "is a completely P2P application and no third-party relay services are used to link local and remote machines. The\n"
-          "well-known UDP hole-punching technique is used to establish connections, and email or DHT-network is used as\n"
-          "a rendezvous service. Public key authentication is used for rendezvous security. The email service is also used to\n"
-          "invite owners of other machines to participate and to exchange public keys. Thus, to use the application, you at\n"
-          "least need to define the identifier of this pier, setup the built-in email client and define STUN server. Note that\n"
-          "the email address is a first part of pier's identifier and the pier name must be unique for the address when it is\n"
-          "used for another piers. To init the pier context you should define pier identifier right now."),
+        _("The WebPier program is designed to forward TCP services running on machines located behind the NAT. This is a\n"
+          "completely P2P application and no third-party services are used to relay connection between sides. The well-known\n"
+          "UDP-hole-punching technique is used to pass through the NAT, and email or DHT network is used as a rendezvous\n"
+          "service. Public key authentication is used for rendezvous security. To get started, you at least need to define the\n"
+          "identifier of this pier, then set up your preferred rendezvous service and define a STUN server. Note that the email\n"
+          "address is a first part of pier's identifier and the pier name must be unique for the address."),
         wxDefaultPosition,
         wxDefaultSize,
         0);
     m_message->Wrap(-1);
     idSizer->Add(m_message, 0, wxALL, 20);
+
+    m_prompt = new wxStaticText(
+        idSizer->GetStaticBox(),
+        wxID_ANY,
+        _("Define the pier identifier to init the WebPier context"),
+        wxDefaultPosition,
+        wxDefaultSize,
+        0);
+    m_prompt->Wrap(-1);
+    idSizer->Add(m_prompt, 0, wxALL | wxALIGN_CENTER_HORIZONTAL, 20);
 
     wxFlexGridSizer* idGridSizer;
     idGridSizer = new wxFlexGridSizer(0, 2, 5, 5);
@@ -58,7 +66,7 @@ CStartupDialog::CStartupDialog(wxWindow* parent, wxWindowID id, const wxString& 
     ownerLabel->Wrap(-1);
     idGridSizer->Add(ownerLabel, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT | wxLEFT, 5);
 
-    m_ownerCtrl = new wxTextCtrl(idSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(200, -1), 0);
+    m_ownerCtrl = new wxTextCtrl(idSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(250, -1), 0);
     m_ownerCtrl->SetToolTip(_("Email address to represent you to owners of remote piers"));
     m_ownerCtrl->SetValidator(wxTextValidator(wxFILTER_EXCLUDE_CHAR_LIST));
     ((wxTextValidator*)m_ownerCtrl->GetValidator())->SetCharExcludes(FORBIDDEN_PATH_CHARS);
@@ -70,7 +78,7 @@ CStartupDialog::CStartupDialog(wxWindow* parent, wxWindowID id, const wxString& 
     pierLabel->Wrap(-1);
     idGridSizer->Add(pierLabel, 0, wxALIGN_CENTER_VERTICAL | wxBOTTOM | wxRIGHT | wxLEFT, 5);
 
-    m_pierCtrl = new wxTextCtrl(idSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(200, -1), 0);
+    m_pierCtrl = new wxTextCtrl(idSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(250, -1), 0);
     m_pierCtrl->SetToolTip(_("Identifier of this pier"));
     m_pierCtrl->SetValidator(wxTextValidator(wxFILTER_EXCLUDE_CHAR_LIST));
     ((wxTextValidator*)m_ownerCtrl->GetValidator())->SetCharExcludes(FORBIDDEN_PATH_CHARS);
@@ -120,6 +128,7 @@ CStartupDialog::~CStartupDialog()
     delete m_logo;
     delete m_welcome;
     delete m_message;
+    delete m_prompt;
     delete m_ownerCtrl;
     delete m_pierCtrl;
 }

@@ -24,6 +24,7 @@ class CStartupDialog : public wxDialog
     wxStaticBitmap* m_logo;
     wxStaticText* m_welcome;
     wxStaticText* m_message;
+    wxStaticText* m_prompt;
     wxTextCtrl* m_ownerCtrl;
     wxTextCtrl* m_pierCtrl;
 

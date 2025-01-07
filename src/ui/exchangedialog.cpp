@@ -10,8 +10,8 @@ CImportPage::CImportPage(const wxString& pier, const WebPier::ServiceList& forIm
     mainSizer = new wxBoxSizer( wxVERTICAL );
 
     mainSizer->SetMinSize( wxSize( 400,-1 ) );
-    wxStaticBoxSizer* peerSizer;
-    peerSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, pier ), wxVERTICAL );
+    wxStaticBoxSizer* pierSizer;
+    pierSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, pier ), wxVERTICAL );
 
     wxBoxSizer* listSizer;
     listSizer = new wxBoxSizer( wxHORIZONTAL );
@@ -23,7 +23,7 @@ CImportPage::CImportPage(const wxString& pier, const WebPier::ServiceList& forIm
         choices.Add(item.second->Name);
     }
 
-    m_serviceList = new wxCheckListBox( peerSizer->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize( -1,10 ), choices, wxLB_SINGLE );
+    m_serviceList = new wxCheckListBox( pierSizer->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize( -1,10 ), choices, wxLB_SINGLE );
     listSizer->Add( m_serviceList, 0, wxALL|wxEXPAND, 5 );
 
     wxBoxSizer* tableSizer;
@@ -35,83 +35,53 @@ CImportPage::CImportPage(const wxString& pier, const WebPier::ServiceList& forIm
     serviceSizer->SetFlexibleDirection( wxHORIZONTAL );
     serviceSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-    m_nameLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Service"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_nameLabel = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _("Service"), wxDefaultPosition, wxDefaultSize, 0 );
     m_nameLabel->Wrap( -1 );
     serviceSizer->Add( m_nameLabel, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 
-    m_nameValue = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, 0 );
+    m_nameValue = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, 0 );
     m_nameValue->Wrap( -1 );
     serviceSizer->Add( m_nameValue, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 
-    m_addressLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Address"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_addressLabel = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _("Address"), wxDefaultPosition, wxDefaultSize, 0 );
     m_addressLabel->Wrap( -1 );
     m_addressLabel->SetToolTip( _("Local endpoint to map remote service") );
 
     serviceSizer->Add( m_addressLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
-    m_addressCtrl = new wxTextCtrl( peerSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+    m_addressCtrl = new wxTextCtrl( pierSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
     m_addressCtrl->SetToolTip( _("Local endpoint to map remote service") );
 
     serviceSizer->Add( m_addressCtrl, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
-    m_gateLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Gateway"), wxDefaultPosition, wxDefaultSize, 0 );
-    m_gateLabel->Wrap( -1 );
-    m_gateLabel->SetToolTip( _("Local endpoint to bind wormhole tunnel") );
-
-    serviceSizer->Add( m_gateLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
-
-    m_gateCtrl = new wxTextCtrl( peerSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-    m_gateCtrl->SetToolTip( _("Local endpoint to bind wormhole tunnel") );
-
-    serviceSizer->Add( m_gateCtrl, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
-
-    m_startLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Autostart"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_startLabel = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _("Autostart"), wxDefaultPosition, wxDefaultSize, 0 );
     m_startLabel->Wrap( -1 );
     serviceSizer->Add( m_startLabel, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
 
-    m_startCtrl = new wxCheckBox( peerSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+    m_startCtrl = new wxCheckBox( pierSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
     serviceSizer->Add( m_startCtrl, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
 
-    m_obscureLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Obscure"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_obscureLabel = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _("Obscure"), wxDefaultPosition, wxDefaultSize, 0 );
     m_obscureLabel->Wrap( -1 );
     serviceSizer->Add( m_obscureLabel, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
 
-    m_obscureValue = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("yes"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_obscureValue = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _("yes"), wxDefaultPosition, wxDefaultSize, 0 );
     m_obscureValue->Wrap( -1 );
     serviceSizer->Add( m_obscureValue, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
+
+    m_rendLabel = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _("Rendezvous"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_rendLabel->Wrap( -1 );
+    serviceSizer->Add( m_rendLabel, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
+
+    m_rendValue = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, 0 );
+    m_rendValue->Wrap( -1 );
+    serviceSizer->Add( m_rendValue, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
+
     tableSizer->Add( serviceSizer, 1, wxALL|wxEXPAND, 5 );
 
-    wxStaticBoxSizer* rendSizer;
-    rendSizer = new wxStaticBoxSizer( new wxStaticBox( peerSizer->GetStaticBox(), wxID_ANY, _("DHT") ), wxVERTICAL );
-
-    wxFlexGridSizer* rendGridSizer;
-    rendGridSizer = new wxFlexGridSizer( 0, 2, 0, 0 );
-    rendGridSizer->SetFlexibleDirection( wxHORIZONTAL );
-    rendGridSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-
-    m_bootLabel = new wxStaticText( rendSizer->GetStaticBox(), wxID_ANY, _("Bootstrap"), wxDefaultPosition, wxDefaultSize, 0 );
-    m_bootLabel->Wrap( -1 );
-    rendGridSizer->Add( m_bootLabel, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
-
-    m_bootValue = new wxStaticText( rendSizer->GetStaticBox(), wxID_ANY, _("bootstrap.jami.net:4222"), wxDefaultPosition, wxDefaultSize, 0 );
-    m_bootValue->Wrap( -1 );
-    rendGridSizer->Add( m_bootValue, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
-
-    m_netLabel = new wxStaticText( rendSizer->GetStaticBox(), wxID_ANY, _("Network"), wxDefaultPosition, wxDefaultSize, 0 );
-    m_netLabel->Wrap( -1 );
-    rendGridSizer->Add( m_netLabel, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
-
-    m_netValue = new wxStaticText( rendSizer->GetStaticBox(), wxID_ANY, _("0"), wxDefaultPosition, wxDefaultSize, 0 );
-    m_netValue->Wrap( -1 );
-    rendGridSizer->Add( m_netValue, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
-
-    rendSizer->Add( rendGridSizer, 0, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
-
-    tableSizer->Add( rendSizer, 0, wxEXPAND|wxALL, 5 );
-
     listSizer->Add( tableSizer, 1, wxEXPAND, 5 );
-    peerSizer->Add( listSizer, 1, wxALL|wxEXPAND, 5 );
-    mainSizer->Add( peerSizer, 1, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
+    pierSizer->Add( listSizer, 1, wxALL|wxEXPAND, 5 );
+    mainSizer->Add( pierSizer, 1, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
 
     this->SetSizer( mainSizer );
     this->Layout();
@@ -121,7 +91,6 @@ CImportPage::CImportPage(const wxString& pier, const WebPier::ServiceList& forIm
 
     m_serviceList->Connect(wxEVT_COMMAND_LISTBOX_SELECTED, wxCommandEventHandler(CImportPage::onListItemSelected), NULL, this);
     m_addressCtrl->Connect(wxEVT_KILL_FOCUS, wxFocusEventHandler(CImportPage::onServiceCtrlKillFocus), NULL, this);
-    m_gateCtrl->Connect(wxEVT_KILL_FOCUS, wxFocusEventHandler(CImportPage::onGatewayCtrlKillFocus), NULL, this);
     m_startCtrl->Connect(wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(CImportPage::onAutostartCheckBox), NULL, this);
 
     if (!m_import.empty())
@@ -138,16 +107,12 @@ CImportPage::~CImportPage()
     delete m_nameValue;
     delete m_addressLabel;
     delete m_addressCtrl;
-    delete m_gateLabel;
-    delete m_gateCtrl;
     delete m_startLabel;
     delete m_startCtrl;
     delete m_obscureLabel;
     delete m_obscureValue;
-    delete m_bootLabel;
-    delete m_bootValue;
-    delete m_netLabel;
-    delete m_netValue;
+    delete m_rendLabel;
+    delete m_rendValue;
 }
 
 void CImportPage::populate(int line)
@@ -159,11 +124,9 @@ void CImportPage::populate(int line)
 
     m_nameValue->SetLabel(service->Name);
     m_addressCtrl->SetValue(service->Address);
-    m_gateCtrl->SetValue(service->Gateway);
     m_startCtrl->SetValue(service->Autostart);
     m_obscureValue->SetLabel(service->Obscure ? _("yes") : _("no"));
-    m_bootValue->SetLabel(service->DhtBootstrap);
-    m_netValue->SetLabel(wxString::Format(wxT("%d"), (int)service->DhtNetwork));
+    m_rendValue->SetLabel(service->Rendezvous.IsEmpty() ? _("Email") : _("DHT"));
 
     this->Layout();
 }
@@ -190,22 +153,6 @@ void CImportPage::onServiceCtrlKillFocus(wxFocusEvent& event)
     event.Skip();
 }
 
-void CImportPage::onGatewayCtrlKillFocus(wxFocusEvent& event)
-{
-    if (m_import.empty())
-        return;
-
-    int line = m_serviceList->GetSelection();
-    if (line == wxNOT_FOUND)
-    {
-        line = 0;
-        m_serviceList->SetSelection(line);
-    }
-
-    m_import[line]->Gateway = m_gateCtrl->GetValue();
-    event.Skip();
-}
-
 void CImportPage::onAutostartCheckBox(wxCommandEvent& event)
 {
     if (m_import.empty())
@@ -229,9 +176,9 @@ bool CImportPage::ValidateData()
 
     for(auto index : checked)
     {
-        if (m_import[index]->Address.IsEmpty() || m_import[index]->Gateway.IsEmpty())
+        if (m_import[index]->Address.IsEmpty())
         {
-            CMessageDialog dialog(this, _("Define the 'service' and 'gateway' properties for all checked services"), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
+            CMessageDialog dialog(this, _("Define the 'service' properties for all checked services"), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
             dialog.ShowModal();
             return false;
         }
@@ -263,8 +210,8 @@ CExportPage::CExportPage(const wxString& pier, const WebPier::ServiceList& forEx
     mainSizer = new wxBoxSizer( wxVERTICAL );
 
     mainSizer->SetMinSize( wxSize( 400,-1 ) );
-    wxStaticBoxSizer* peerSizer;
-    peerSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, pier ), wxVERTICAL );
+    wxStaticBoxSizer* pierSizer;
+    pierSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, pier ), wxVERTICAL );
 
     wxBoxSizer* listSizer;
     listSizer = new wxBoxSizer( wxHORIZONTAL );
@@ -276,11 +223,11 @@ CExportPage::CExportPage(const wxString& pier, const WebPier::ServiceList& forEx
         choices.Add(item.second->Name);
     }
 
-    m_serviceList = new wxCheckListBox( peerSizer->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize( -1,10 ), choices, wxLB_SINGLE );
+    m_serviceList = new wxCheckListBox( pierSizer->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize( -1,10 ), choices, wxLB_SINGLE );
 
     for (size_t i = 0; i < m_export.size(); ++i)
     {
-        if (m_export[i]->HasPeer(pier))
+        if (m_export[i]->HasPier(pier))
             m_serviceList->Check(i);
     }
 
@@ -295,82 +242,53 @@ CExportPage::CExportPage(const wxString& pier, const WebPier::ServiceList& forEx
     serviceSizer->SetFlexibleDirection( wxHORIZONTAL );
     serviceSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-    m_nameLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Service"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_nameLabel = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _("Service"), wxDefaultPosition, wxDefaultSize, 0 );
     m_nameLabel->Wrap( -1 );
     serviceSizer->Add( m_nameLabel, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    m_nameValue = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, 0 );
+    m_nameValue = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, 0 );
     m_nameValue->Wrap( -1 );
     serviceSizer->Add( m_nameValue, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    m_addressLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Address"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_addressLabel = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _("Address"), wxDefaultPosition, wxDefaultSize, 0 );
     m_addressLabel->Wrap( -1 );
     m_addressLabel->SetToolTip( _("Endpoint of the local service") );
 
     serviceSizer->Add( m_addressLabel, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    m_addressValue = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("0.0.0.0:0"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_addressValue = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _("0.0.0.0:0"), wxDefaultPosition, wxDefaultSize, 0 );
     m_addressValue->Wrap( -1 );
     serviceSizer->Add( m_addressValue, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    m_gateLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Gateway"), wxDefaultPosition, wxDefaultSize, 0 );
-    m_gateLabel->Wrap( -1 );
-    m_gateLabel->SetToolTip( _("Local endpoint to bind wormhole tunnel") );
-
-    serviceSizer->Add( m_gateLabel, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-
-    m_gateValue = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("0.0.0.0:0"), wxDefaultPosition, wxDefaultSize, 0 );
-    m_gateValue->Wrap( -1 );
-    serviceSizer->Add( m_gateValue, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-
-    m_startLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Autostart"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_startLabel = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _("Autostart"), wxDefaultPosition, wxDefaultSize, 0 );
     m_startLabel->Wrap( -1 );
     serviceSizer->Add( m_startLabel, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    m_startValue = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("no"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_startValue = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _("no"), wxDefaultPosition, wxDefaultSize, 0 );
     m_startValue->Wrap( -1 );
     serviceSizer->Add( m_startValue, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    m_obscureLabel = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("Obscure"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_obscureLabel = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _("Obscure"), wxDefaultPosition, wxDefaultSize, 0 );
     m_obscureLabel->Wrap( -1 );
     serviceSizer->Add( m_obscureLabel, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    m_obscureValue = new wxStaticText( peerSizer->GetStaticBox(), wxID_ANY, _("yes"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_obscureValue = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _("yes"), wxDefaultPosition, wxDefaultSize, 0 );
     m_obscureValue->Wrap( -1 );
     serviceSizer->Add( m_obscureValue, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
+    m_rendLabel = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _("Rendezvous"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_rendLabel->Wrap( -1 );
+    serviceSizer->Add( m_rendLabel, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
+
+    m_rendValue = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, 0 );
+    m_rendValue->Wrap( -1 );
+    serviceSizer->Add( m_rendValue, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
+
     tableSizer->Add( serviceSizer, 1, wxEXPAND|wxALL, 5 );
 
-    wxStaticBoxSizer* rendSizer;
-    rendSizer = new wxStaticBoxSizer( new wxStaticBox( peerSizer->GetStaticBox(), wxID_ANY, _("DHT") ), wxVERTICAL );
-
-    wxFlexGridSizer* rendGridSizer;
-    rendGridSizer = new wxFlexGridSizer( 0, 2, 0, 0 );
-    rendGridSizer->SetFlexibleDirection( wxHORIZONTAL );
-    rendGridSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-
-    m_bootLabel = new wxStaticText( rendSizer->GetStaticBox(), wxID_ANY, _("Bootstrap"), wxDefaultPosition, wxDefaultSize, 0 );
-    m_bootLabel->Wrap( -1 );
-    rendGridSizer->Add( m_bootLabel, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
-
-    m_bootValue = new wxStaticText( rendSizer->GetStaticBox(), wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, 0 );
-    m_bootValue->Wrap( -1 );
-    rendGridSizer->Add( m_bootValue, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
-
-    m_netLabel = new wxStaticText( rendSizer->GetStaticBox(), wxID_ANY, _("Network"), wxDefaultPosition, wxDefaultSize, 0 );
-    m_netLabel->Wrap( -1 );
-    rendGridSizer->Add( m_netLabel, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
-
-    m_netValue = new wxStaticText( rendSizer->GetStaticBox(), wxID_ANY, _("0"), wxDefaultPosition, wxDefaultSize, 0 );
-    m_netValue->Wrap( -1 );
-    rendGridSizer->Add( m_netValue, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
-
-    rendSizer->Add( rendGridSizer, 0, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
-
-    tableSizer->Add( rendSizer, 0, wxEXPAND|wxALL, 5 );
     listSizer->Add( tableSizer, 1, wxEXPAND, 5 );
-    peerSizer->Add( listSizer, 1, wxALL|wxEXPAND, 5 );
-    mainSizer->Add( peerSizer, 1, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
+    pierSizer->Add( listSizer, 1, wxALL|wxEXPAND, 5 );
+    mainSizer->Add( pierSizer, 1, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
 
     this->SetSizer( mainSizer );
     this->Layout();
@@ -394,16 +312,12 @@ CExportPage::~CExportPage()
     delete m_nameValue;
     delete m_addressLabel;
     delete m_addressValue;
-    delete m_gateLabel;
-    delete m_gateValue;
     delete m_startLabel;
     delete m_startValue;
     delete m_obscureLabel;
     delete m_obscureValue;
-    delete m_bootLabel;
-    delete m_bootValue;
-    delete m_netLabel;
-    delete m_netValue;
+    delete m_rendLabel;
+    delete m_rendValue;
 }
 
 void CExportPage::populate(int line)
@@ -415,11 +329,9 @@ void CExportPage::populate(int line)
 
     m_nameValue->SetLabel(service->Name);
     m_addressValue->SetLabel(service->Address);
-    m_gateValue->SetLabel(service->Gateway);
     m_startValue->SetLabel(service->Autostart ? _("yes") : _("no"));
     m_obscureValue->SetLabel(service->Obscure ? _("yes") : _("no"));
-    m_bootValue->SetLabel(service->DhtBootstrap);
-    m_netValue->SetLabel(wxString::Format(wxT("%d"), (int)service->DhtNetwork));
+    m_rendValue->SetLabel(service->Rendezvous.IsEmpty() ? _("Email") : _("DHT"));
 
     this->Layout();
 }

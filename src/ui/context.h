@@ -12,11 +12,9 @@ namespace WebPier
     struct Service
     {
         wxString Name;
-        wxString Peer;
+        wxString Pier;
         wxString Address;
-        wxString Gateway;
-        wxString DhtBootstrap;
-        wxUint32 DhtNetwork;
+        wxString Rendezvous;
         bool Autostart;
         bool Obscure;
 
@@ -24,9 +22,9 @@ namespace WebPier
         virtual void Store() noexcept(false) = 0;
         virtual void Purge() noexcept(false) = 0;
         virtual void Revert() noexcept(true) = 0;
-        virtual void AddPeer(const wxString& peer) noexcept(true) = 0;
-        virtual void DelPeer(const wxString& peer) noexcept(true) = 0;
-        virtual bool HasPeer(const wxString& peer) const noexcept(true) = 0;
+        virtual void AddPier(const wxString& pier) noexcept(true) = 0;
+        virtual void DelPier(const wxString& pier) noexcept(true) = 0;
+        virtual bool HasPier(const wxString& pier) const noexcept(true) = 0;
         virtual bool IsDirty() const noexcept(true) = 0;
         virtual bool IsExport() const noexcept(true) = 0;
         virtual bool IsImport() const noexcept(true) = 0;
@@ -42,11 +40,11 @@ namespace WebPier
 
     struct Config
     {
-        wxString Host;
+        wxString Pier;
         wxString StunServer;
         wxUint8 PunchHops;
         wxString DhtBootstrap;
-        wxUint32 DhtNetwork;
+        wxUint16 DhtPort;
         wxString SmtpServer;
         wxString ImapServer;
         wxString EmailLogin;
@@ -73,13 +71,13 @@ namespace WebPier
     ConfigPtr GetConfig() noexcept(false);
     ServiceList GetExportServices() noexcept(false);
     ServiceList GetImportServices() noexcept(false);
-    wxArrayString GetPeers() noexcept(false);
-    bool IsUselessPeer(const wxString& peer) noexcept(false);
-    bool IsUnknownPeer(const wxString& peer) noexcept(false);
-    void AddPeer(const wxString& peer, const wxString& cert) noexcept(false);
-    void DelPeer(const wxString& peer) noexcept(false);
-    wxString GetCertificate(const wxString& peer) noexcept(false);
-    wxString GetFingerprint(const wxString& peer) noexcept(false);
+    wxArrayString GetPiers() noexcept(false);
+    bool IsUselessPier(const wxString& pier) noexcept(false);
+    bool IsUnknownPier(const wxString& pier) noexcept(false);
+    void AddPier(const wxString& pier, const wxString& cert) noexcept(false);
+    void DelPier(const wxString& pier) noexcept(false);
+    wxString GetCertificate(const wxString& pier) noexcept(false);
+    wxString GetFingerprint(const wxString& pier) noexcept(false);
     void WriteExchangeFile(const wxString& file, const Exchange& data) noexcept(false);
     void ReadExchangeFile(const wxString& file, Exchange& data) noexcept(false);
 }

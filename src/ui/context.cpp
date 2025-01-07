@@ -33,13 +33,13 @@ namespace WebPier
         webpier::config config;
         context->get_config(config);
 
-        if (config.host.empty())
+        if (config.pier.empty())
         {
             CStartupDialog dialog(nullptr);
             if (dialog.ShowModal() == wxID_OK)
-                config.host = dialog.GetIdentity().ToStdString();
+                config.pier = dialog.GetIdentity().ToStdString();
 
-            if (config.host.empty())
+            if (config.pier.empty())
                 throw webpier::usage_error("can't init context");
 
             context->set_config(config);
@@ -53,11 +53,9 @@ namespace WebPier
     {
         return lhs && rhs 
             && lhs->Name == rhs->Name
-            && lhs->Peer == rhs->Peer
+            && lhs->Pier == rhs->Pier
             && lhs->Address == rhs->Address
-            && lhs->Gateway == rhs->Gateway
-            && lhs->DhtBootstrap == rhs->DhtBootstrap
-            && lhs->DhtNetwork == rhs->DhtNetwork
+            && lhs->Rendezvous == rhs->Rendezvous
             && lhs->Autostart == rhs->Autostart
             && lhs->Obscure == rhs->Obscure;
     }
@@ -81,10 +79,9 @@ namespace WebPier
 
             webpier::service actual {
                 Name.ToStdString(),
-                Peer.ToStdString(),
+                Pier.ToStdString(),
                 Address.ToStdString(),
-                Gateway.ToStdString(),
-                { DhtBootstrap.ToStdString(), DhtNetwork },
+                Rendezvous.ToStdString(),
                 Autostart,
                 Obscure
             };
@@ -98,8 +95,8 @@ namespace WebPier
             }
             else
             {
-                if (!m_origin.name.empty() && !m_origin.peer.empty())
-                    context->del_import_service(m_origin.peer, m_origin.name);
+                if (!m_origin.name.empty() && !m_origin.pier.empty())
+                    context->del_import_service(m_origin.pier, m_origin.name);
                 context->add_import_service(actual);
             }
             m_origin = actual;
@@ -115,8 +112,8 @@ namespace WebPier
             }
             else
             {
-                if (!m_origin.name.empty() && !m_origin.peer.empty())
-                    context->del_import_service(m_origin.peer, m_origin.name);
+                if (!m_origin.name.empty() && !m_origin.pier.empty())
+                    context->del_import_service(m_origin.pier, m_origin.name);
             }
             m_origin = {};
         }
@@ -124,59 +121,55 @@ namespace WebPier
         void Revert() noexcept(true) override
         {
             Name = m_origin.name;
-            Peer = m_origin.peer;
+            Pier = m_origin.pier;
             Address = m_origin.address;
-            Gateway = m_origin.gateway;
-            DhtBootstrap = m_origin.rendezvous.bootstrap;
-            DhtNetwork = m_origin.rendezvous.network;
+            Rendezvous = m_origin.rendezvous;
             Autostart = m_origin.autostart;
             Obscure = m_origin.obscure;
         }
 
-        void AddPeer(const wxString& peer) noexcept(true) override
+        void AddPier(const wxString& pier) noexcept(true) override
         {
             if (IsExport())
             {
-                auto arr = wxSplit(Peer, ' ');
-                if (arr.Index(peer) == wxNOT_FOUND)
+                auto arr = wxSplit(Pier, ' ');
+                if (arr.Index(pier) == wxNOT_FOUND)
                 {
-                    arr.Add(peer);
-                    Peer = wxJoin(arr, ' ');
+                    arr.Add(pier);
+                    Pier = wxJoin(arr, ' ');
                 }
             }
             else
-                Peer = peer;
+                Pier = pier;
         }
 
-        void DelPeer(const wxString& peer) noexcept(true) override
+        void DelPier(const wxString& pier) noexcept(true) override
         {
             if (IsExport())
             {
-                auto arr = wxSplit(Peer, ' ');
-                auto ind = arr.Index(peer);
+                auto arr = wxSplit(Pier, ' ');
+                auto ind = arr.Index(pier);
                 if (ind != wxNOT_FOUND)
                 {
                     arr.RemoveAt(ind);
-                    Peer = wxJoin(arr, ' ');
+                    Pier = wxJoin(arr, ' ');
                 }
             }
-            else if (peer == Peer)
-                Peer.Clear();
+            else if (pier == Pier)
+                Pier.Clear();
         }
 
-        bool HasPeer(const wxString& peer) const noexcept(true) override
+        bool HasPier(const wxString& pier) const noexcept(true) override
         {
-            return IsExport() ? wxSplit(Peer, ' ').Index(peer) != wxNOT_FOUND : peer == Peer;
+            return IsExport() ? wxSplit(Pier, ' ').Index(pier) != wxNOT_FOUND : pier == Pier;
         }
 
         bool IsDirty() const noexcept(true) override
         {
             return Name != m_origin.name
-                || Peer != m_origin.peer
+                || Pier != m_origin.pier
                 || Address != m_origin.address
-                || Gateway != m_origin.gateway
-                || DhtBootstrap != m_origin.rendezvous.bootstrap
-                || DhtNetwork != m_origin.rendezvous.network
+                || Rendezvous != m_origin.rendezvous
                 || Autostart != m_origin.autostart
                 || Obscure != m_origin.obscure;
         }
@@ -220,9 +213,9 @@ namespace WebPier
         void Store() noexcept(false) override
         {
             webpier::config actual {
-                Host.ToStdString(),
+                Pier.ToStdString(),
                 { StunServer.ToStdString(), PunchHops },
-                { DhtBootstrap.ToStdString(), DhtNetwork },
+                { DhtBootstrap.ToStdString(), DhtPort },
                 { 
                     SmtpServer.ToStdString(),
                     ImapServer.ToStdString(),
@@ -242,18 +235,18 @@ namespace WebPier
 
         void Revert() noexcept(true) override
         {
-            Host = m_origin.host;
-            StunServer = m_origin.traverse.stun;
-            PunchHops = m_origin.traverse.hops;
-            DhtBootstrap = m_origin.rendezvous.bootstrap;
-            DhtNetwork = m_origin.rendezvous.network;
-            SmtpServer = m_origin.emailer.smtp;
-            ImapServer = m_origin.emailer.imap;
-            EmailLogin = m_origin.emailer.login;
-            EmailPassword = m_origin.emailer.password;
-            EmailX509Cert = m_origin.emailer.cert;
-            EmailX509Key = m_origin.emailer.key;
-            EmailX509Ca = m_origin.emailer.ca;
+            Pier = m_origin.pier;
+            StunServer = m_origin.nat.stun;
+            PunchHops = m_origin.nat.hops;
+            DhtBootstrap = m_origin.dht.bootstrap;
+            DhtPort = m_origin.dht.port;
+            SmtpServer = m_origin.email.smtp;
+            ImapServer = m_origin.email.imap;
+            EmailLogin = m_origin.email.login;
+            EmailPassword = m_origin.email.password;
+            EmailX509Cert = m_origin.email.cert;
+            EmailX509Key = m_origin.email.key;
+            EmailX509Ca = m_origin.email.ca;
             Autostart = m_origin.autostart;
         }
     };
@@ -292,17 +285,17 @@ namespace WebPier
         return collection;
     }
 
-    wxArrayString GetPeers() noexcept(false)
+    wxArrayString GetPiers() noexcept(false)
     {
         wxArrayString array;
         std::vector<std::string> list;
-        GetContext()->get_peers(list);
+        GetContext()->get_piers(list);
         for (const auto& item : list)
             array.Add(item);
         return array;
     }
 
-    bool IsUselessPeer(const wxString& id) noexcept(false)
+    bool IsUselessPier(const wxString& id) noexcept(false)
     {
         auto isUsedForRemote = [&]()
         {
@@ -310,7 +303,7 @@ namespace WebPier
             GetContext()->get_import_services(list);
             auto iter = std::find_if(list.begin(), list.end(), [&id](const auto& item)
             {
-                return item.peer == id;
+                return item.pier == id;
             });
             return iter != list.end();
         };
@@ -319,9 +312,9 @@ namespace WebPier
         {
             std::vector<webpier::service> list;
             GetContext()->get_export_services(list);
-            auto iter = std::find_if(list.begin(), list.end(), [peer = id.ToStdString()](const auto& item)
+            auto iter = std::find_if(list.begin(), list.end(), [pier = id.ToStdString()](const auto& item)
             {
-                return item.peer.find(peer) != std::string::npos;
+                return item.pier.find(pier) != std::string::npos;
             });
             return iter != list.end();
         };
@@ -329,19 +322,19 @@ namespace WebPier
         return !isUsedForRemote() && !isUsedForLocal();
     }
 
-    bool IsUnknownPeer(const wxString& id) noexcept(false)
+    bool IsUnknownPier(const wxString& id) noexcept(false)
     {
-        return GetPeers().Index(id) == wxNOT_FOUND;
+        return GetPiers().Index(id) == wxNOT_FOUND;
     }
 
-    void AddPeer(const wxString& id, const wxString& cert) noexcept(false)
+    void AddPier(const wxString& id, const wxString& cert) noexcept(false)
     {
-        GetContext()->add_peer(id.ToStdString(), cert.ToStdString());
+        GetContext()->add_pier(id.ToStdString(), cert.ToStdString());
     }
 
-    void DelPeer(const wxString& id) noexcept(false)
+    void DelPier(const wxString& id) noexcept(false)
     {
-        GetContext()->del_peer(id.ToStdString());
+        GetContext()->del_pier(id.ToStdString());
     }
 
     wxString GetCertificate(const wxString& id) noexcept(false)
@@ -366,8 +359,7 @@ namespace WebPier
             boost::property_tree::ptree item;
             item.put("name", pair.second->Name.ToStdString());
             item.put("obscure", pair.second->Obscure);
-            item.put("rendezvous.dht.bootstrap", pair.second->DhtBootstrap.ToStdString());
-            item.put("rendezvous.dht.network", pair.second->DhtNetwork);
+            item.put("rendezvous", pair.second->Rendezvous.ToStdString());
             array.push_back(std::make_pair("", item));
         }
         doc.put_child("services", array);
@@ -388,10 +380,9 @@ namespace WebPier
         {
             ServicePtr service(new ImportService());
             service->Name = item.second.get<std::string>("name");
-            service->Peer = data.Pier;
+            service->Pier = data.Pier;
             service->Obscure = item.second.get<bool>("obscure");
-            service->DhtBootstrap = item.second.get<std::string>("rendezvous.dht.bootstrap", "");
-            service->DhtNetwork = item.second.get<uint32_t>("rendezvous.dht.network", 0);
+            service->Rendezvous = item.second.get<std::string>("rendezvous", "");
             data.Services[wxUIntPtr(service.get())] = service;
         }
     }

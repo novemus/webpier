@@ -30,7 +30,7 @@ class CMainFrame : public wxFrame
     wxMenuItem* m_exportItem;
     wxRadioButton* m_importBtn;
     wxRadioButton* m_exportBtn;
-    wxStaticText* m_hostLabel;
+    wxStaticText* m_pierLabel;
     wxBitmapButton* m_addBtn;
     wxBitmapButton* m_editBtn;
     wxBitmapButton* m_deleteBtn;

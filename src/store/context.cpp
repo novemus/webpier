@@ -11,10 +11,8 @@ namespace webpier
 {
     constexpr const char* cert_file_name = "cert.crt";
     constexpr const char* key_file_name = "private.key";
-    constexpr const char* conf_file_name = "webpier.json";
-    constexpr const char* lock_file_name = "context.lock";
-    constexpr const char* link_dir_name = "context";
-    constexpr const char* repo_dir_name = "repo";
+    constexpr const char* config_file_name = "webpier.json";
+    constexpr const char* context_link_name = "context";
 
     using scoped_lock = boost::interprocess::scoped_lock<boost::interprocess::file_lock>;
 
@@ -78,24 +76,24 @@ namespace webpier
         {
             try
             {
-                auto file = m_guard.home() / link_dir_name / conf_file_name;
+                auto file = m_guard.home() / config_file_name;
 
-                if (std::filesystem::exists(file))
+                if (std::filesystem::exists(file) && std::filesystem::file_size(file) > 0)
                 {
                     boost::property_tree::ptree doc;
                     boost::property_tree::read_json(file.string(), doc);
-                    m_config.host = doc.get<std::string>("host");
-                    m_config.traverse.stun = doc.get<std::string>("nat.traverse.stun", default_stun_server);
-                    m_config.traverse.hops = doc.get<uint8_t>("nat.traverse.hops", 7);
-                    m_config.rendezvous.bootstrap = doc.get<std::string>("rendezvous.dht.bootstrap", default_dht_bootstrap);
-                    m_config.rendezvous.network = doc.get<uint32_t>("rendezvous.dht.network", 0);
-                    m_config.emailer.smtp = doc.get<std::string>("emailer.smtp", "");
-                    m_config.emailer.imap = doc.get<std::string>("emailer.imap", "");
-                    m_config.emailer.login = doc.get<std::string>("emailer.login", "");
-                    m_config.emailer.password = doc.get<std::string>("emailer.password", "");
-                    m_config.emailer.cert = doc.get<std::string>("emailer.cert", "");
-                    m_config.emailer.key = doc.get<std::string>("emailer.key", "");
-                    m_config.emailer.ca = doc.get<std::string>("emailer.ca", "");
+                    m_config.pier = doc.get<std::string>("pier");
+                    m_config.nat.stun = doc.get<std::string>("nat.stun", default_stun_server);
+                    m_config.nat.hops = doc.get<uint8_t>("nat.hops", 7);
+                    m_config.dht.bootstrap = doc.get<std::string>("dht.bootstrap", default_dht_bootstrap);
+                    m_config.dht.port = doc.get<uint32_t>("dht.port", default_dht_port);
+                    m_config.email.smtp = doc.get<std::string>("email.smtp", "");
+                    m_config.email.imap = doc.get<std::string>("email.imap", "");
+                    m_config.email.login = doc.get<std::string>("email.login", "");
+                    m_config.email.password = doc.get<std::string>("email.password", "");
+                    m_config.email.cert = doc.get<std::string>("email.cert", "");
+                    m_config.email.key = doc.get<std::string>("email.key", "");
+                    m_config.email.ca = doc.get<std::string>("email.ca", "");
                     m_config.autostart = doc.get<bool>("autostart", false);
                 }
             }
@@ -109,21 +107,21 @@ namespace webpier
         {
             try
             {
-                auto file = m_guard.home() / link_dir_name / conf_file_name;
+                auto file = m_guard.home() / config_file_name;
 
                 boost::property_tree::ptree doc;
-                doc.put("host", m_config.host);
-                doc.put("nat.traverse.stun", m_config.traverse.stun);
-                doc.put("nat.traverse.hops", m_config.traverse.hops);
-                doc.put("rendezvous.dht.bootstrap", m_config.rendezvous.bootstrap);
-                doc.put("rendezvous.dht.network", m_config.rendezvous.network);
-                doc.put("emailer.smtp", m_config.emailer.smtp);
-                doc.put("emailer.imap", m_config.emailer.imap);
-                doc.put("emailer.login", m_config.emailer.login);
-                doc.put("emailer.password", m_config.emailer.password);
-                doc.put("emailer.cert", m_config.emailer.cert);
-                doc.put("emailer.key", m_config.emailer.key);
-                doc.put("emailer.ca", m_config.emailer.ca);
+                doc.put("pier", m_config.pier);
+                doc.put("nat.stun", m_config.nat.stun);
+                doc.put("nat.hops", m_config.nat.hops);
+                doc.put("dht.bootstrap", m_config.dht.bootstrap);
+                doc.put("dht.port", m_config.dht.port);
+                doc.put("emailer.smtp", m_config.email.smtp);
+                doc.put("emailer.imap", m_config.email.imap);
+                doc.put("emailer.login", m_config.email.login);
+                doc.put("emailer.password", m_config.email.password);
+                doc.put("emailer.cert", m_config.email.cert);
+                doc.put("emailer.key", m_config.email.key);
+                doc.put("emailer.ca", m_config.email.ca);
                 doc.put("autostart", m_config.autostart);
                 boost::property_tree::write_json(file.string(), doc);
             }
@@ -137,27 +135,24 @@ namespace webpier
         {
             try
             {
-                auto file = m_guard.home() / link_dir_name / repo_dir_name / id / conf_file_name;
-                
+                auto& services = m_bundle[id];
+
+                auto file = m_guard.home() / context_link_name / id / config_file_name;
                 if (std::filesystem::exists(file))
                 {
                     boost::property_tree::ptree doc;
                     boost::property_tree::read_json(file.string(), doc);
-
-                    auto& services = m_bundle[id];
 
                     boost::property_tree::ptree array;
                     for (auto& item : doc.get_child("services", array))
                     {
                         service unit;
                         unit.name = item.second.get<std::string>("name", "");
-                        unit.peer = item.second.get<std::string>("peer", "");
+                        unit.pier = item.second.get<std::string>("pier", "");
                         unit.address = item.second.get<std::string>("address", "");
-                        unit.gateway = item.second.get<std::string>("gateway", "");
+                        unit.rendezvous = item.second.get<std::string>("rendezvous", "");
                         unit.autostart = item.second.get<bool>("autostart", false);
                         unit.obscure = item.second.get<bool>("obscure", true);
-                        unit.rendezvous.bootstrap = item.second.get<std::string>("rendezvous.dht.bootstrap", "");
-                        unit.rendezvous.network = item.second.get<uint32_t>("rendezvous.dht.network", 0);
                         services.emplace(unit.name, unit);
                     }
                 }
@@ -172,7 +167,7 @@ namespace webpier
         {
             try
             {
-                auto file = m_guard.home() / link_dir_name / repo_dir_name / id / conf_file_name;
+                auto file = m_guard.home() / context_link_name / id / config_file_name;
                 auto& services = m_bundle[id];
 
                 boost::property_tree::ptree array;
@@ -180,13 +175,11 @@ namespace webpier
                 {
                     boost::property_tree::ptree item;
                     item.put("name", unit.second.name);
-                    item.put("peer", unit.second.peer);
+                    item.put("pier", unit.second.pier);
                     item.put("address", unit.second.address);
-                    item.put("gateway", unit.second.gateway);
                     item.put("autostart", unit.second.autostart);
                     item.put("obscure", unit.second.obscure);
-                    item.put("rendezvous.dht.bootstrap", unit.second.rendezvous.bootstrap);
-                    item.put("rendezvous.dht.network", unit.second.rendezvous.network);
+                    item.put("rendezvous", unit.second.rendezvous);
                     array.push_back(std::make_pair("", item));
                 }
 
@@ -204,17 +197,17 @@ namespace webpier
     public:
 
         context_impl(const std::filesystem::path& home)
-            : m_guard(home / lock_file_name)
+            : m_guard(home / config_file_name)
         {
             m_guard.soft_lock();
 
-            auto conf = m_guard.home() / link_dir_name / conf_file_name;
+            auto conf = home / config_file_name;
             if (std::filesystem::exists(conf))
             {
                 load_config();
             }
 
-            auto repo = m_guard.home() / link_dir_name / repo_dir_name;
+            auto repo = home / context_link_name;
             if (std::filesystem::exists(repo))
             {
                 for (auto const& owner : std::filesystem::directory_iterator(repo))
@@ -244,12 +237,12 @@ namespace webpier
 
         void set_config(const config& info) noexcept(false) override
         {
-            if (info.host != m_config.host)
+            if (info.pier != m_config.pier)
             {
-                auto dir = to_hexadecimal(info.host.data(), info.host.size());
+                auto dir = to_hexadecimal(info.pier.data(), info.pier.size());
             
-                auto cert = m_guard.home() / dir / repo_dir_name / info.host / cert_file_name;
-                auto key = m_guard.home() / dir / repo_dir_name / info.host / key_file_name;
+                auto cert = m_guard.home() / dir / info.pier / cert_file_name;
+                auto key = m_guard.home() / dir / info.pier / key_file_name;
 
                 bool wrong = (!std::filesystem::exists(cert) && std::filesystem::exists(key))
                           || (std::filesystem::exists(cert) && !std::filesystem::exists(key));
@@ -259,18 +252,18 @@ namespace webpier
 
                 m_config = info;
                 m_bundle.clear();
-                m_bundle.emplace(m_config.host, bundle::mapped_type());
+                m_bundle.emplace(m_config.pier, bundle::mapped_type());
 
                 m_guard.hard_lock();
 
                 if (!std::filesystem::exists(cert) && !std::filesystem::exists(key))
                 {
                     std::filesystem::create_directories(cert.parent_path());
-                    generate_x509_pair(cert, key, info.host);
+                    generate_x509_pair(cert, key, info.pier);
                 }
 
-                std::filesystem::remove(m_guard.home() / link_dir_name);
-                std::filesystem::create_directory_symlink(m_guard.home() / dir, m_guard.home() / link_dir_name);
+                std::filesystem::remove(m_guard.home() / context_link_name);
+                std::filesystem::create_directory_symlink(m_guard.home() / dir, m_guard.home() / context_link_name);
 
                 save_config();
             }
@@ -285,7 +278,7 @@ namespace webpier
 
         void get_export_services(std::vector<service>& list) const noexcept(true) override
         {
-            auto iter = m_bundle.find(m_config.host);
+            auto iter = m_bundle.find(m_config.pier);
             if (iter != m_bundle.end())
             {
                 for(auto& item : iter->second)
@@ -297,7 +290,7 @@ namespace webpier
         {
             for (const auto& pier : m_bundle)
             {
-                if (pier.first != m_config.host)
+                if (pier.first != m_config.pier)
                 {
                     for(auto& item : pier.second)
                         list.push_back(item.second);
@@ -307,7 +300,7 @@ namespace webpier
 
         void add_export_service(const service& info) noexcept(false) override
         {
-            auto iter = m_bundle.find(m_config.host);
+            auto iter = m_bundle.find(m_config.pier);
             if (iter == m_bundle.end())
                 throw usage_error("local pier does not exist");
 
@@ -317,25 +310,25 @@ namespace webpier
             iter->second.emplace(info.name, info);
 
             m_guard.hard_lock();
-            save_pier_config(m_config.host);
+            save_pier_config(m_config.pier);
         }
 
         void del_export_service(const std::string& name) noexcept(false) override
         {
-            auto iter = m_bundle.find(m_config.host);
+            auto iter = m_bundle.find(m_config.pier);
             if (iter == m_bundle.end())
                 throw usage_error("local pier does not exist");
 
             if (iter->second.erase(name))
             {
                 m_guard.hard_lock();
-                save_pier_config(m_config.host);
+                save_pier_config(m_config.pier);
             }
         }
 
         void add_import_service(const service& info) noexcept(false) override
         {
-            auto iter = m_bundle.find(info.peer);
+            auto iter = m_bundle.find(info.pier);
             if (iter == m_bundle.end())
                 throw usage_error("remote pier does not exist");
 
@@ -345,36 +338,36 @@ namespace webpier
             iter->second.emplace(info.name, info);
 
             m_guard.hard_lock();
-            save_pier_config(info.peer);
+            save_pier_config(info.pier);
         }
 
-        void del_import_service(const std::string& peer, const std::string& name) noexcept(false) override
+        void del_import_service(const std::string& pier, const std::string& name) noexcept(false) override
         {
-            auto iter = m_bundle.find(peer);
+            auto iter = m_bundle.find(pier);
             if (iter == m_bundle.end())
                 throw usage_error("remote pier does not exist");
 
             if (iter->second.erase(name))
             {
                 m_guard.hard_lock();
-                save_pier_config(peer);
+                save_pier_config(pier);
             }
         }
 
-        void get_peers(std::vector<std::string>& list) const noexcept(true) override
+        void get_piers(std::vector<std::string>& list) const noexcept(true) override
         {
             for (const auto& item : m_bundle)
             {
-                if (item.first != m_config.host)
+                if (item.first != m_config.pier)
                     list.push_back(item.first);
             }
         }
 
-        void add_peer(const std::string& id, const std::string& cert) noexcept(false) override
+        void add_pier(const std::string& id, const std::string& cert) noexcept(false) override
         {
             m_guard.hard_lock();
 
-            auto path = m_guard.home() / link_dir_name / repo_dir_name / id;
+            auto path = m_guard.home() / context_link_name / id;
 
             if (std::filesystem::exists(path))
                 throw usage_error("pier already exists");
@@ -385,9 +378,9 @@ namespace webpier
             m_bundle.emplace(id, bundle::mapped_type());
         }
 
-        void del_peer(const std::string& id) noexcept(false) override
+        void del_pier(const std::string& id) noexcept(false) override
         {
-            if (m_config.host == id)
+            if (m_config.pier == id)
                 throw usage_error("can't delete local pier");
 
             m_guard.hard_lock();
@@ -395,7 +388,7 @@ namespace webpier
 
             try
             {
-                std::filesystem::remove_all(m_guard.home() / link_dir_name / repo_dir_name / id);
+                std::filesystem::remove_all(m_guard.home() / context_link_name / id);
             }
             catch(const std::exception& e)
             {
@@ -406,13 +399,13 @@ namespace webpier
         std::string get_fingerprint(const std::string& id) const noexcept(false) override
         {
             m_guard.soft_lock();
-            return get_x509_public_sha1(m_guard.home() / link_dir_name / repo_dir_name / id / cert_file_name);
+            return get_x509_public_sha1(m_guard.home() / context_link_name / id / cert_file_name);
         }
 
         std::string get_certificate(const std::string& id) const noexcept(false) override
         {
             m_guard.soft_lock();
-            return load_x509_cert(m_guard.home() / link_dir_name / repo_dir_name / id / cert_file_name);
+            return load_x509_cert(m_guard.home() / context_link_name / id / cert_file_name);
         }
     };
 

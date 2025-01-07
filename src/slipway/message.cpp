@@ -6,7 +6,7 @@ namespace slipway
     boost::property_tree::ptree convert_handle(const slipway::handle& obj) noexcept(true)
     {
         boost::property_tree::ptree doc;
-        doc.put("node", obj.node);
+        doc.put("pier", obj.pier);
         doc.put("service", obj.service);
         return doc;
     }
@@ -14,7 +14,7 @@ namespace slipway
     slipway::handle convert_handle(const boost::property_tree::ptree& doc) noexcept(false)
     {
         slipway::handle obj;
-        obj.node = doc.get<std::string>("node");
+        obj.pier = doc.get<std::string>("pier");
         obj.service = doc.get<std::string>("service");
         return obj;
     }
@@ -22,7 +22,7 @@ namespace slipway
     boost::property_tree::ptree convert_health(const slipway::health& obj) noexcept(true)
     {
         boost::property_tree::ptree doc;
-        doc.put("node", obj.node);
+        doc.put("pier", obj.pier);
         doc.put("service", obj.service);
         doc.put("state", obj.state);
         return doc;
@@ -31,7 +31,7 @@ namespace slipway
     slipway::health convert_health(const boost::property_tree::ptree& doc) noexcept(false)
     {
         slipway::health obj;
-        obj.node = doc.get<std::string>("node");
+        obj.pier = doc.get<std::string>("pier");
         obj.service = doc.get<std::string>("service");
         obj.state = static_cast<health::status>(doc.get<int>("state"));
         return obj;
@@ -40,7 +40,7 @@ namespace slipway
     boost::property_tree::ptree convert_report(const slipway::report& obj) noexcept(true)
     {
         boost::property_tree::ptree doc;
-        doc.put("node", obj.node);
+        doc.put("pier", obj.pier);
         doc.put("service", obj.service);
         doc.put("state", obj.state);
 
@@ -49,7 +49,7 @@ namespace slipway
         {
             boost::property_tree::ptree item;
             item.put("pid", link.pid);
-            item.put("peer", link.peer);
+            item.put("pier", link.pier);
             context.push_back(std::make_pair("", item));
         }
         doc.put_child("context", context);
@@ -59,7 +59,7 @@ namespace slipway
     slipway::report convert_report(const boost::property_tree::ptree& doc) noexcept(false)
     {
         slipway::report obj;
-        obj.node = doc.get<std::string>("node");
+        obj.pier = doc.get<std::string>("pier");
         obj.service = doc.get<std::string>("service");
         obj.state = static_cast<health::status>(doc.get<int>("state"));
 
@@ -68,7 +68,7 @@ namespace slipway
         {
             report::linkage link;
             link.pid = item.second.get<int>("pid");
-            link.peer = item.second.get<std::string>("peer");
+            link.pier = item.second.get<std::string>("pier");
             obj.context.emplace_back(std::move(link));
         }
         return obj;

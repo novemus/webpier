@@ -230,7 +230,13 @@ int main(int argc, char* argv[])
             std::ofstream(locker).close();
 
         boost::interprocess::file_lock guard(locker.string().c_str());
-        boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(guard);
+        boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(guard, boost::interprocess::try_to_lock_type());
+
+        if (!lock.owns())
+        {
+            std::cerr << "can't acquire lock" << std::endl;
+            return 1;
+        }
 
 #ifdef WIN32
         DeleteFile(socket.string().c_str());
@@ -245,7 +251,7 @@ int main(int argc, char* argv[])
     catch (const std::exception& ex)
     {
         std::cerr << ex.what() << std::endl;
-        return 1;
+        return 2;
     }
 
     return 0;
