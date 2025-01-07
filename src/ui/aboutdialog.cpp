@@ -38,7 +38,7 @@ CAboutDialog::CAboutDialog( wxWindow* parent, wxWindowID id, const wxString& tit
 
     panelSizer->Add( topSizer, 1, wxEXPAND|wxALL, 10 );
 
-    wxStaticText* appPurpose = new wxStaticText( m_panel, wxID_ANY, _("A program for mapping remote TCP services placed behind NAT to a local interface"), wxDefaultPosition, wxDefaultSize, 0 );
+    wxStaticText* appPurpose = new wxStaticText( m_panel, wxID_ANY, _("A program for forwarding TCP services running on machines located behind the NAT"), wxDefaultPosition, wxDefaultSize, 0 );
     appPurpose->Wrap( -1 );
     panelSizer->Add( appPurpose, 0, wxALL, 20 );
 
