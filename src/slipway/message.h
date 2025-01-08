@@ -36,19 +36,19 @@ namespace slipway
 
     struct report : public health
     {
-        struct linkage
+        struct spawn
         {
             std::string pier;
             int pid;
 
-            bool operator<(const linkage& other) const { return pier < other.pier || pid < other.pid; }
-            bool operator==(const linkage& other) const { return pier == other.pier && pid == other.pid; }
+            bool operator<(const spawn& other) const { return pier < other.pier || pid < other.pid; }
+            bool operator==(const spawn& other) const { return pier == other.pier && pid == other.pid; }
         };
 
-        std::vector<linkage> context;
+        std::vector<spawn> asset;
 
-        bool operator<(const report& other) const { return health::operator<(other) || context < other.context; }
-        bool operator==(const report& other) const { return health::operator==(other) && context == other.context; }
+        bool operator<(const report& other) const { return health::operator<(other) || asset < other.asset; }
+        bool operator==(const report& other) const { return health::operator==(other) && asset == other.asset; }
     };
 
     struct message
@@ -56,7 +56,6 @@ namespace slipway
         enum command
         {
             naught,
-            adjust,
             unplug,
             engage,
             reboot,

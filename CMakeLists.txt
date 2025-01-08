@@ -43,6 +43,62 @@ message("*** OpenSSL Version: ${OPENSSL_VERSION}")
 message("*** OpenSSL Include: ${OPENSSL_INCLUDE_DIR}")
 message("*** OpenSSL Libraries: ${OPENSSL_LIBRARIES}")
 
+find_package(plexus REQUIRED)
+
+message("*** plexus Version: ${plexus_VERSION}")
+message("*** plexus Include: ${plexus_INCLUDE_DIR}")
+message("*** plexus Library: ${plexus_LIB}")
+
+find_package(wormhole REQUIRED)
+
+message("*** wormhole Version: ${wormhole_VERSION}")
+message("*** wormhole Include: ${wormhole_INCLUDE_DIR}")
+message("*** wormhole Library: ${wormhole_LIB}")
+
+find_package(tubus REQUIRED)
+
+message("*** tubus Version: ${tubus_VERSION}")
+message("*** tubus Include: ${tubus_INCLUDE_DIR}")
+message("*** tubus Library: ${tubus_LIB}")
+
+find_package(PkgConfig REQUIRED)
+
+pkg_search_module(opendht REQUIRED IMPORTED_TARGET opendht>=3.2)
+message("* opendht Include Dir: ${opendht_INCLUDEDIR}")
+message("* opendht Lib Dir: ${opendht_LIBDIR}")
+include_directories(${opendht_INCLUDE_DIR})
+link_directories(${opendht_LIBDIR})
+
+pkg_search_module(JsonCpp REQUIRED IMPORTED_TARGET jsoncpp)
+message("* JsonCpp Include Dir: ${JsonCpp_INCLUDEDIR}")
+message("* JsonCpp Lib Dir: ${JsonCpp_LIBDIR}")
+include_directories(${JsonCpp_INCLUDE_DIR})
+link_directories(${JsonCpp_LIBDIR})
+
+pkg_search_module(libargon2 REQUIRED IMPORTED_TARGET libargon2)
+message("* libargon2 Include Dir: ${libargon2_INCLUDEDIR}")
+message("* libargon2 Lib Dir: ${libargon2_LIBDIR}")
+include_directories(${libargon2_INCLUDE_DIR})
+link_directories(${libargon2_LIBDIR})
+
+pkg_search_module(fmt REQUIRED IMPORTED_TARGET fmt)
+message("* fmt Include Dir: ${fmt_INCLUDEDIR}")
+message("* fmt Lib Dir: ${fmt_LIBDIR}")
+include_directories(${fmt_INCLUDE_DIR})
+link_directories(${fmt_LIBDIR})
+
+pkg_search_module(GnuTLS REQUIRED IMPORTED_TARGET gnutls)
+message("* GnuTLS Include Dir: ${GnuTLS_INCLUDEDIR}")
+message("* GnuTLS Lib Dir: ${GnuTLS_LIBDIR}")
+include_directories(${GnuTLS_INCLUDE_DIR})
+link_directories(${GnuTLS_LIBDIR})
+
+pkg_search_module(nettle REQUIRED IMPORTED_TARGET nettle)
+message("* nettle Include Dir: ${nettle_INCLUDEDIR}")
+message("* nettle Lib Dir: ${nettle_LIBDIR}")
+include_directories(${nettle_INCLUDE_DIR})
+link_directories(${nettle_LIBDIR})
+
 add_executable(${PROJECT_NAME} WIN32 
     src/ui/main.cpp
     src/ui/mainframe.cpp
@@ -70,10 +126,12 @@ set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "d")
 
 set(SLIPWAY_MODULE slipway)
 add_executable(${SLIPWAY_MODULE} WIN32 src/slipway/message.cpp src/slipway/server.cpp)
+target_compile_definitions(${SLIPWAY_MODULE} PRIVATE PLEXUS_EXPORTS BOOST_BIND_GLOBAL_PLACEHOLDERS)
+target_include_directories(${SLIPWAY_MODULE} PRIVATE src ${plexus_INCLUDE_DIR} ${tubus_INCLUDE_DIR})
 if(WIN32)
-    target_link_libraries(${SLIPWAY_MODULE} PRIVATE ${wxWidgets_LIBRARIES} Boost::property_tree Boost::coroutine)
+    target_link_libraries(${SLIPWAY_MODULE} PRIVATE plexus wormhole tubus PkgConfig::opendht PkgConfig::fmt PkgConfig::libargon2 PkgConfig::GnuTLS PkgConfig::nettle PkgConfig::JsonCpp Boost::property_tree Boost::coroutine OpenSSL::SSL OpenSSL::Crypto Crypt32)
 else()
-    target_link_libraries(${SLIPWAY_MODULE} PRIVATE ${wxWidgets_LIBRARIES} Boost::coroutine)
+    target_link_libraries(${SLIPWAY_MODULE} PRIVATE plexus wormhole tubus PkgConfig::opendht PkgConfig::fmt PkgConfig::libargon2 PkgConfig::GnuTLS PkgConfig::nettle PkgConfig::JsonCpp Boost::coroutine OpenSSL::SSL OpenSSL::Crypto)
 endif()
 set_target_properties(${SLIPWAY_MODULE} PROPERTIES DEBUG_POSTFIX "d")
 

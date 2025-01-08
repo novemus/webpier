@@ -95,11 +95,6 @@ namespace slipway
             });
         }
 
-        void adjust() noexcept(false) override
-        {
-            perform(message::make(message::adjust));
-        }
-
         void unplug() noexcept(false) override
         {
             perform(message::make(message::unplug));
@@ -123,11 +118,6 @@ namespace slipway
         void review(std::vector<slipway::report>& result) noexcept(false) override
         {
             perform<std::vector<slipway::report>>(message::make(message::review));
-        }
-
-        void adjust(const handle& service) noexcept(false) override
-        {
-            perform(message::make(message::adjust, service));
         }
 
         void unplug(const handle& service) noexcept(false) override

@@ -77,7 +77,6 @@ namespace webpier
             try
             {
                 auto file = m_guard.home() / config_file_name;
-
                 if (std::filesystem::exists(file) && std::filesystem::file_size(file) > 0)
                 {
                     boost::property_tree::ptree doc;
@@ -86,7 +85,7 @@ namespace webpier
                     m_config.nat.stun = doc.get<std::string>("nat.stun", default_stun_server);
                     m_config.nat.hops = doc.get<uint8_t>("nat.hops", 7);
                     m_config.dht.bootstrap = doc.get<std::string>("dht.bootstrap", default_dht_bootstrap);
-                    m_config.dht.port = doc.get<uint32_t>("dht.port", default_dht_port);
+                    m_config.dht.port = doc.get<uint16_t>("dht.port", default_dht_port);
                     m_config.email.smtp = doc.get<std::string>("email.smtp", "");
                     m_config.email.imap = doc.get<std::string>("email.imap", "");
                     m_config.email.login = doc.get<std::string>("email.login", "");
