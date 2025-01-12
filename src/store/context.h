@@ -42,6 +42,7 @@ namespace webpier
     struct config
     {
         std::string pier;
+        std::string repo;
         puncher nat;
         dhtnode dht;
         emailer email;

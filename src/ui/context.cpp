@@ -1,4 +1,5 @@
 #include "../store/context.h"
+#include "../store/utils.h"
 #include "context.h"
 #include "messagedialog.h"
 #include "startupdialog.h"
@@ -28,7 +29,7 @@ namespace WebPier
             throw webpier::usage_error("no context");
         }
 
-        auto context = webpier::open_context(home.ToStdString());
+        auto context = webpier::open_context(home.ToStdString(wxGet_wxConvUTF8()));
 
         webpier::config config;
         context->get_config(config);
@@ -37,7 +38,7 @@ namespace WebPier
         {
             CStartupDialog dialog(nullptr);
             if (dialog.ShowModal() == wxID_OK)
-                config.pier = dialog.GetIdentity().ToStdString();
+                config.pier = dialog.GetIdentity().ToStdString(wxGet_wxConvUTF8());
 
             if (config.pier.empty())
                 throw webpier::usage_error("can't init context");
@@ -78,10 +79,10 @@ namespace WebPier
                 return;
 
             webpier::service actual {
-                Name.ToStdString(),
-                Pier.ToStdString(),
-                Address.ToStdString(),
-                Rendezvous.ToStdString(),
+                Name.ToStdString(wxGet_wxConvUTF8()),
+                Pier.ToStdString(wxGet_wxConvUTF8()),
+                Address.ToStdString(wxGet_wxConvUTF8()),
+                Rendezvous.ToStdString(wxGet_wxConvUTF8()),
                 Autostart,
                 Obscure
             };
@@ -120,10 +121,10 @@ namespace WebPier
 
         void Revert() noexcept(true) override
         {
-            Name = m_origin.name;
-            Pier = m_origin.pier;
-            Address = m_origin.address;
-            Rendezvous = m_origin.rendezvous;
+            Name = wxString::FromUTF8(m_origin.name);
+            Pier = wxString::FromUTF8(m_origin.pier);
+            Address = wxString::FromUTF8(m_origin.address);
+            Rendezvous = wxString::FromUTF8(m_origin.rendezvous);
             Autostart = m_origin.autostart;
             Obscure = m_origin.obscure;
         }
@@ -166,10 +167,10 @@ namespace WebPier
 
         bool IsDirty() const noexcept(true) override
         {
-            return Name != m_origin.name
-                || Pier != m_origin.pier
-                || Address != m_origin.address
-                || Rendezvous != m_origin.rendezvous
+            return Name.ToStdString(wxGet_wxConvUTF8()) != m_origin.name
+                || Pier.ToStdString(wxGet_wxConvUTF8()) != m_origin.pier
+                || Address.ToStdString(wxGet_wxConvUTF8()) != m_origin.address
+                || Rendezvous.ToStdString(wxGet_wxConvUTF8()) != m_origin.rendezvous
                 || Autostart != m_origin.autostart
                 || Obscure != m_origin.obscure;
         }
@@ -212,18 +213,20 @@ namespace WebPier
 
         void Store() noexcept(false) override
         {
+            auto pier = Pier.ToStdString(wxGet_wxConvUTF8());
             webpier::config actual {
-                Pier.ToStdString(),
-                { StunServer.ToStdString(), PunchHops },
-                { DhtBootstrap.ToStdString(), DhtPort },
+                pier,
+                webpier::to_hexadecimal(pier.data(), pier.size()),
+                { StunServer.ToStdString(wxGet_wxConvUTF8()), PunchHops },
+                { DhtBootstrap.ToStdString(wxGet_wxConvUTF8()), DhtPort },
                 { 
-                    SmtpServer.ToStdString(),
-                    ImapServer.ToStdString(),
-                    EmailLogin.ToStdString(),
-                    EmailPassword.ToStdString(), 
-                    EmailX509Cert.ToStdString(), 
-                    EmailX509Key.ToStdString(), 
-                    EmailX509Ca.ToStdString() 
+                    SmtpServer.ToStdString(wxGet_wxConvUTF8()),
+                    ImapServer.ToStdString(wxGet_wxConvUTF8()),
+                    EmailLogin.ToStdString(wxGet_wxConvUTF8()),
+                    EmailPassword.ToStdString(wxGet_wxConvUTF8()), 
+                    EmailX509Cert.ToStdString(wxGet_wxConvUTF8()), 
+                    EmailX509Key.ToStdString(wxGet_wxConvUTF8()), 
+                    EmailX509Ca.ToStdString(wxGet_wxConvUTF8()) 
                 },
                 Autostart
             };
@@ -235,18 +238,18 @@ namespace WebPier
 
         void Revert() noexcept(true) override
         {
-            Pier = m_origin.pier;
-            StunServer = m_origin.nat.stun;
+            Pier = wxString::FromUTF8(m_origin.pier);
+            StunServer = wxString::FromUTF8(m_origin.nat.stun);
             PunchHops = m_origin.nat.hops;
-            DhtBootstrap = m_origin.dht.bootstrap;
+            DhtBootstrap = wxString::FromUTF8(m_origin.dht.bootstrap);
             DhtPort = m_origin.dht.port;
-            SmtpServer = m_origin.email.smtp;
-            ImapServer = m_origin.email.imap;
-            EmailLogin = m_origin.email.login;
-            EmailPassword = m_origin.email.password;
-            EmailX509Cert = m_origin.email.cert;
-            EmailX509Key = m_origin.email.key;
-            EmailX509Ca = m_origin.email.ca;
+            SmtpServer = wxString::FromUTF8(m_origin.email.smtp);
+            ImapServer = wxString::FromUTF8(m_origin.email.imap);
+            EmailLogin = wxString::FromUTF8(m_origin.email.login);
+            EmailPassword = wxString::FromUTF8(m_origin.email.password);
+            EmailX509Cert = wxString::FromUTF8(m_origin.email.cert);
+            EmailX509Key = wxString::FromUTF8(m_origin.email.key);
+            EmailX509Ca = wxString::FromUTF8(m_origin.email.ca);
             Autostart = m_origin.autostart;
         }
     };
@@ -291,7 +294,7 @@ namespace WebPier
         std::vector<std::string> list;
         GetContext()->get_piers(list);
         for (const auto& item : list)
-            array.Add(item);
+            array.Add(wxString::FromUTF8(item));
         return array;
     }
 
@@ -301,9 +304,9 @@ namespace WebPier
         {
             std::vector<webpier::service> list;
             GetContext()->get_import_services(list);
-            auto iter = std::find_if(list.begin(), list.end(), [&id](const auto& item)
+            auto iter = std::find_if(list.begin(), list.end(), [pier = id.ToStdString(wxGet_wxConvUTF8())](const auto& item)
             {
-                return item.pier == id;
+                return item.pier == pier;
             });
             return iter != list.end();
         };
@@ -312,7 +315,7 @@ namespace WebPier
         {
             std::vector<webpier::service> list;
             GetContext()->get_export_services(list);
-            auto iter = std::find_if(list.begin(), list.end(), [pier = id.ToStdString()](const auto& item)
+            auto iter = std::find_if(list.begin(), list.end(), [pier = id.ToStdString(wxGet_wxConvUTF8())](const auto& item)
             {
                 return item.pier.find(pier) != std::string::npos;
             });
@@ -329,60 +332,60 @@ namespace WebPier
 
     void AddPier(const wxString& id, const wxString& cert) noexcept(false)
     {
-        GetContext()->add_pier(id.ToStdString(), cert.ToStdString());
+        GetContext()->add_pier(id.ToStdString(wxGet_wxConvUTF8()), cert.ToStdString(wxGet_wxConvUTF8()));
     }
 
     void DelPier(const wxString& id) noexcept(false)
     {
-        GetContext()->del_pier(id.ToStdString());
+        GetContext()->del_pier(id.ToStdString(wxGet_wxConvUTF8()));
     }
 
     wxString GetCertificate(const wxString& id) noexcept(false)
     {
-        return GetContext()->get_certificate(id.ToStdString());
+        return GetContext()->get_certificate(id.ToStdString(wxGet_wxConvUTF8()));
     }
 
     wxString GetFingerprint(const wxString& id) noexcept(false)
     {
-        return GetContext()->get_fingerprint(id.ToStdString());
+        return GetContext()->get_fingerprint(id.ToStdString(wxGet_wxConvUTF8()));
     }
 
     void WriteExchangeFile(const wxString& file, const Exchange& data) noexcept(false)
     {
         boost::property_tree::ptree doc;
-        doc.put("pier", data.Pier.ToStdString());
-        doc.put("certificate", data.Certificate.ToStdString());
+        doc.put("pier", data.Pier.ToStdString(wxGet_wxConvUTF8()));
+        doc.put("certificate", data.Certificate.ToStdString(wxGet_wxConvUTF8()));
 
         boost::property_tree::ptree array;
         for (const auto& pair : data.Services)
         {
             boost::property_tree::ptree item;
-            item.put("name", pair.second->Name.ToStdString());
+            item.put("name", pair.second->Name.ToStdString(wxGet_wxConvUTF8()));
             item.put("obscure", pair.second->Obscure);
-            item.put("rendezvous", pair.second->Rendezvous.ToStdString());
+            item.put("rendezvous", pair.second->Rendezvous.ToStdString(wxGet_wxConvUTF8()));
             array.push_back(std::make_pair("", item));
         }
         doc.put_child("services", array);
 
-        boost::property_tree::write_json(file.ToStdString(), doc);
+        boost::property_tree::write_json(file.ToStdString(wxGet_wxConvUTF8()), doc);
     }
 
     void ReadExchangeFile(const wxString& file, Exchange& data) noexcept(false)
     {
         boost::property_tree::ptree doc;
-        boost::property_tree::read_json(file.ToStdString(), doc);
+        boost::property_tree::read_json(file.ToStdString(wxGet_wxConvUTF8()), doc);
 
-        data.Pier = doc.get<std::string>("pier", "");
-        data.Certificate = doc.get<std::string>("certificate", "");
+        data.Pier = wxString::FromUTF8(doc.get<std::string>("pier", ""));
+        data.Certificate = wxString::FromUTF8(doc.get<std::string>("certificate", ""));
 
         boost::property_tree::ptree array;
         for (auto& item : doc.get_child("services", array))
         {
             ServicePtr service(new ImportService());
-            service->Name = item.second.get<std::string>("name");
+            service->Name = wxString::FromUTF8(item.second.get<std::string>("name"));
             service->Pier = data.Pier;
             service->Obscure = item.second.get<bool>("obscure");
-            service->Rendezvous = item.second.get<std::string>("rendezvous", "");
+            service->Rendezvous = wxString::FromUTF8(item.second.get<std::string>("rendezvous", ""));
             data.Services[wxUIntPtr(service.get())] = service;
         }
     }

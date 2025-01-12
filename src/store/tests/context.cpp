@@ -6,8 +6,12 @@
 
 BOOST_AUTO_TEST_CASE(context)
 {
+    std::string host = "host@mail.box/test";
+    std::string peer = "peer@mail.box/test";
+
     auto dest = std::filesystem::current_path() / std::to_string(std::time(0));
-    auto link = dest / "context";
+    auto hrep = dest / webpier::to_hexadecimal(host.data(), host.size());
+    auto prep = dest / webpier::to_hexadecimal(peer.data(), peer.size());
 
     BOOST_REQUIRE_NO_THROW(std::filesystem::create_directory(dest));
 
@@ -17,13 +21,11 @@ BOOST_AUTO_TEST_CASE(context)
     } 
     BOOST_SCOPE_EXIT_END
 
-    std::string host = "host@mail.box/test";
-    std::string peer = "peer@mail.box/test";
-
     auto context = webpier::open_context(dest);
 
     webpier::config in {
         peer,
+        prep.string(),
         {},
         {},
         {
@@ -38,10 +40,8 @@ BOOST_AUTO_TEST_CASE(context)
 
     BOOST_REQUIRE_NO_THROW(context->set_config(in));
 
-    BOOST_REQUIRE(std::filesystem::is_symlink(link));
-    BOOST_REQUIRE(std::filesystem::is_directory(std::filesystem::read_symlink(link)));
-
     in.pier = host;
+    in.repo = hrep.string();
 
     BOOST_REQUIRE_NO_THROW(context->set_config(in));
 

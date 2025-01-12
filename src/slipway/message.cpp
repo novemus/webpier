@@ -3,78 +3,81 @@
 
 namespace slipway
 {
-    boost::property_tree::ptree convert_handle(const slipway::handle& obj) noexcept(true)
+    namespace
     {
-        boost::property_tree::ptree doc;
-        doc.put("pier", obj.pier);
-        doc.put("service", obj.service);
-        return doc;
-    }
-
-    slipway::handle convert_handle(const boost::property_tree::ptree& doc) noexcept(false)
-    {
-        slipway::handle obj;
-        obj.pier = doc.get<std::string>("pier");
-        obj.service = doc.get<std::string>("service");
-        return obj;
-    }
-
-    boost::property_tree::ptree convert_health(const slipway::health& obj) noexcept(true)
-    {
-        boost::property_tree::ptree doc;
-        doc.put("pier", obj.pier);
-        doc.put("service", obj.service);
-        doc.put("state", obj.state);
-        return doc;
-    }
-
-    slipway::health convert_health(const boost::property_tree::ptree& doc) noexcept(false)
-    {
-        slipway::health obj;
-        obj.pier = doc.get<std::string>("pier");
-        obj.service = doc.get<std::string>("service");
-        obj.state = static_cast<health::status>(doc.get<int>("state"));
-        return obj;
-    }
-
-    boost::property_tree::ptree convert_report(const slipway::report& obj) noexcept(true)
-    {
-        boost::property_tree::ptree doc;
-        doc.put("pier", obj.pier);
-        doc.put("service", obj.service);
-        doc.put("state", obj.state);
-
-        boost::property_tree::ptree context;
-        for(const auto& link : obj.asset)
+        boost::property_tree::ptree convert_handle(const slipway::handle& obj) noexcept(true)
         {
-            boost::property_tree::ptree item;
-            item.put("pid", link.pid);
-            item.put("pier", link.pier);
-            context.push_back(std::make_pair("", item));
+            boost::property_tree::ptree doc;
+            doc.put("pier", obj.pier);
+            doc.put("service", obj.service);
+            return doc;
         }
-        doc.put_child("context", context);
-        return doc;
-    }
 
-    slipway::report convert_report(const boost::property_tree::ptree& doc) noexcept(false)
-    {
-        slipway::report obj;
-        obj.pier = doc.get<std::string>("pier");
-        obj.service = doc.get<std::string>("service");
-        obj.state = static_cast<health::status>(doc.get<int>("state"));
-
-        boost::property_tree::ptree asset;
-        for (auto& item : doc.get_child("asset", asset))
+        slipway::handle convert_handle(const boost::property_tree::ptree& doc) noexcept(false)
         {
-            report::spawn spawn;
-            spawn.pid = item.second.get<int>("pid");
-            spawn.pier = item.second.get<std::string>("pier");
-            obj.asset.emplace_back(std::move(spawn));
+            slipway::handle obj;
+            obj.pier = doc.get<std::string>("pier");
+            obj.service = doc.get<std::string>("service");
+            return obj;
         }
-        return obj;
+
+        boost::property_tree::ptree convert_health(const slipway::health& obj) noexcept(true)
+        {
+            boost::property_tree::ptree doc;
+            doc.put("pier", obj.pier);
+            doc.put("service", obj.service);
+            doc.put("state", obj.state);
+            return doc;
+        }
+
+        slipway::health convert_health(const boost::property_tree::ptree& doc) noexcept(false)
+        {
+            slipway::health obj;
+            obj.pier = doc.get<std::string>("pier");
+            obj.service = doc.get<std::string>("service");
+            obj.state = static_cast<health::status>(doc.get<int>("state"));
+            return obj;
+        }
+
+        boost::property_tree::ptree convert_report(const slipway::report& obj) noexcept(true)
+        {
+            boost::property_tree::ptree doc;
+            doc.put("pier", obj.pier);
+            doc.put("service", obj.service);
+            doc.put("state", obj.state);
+
+            boost::property_tree::ptree context;
+            for(const auto& link : obj.asset)
+            {
+                boost::property_tree::ptree item;
+                item.put("pid", link.pid);
+                item.put("pier", link.pier);
+                context.push_back(std::make_pair("", item));
+            }
+            doc.put_child("asset", context);
+            return doc;
+        }
+
+        slipway::report convert_report(const boost::property_tree::ptree& doc) noexcept(false)
+        {
+            slipway::report obj;
+            obj.pier = doc.get<std::string>("pier");
+            obj.service = doc.get<std::string>("service");
+            obj.state = static_cast<health::status>(doc.get<int>("state"));
+
+            boost::property_tree::ptree asset;
+            for (auto& item : doc.get_child("asset", asset))
+            {
+                report::spawn spawn;
+                spawn.pid = item.second.get<int>("pid");
+                spawn.pier = item.second.get<std::string>("pier");
+                obj.asset.emplace_back(std::move(spawn));
+            }
+            return obj;
+        }
     }
 
-    void push_message(boost::asio::streambuf& buffer, const slipway::message& msg) noexcept(true)
+    void push_message(std::streambuf& buffer, const slipway::message& msg) noexcept(true)
     {
         boost::property_tree::ptree doc;
 
@@ -127,7 +130,7 @@ namespace slipway
         boost::property_tree::write_json(stream, doc, false);
     }
 
-    void pull_message(boost::asio::streambuf& buffer, slipway::message& msg) noexcept(false)
+    void pull_message(std::streambuf& buffer, slipway::message& msg) noexcept(false)
     {
         std::istream stream(&buffer);
         boost::property_tree::ptree doc;

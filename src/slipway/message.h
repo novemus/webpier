@@ -3,7 +3,7 @@
 #include <vector>
 #include <variant>
 #include <stdexcept>
-#include <boost/asio.hpp>
+#include <streambuf>
 
 namespace slipway
 {
@@ -89,6 +89,6 @@ namespace slipway
         }
     };
 
-    void push_message(boost::asio::streambuf& buffer, const message& message) noexcept(true);
-    void pull_message(boost::asio::streambuf& buffer, message& message) noexcept(false);
+    void push_message(std::streambuf& buffer, const message& message) noexcept(true);
+    void pull_message(std::streambuf& buffer, message& message) noexcept(false);
 }
