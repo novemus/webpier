@@ -8,6 +8,7 @@
 #include <boost/interprocess/sync/scoped_lock.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/process/v2/process.hpp>
+#include <boost/process/v2/environment.hpp>
 #include <boost/algorithm/string.hpp>
 #include <filesystem>
 #include <fstream>
@@ -47,14 +48,10 @@ namespace slipway
             return boost::posix_time::seconds(20);
         }
 
-        std::string get_exec()
+        boost::filesystem::path get_exec()
         {
             const char* exec = std::getenv("WEBPIER_EXEC");
-#ifdef WIN32
-            return exec ? exec : "wormhole.exe";
-#else
-            return exec ? exec : "wormhole";
-#endif
+            return exec ? boost::filesystem::path(exec) : boost::process::v2::environment::find_executable("wormhole");
         }
 
         template<class protocol>

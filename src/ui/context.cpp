@@ -1,9 +1,11 @@
-#include "../store/context.h"
-#include "../store/utils.h"
 #include "context.h"
 #include "messagedialog.h"
 #include "startupdialog.h"
+#include <store/context.h>
+#include <store/utils.h>
+#include <slipway/slipway.h>
 #include <boost/property_tree/json_parser.hpp>
+#include <boost/process.hpp>
 #include <wx/utils.h> 
 #include <wx/stdpaths.h>
 #include <wx/dataview.h>
@@ -11,13 +13,8 @@
 
 namespace WebPier
 {
-    std::shared_ptr<webpier::context> GetContext()
+    wxString GetHome()
     {
-        static std::shared_ptr<webpier::context> s_context;
-
-        if (s_context)
-            return s_context;
-
         wxString home;
         if (!wxGetEnv("WEBPIER_HOME", &home))
             home = wxStandardPaths::Get().GetUserLocalDataDir();
@@ -29,8 +26,18 @@ namespace WebPier
             throw webpier::usage_error("no context");
         }
 
-        auto path = home.ToStdString(wxGet_wxConvUTF8());
-        auto context = webpier::open_context(path);
+        return home;
+    }
+
+    std::shared_ptr<webpier::context> GetContext()
+    {
+        static std::shared_ptr<webpier::context> s_context;
+
+        if (s_context)
+            return s_context;
+
+        auto home = GetHome().ToStdString(wxGet_wxConvUTF8());
+        auto context = webpier::open_context(home);
 
         webpier::config config;
         context->get_config(config);
@@ -41,8 +48,8 @@ namespace WebPier
             if (dialog.ShowModal() == wxID_OK)
             {
                 config.pier = dialog.GetIdentity().ToStdString(wxGet_wxConvUTF8());
-                config.repo = path + "/" + webpier::to_hexadecimal(config.pier.data(), config.pier.size());
-                config.log.folder = path + "/journal";
+                config.repo = home + "/" + webpier::to_hexadecimal(config.pier.data(), config.pier.size());
+                config.log.folder = home + "/journal";
             }
 
             if (config.pier.empty())
@@ -51,8 +58,21 @@ namespace WebPier
             context->set_config(config);
         }
 
-        s_context = context;
-        return context;
+        return s_context = context;
+    }
+
+    std::shared_ptr<slipway::daemon> GetDaemon()
+    {
+        static std::shared_ptr<slipway::daemon> s_client;
+        if (s_client)
+            return s_client;
+
+        auto home = GetHome().ToStdString(wxGet_wxConvUTF8());
+
+        const char* exec = std::getenv("SLIPWAY_EXEC");
+        boost::process::spawn(exec ? boost::filesystem::path(exec) : boost::process::search_path("slipway"), home);
+
+        return s_client = slipway::create_client(home);
     }
 
     bool IsEqual(ServicePtr lhs, ServicePtr rhs)
