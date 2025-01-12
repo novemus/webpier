@@ -14,7 +14,7 @@ namespace webpier
         constexpr const char* cert_file_name = "cert.crt";
         constexpr const char* key_file_name = "private.key";
         constexpr const char* conf_file_name = "webpier.json";
-
+        
         struct locker
         {
             locker(const std::filesystem::path& file)
@@ -100,6 +100,9 @@ namespace webpier
                         boost::property_tree::read_json(file.string(), doc);
                         m_config.pier = doc.get<std::string>("pier");
                         m_config.repo = doc.get<std::string>("repo");
+                        m_config.log.folder = doc.get<std::string>("log.folder", "");
+                        m_config.log.level = journal::severity(doc.get<int>("log.level", journal::info));
+                        m_config.nat.hops = doc.get<uint8_t>("nat.hops", 7);
                         m_config.nat.stun = doc.get<std::string>("nat.stun", default_stun_server);
                         m_config.nat.hops = doc.get<uint8_t>("nat.hops", 7);
                         m_config.dht.bootstrap = doc.get<std::string>("dht.bootstrap", default_dht_bootstrap);
@@ -129,6 +132,8 @@ namespace webpier
                     boost::property_tree::ptree doc;
                     doc.put("pier", m_config.pier);
                     doc.put("repo", m_config.repo);
+                    doc.put("log.folder", m_config.log.folder);
+                    doc.put("log.level", m_config.log.level);
                     doc.put("nat.stun", m_config.nat.stun);
                     doc.put("nat.hops", m_config.nat.hops);
                     doc.put("dht.bootstrap", m_config.dht.bootstrap);
@@ -270,6 +275,9 @@ namespace webpier
                     m_bundle.emplace(m_config.pier, bundle::mapped_type());
 
                     hard_lock lock(m_guard);
+
+                    std::filesystem::create_directories(m_config.repo);
+                    std::filesystem::create_directories(m_config.log.folder);
 
                     if (!std::filesystem::exists(cert) && !std::filesystem::exists(key))
                     {

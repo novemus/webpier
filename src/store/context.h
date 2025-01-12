@@ -15,6 +15,23 @@ namespace webpier
     struct usage_error : public std::runtime_error { usage_error(const std::string& what) : std::runtime_error(what) {} };
     struct file_error : public std::runtime_error { file_error(const std::string& what) : std::runtime_error(what) {} };
 
+    struct journal
+    {
+        enum severity
+        {
+            none,
+            fatal,
+            error,
+            warning,
+            info,
+            debug,
+            trace
+        };
+
+        std::string folder;
+        severity level = info;
+    };
+
     struct puncher
     {
         std::string stun = default_stun_server;
@@ -43,6 +60,7 @@ namespace webpier
     {
         std::string pier;
         std::string repo;
+        journal log;
         puncher nat;
         dhtnode dht;
         emailer email;

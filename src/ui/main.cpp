@@ -571,7 +571,7 @@ class CWebPierApp : public wxApp
 public:
     bool OnInit() override
     {
-        if (!wxApp::OnInit() )
+        if (!wxApp::OnInit())
             return false;
 
         wxImage::AddHandler(new wxPNGHandler);

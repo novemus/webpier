@@ -40,7 +40,21 @@ namespace WebPier
 
     struct Config
     {
+        enum Logging
+        {
+            none,
+            fatal,
+            error,
+            warning,
+            info,
+            debug,
+            trace
+        };
+
         wxString Pier;
+        wxString Repo;
+        wxString LogFolder;
+        Logging LogLevel;
         wxString StunServer;
         wxUint8 PunchHops;
         wxString DhtBootstrap;

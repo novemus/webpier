@@ -1,6 +1,7 @@
 #include "message.h"
 #include <store/context.h>
 #include <plexus/plexus.h>
+#include <wormhole/logger.h>
 #include <boost/asio.hpp>
 #include <boost/asio/spawn.hpp>
 #include <boost/interprocess/sync/file_lock.hpp>
@@ -38,9 +39,9 @@ namespace slipway
             {
                 return boost::posix_time::seconds(timeout ? std::stoi(timeout) : 20);
             }
-            catch (...)
+            catch (const std::exception& ex)
             {
-                std::cout << "can't parse retry timeout" << std::endl;
+                _err_ << "can't parse retry timeout: " << ex.what();
             }
 
             return boost::posix_time::seconds(20);
@@ -49,11 +50,11 @@ namespace slipway
         std::string get_exec()
         {
             const char* exec = std::getenv("WEBPIER_EXEC");
-    #ifdef WIN32
+#ifdef WIN32
             return exec ? exec : "wormhole.exe";
-    #else
+#else
             return exec ? exec : "wormhole";
-    #endif
+#endif
         }
 
         template<class protocol>
@@ -127,6 +128,15 @@ namespace slipway
             return ep.address().to_string() + ":" + std::to_string(ep.port());
         }
 
+        std::string stringify(const std::chrono::system_clock::time_point& time)
+        {
+            std::time_t tt = std::chrono::system_clock::to_time_t(time);
+            std::tm tm = *std::gmtime(&tt);
+            std::stringstream ss;
+            ss << std::put_time(&tm, "%Y%m%d%H%M%S");
+            return ss.str();
+        }
+
         class spawner
         {
             class session
@@ -144,7 +154,7 @@ namespace slipway
                             m_io.run(ec);
 
                             if (ec)
-                                std::cout << "spawn error: " << ec.message() << std::endl;
+                                _err_ << "spawn error: " << ec.message();
 
                             return ec;
                         });
@@ -213,9 +223,9 @@ namespace slipway
                         item.second.terminate();
                 }
 
-                auto on_accept = [this, serv](const identity&, const identity&, const udp::endpoint& bind, const reference& self, const reference& mate)
+                auto on_accept = [this, conf, serv](const identity&, const identity&, const udp::endpoint& bind, const reference& self, const reference& mate)
                 {
-                    m_io.post([this, serv, bind, self, mate]()
+                    m_io.post([this, conf, serv, bind, self, mate]()
                     {
                         boost::process::v2::process proc(m_io, get_exec(), 
                         {
@@ -223,14 +233,16 @@ namespace slipway
                             "--service=" + serv.address,
                             "--gateway=" + stringify(bind),
                             "--faraway=" + stringify(mate.endpoint),
-                            "--obscure=" + std::to_string(serv.obscure ? self.puzzle ^ mate.puzzle : 0)
+                            "--obscure=" + std::to_string(serv.obscure ? self.puzzle ^ mate.puzzle : 0),
+                            "--log-file=" + (conf.log.folder.empty() ? "" : conf.log.folder + "/export.%p.log"),
+                            "--log-level=" + std::to_string(conf.log.level)
                         });
 
-                        std::cout << "launch export process: service=" << serv.name << " pier=" << serv.pier << " pid=" << proc.id() << std::endl;
+                        _inf_ << "launch export process: service=" << serv.name << " pier=" << serv.pier << " pid=" << proc.id();
 
                         proc.async_wait([this, serv, id = proc.id()](const boost::system::error_code& ec, int code)
                         {
-                            std::cout << "joined export process: pid=" << id << " code=" << code << " message=" << ec.message() << std::endl;
+                            _inf_ << "joined export process: pid=" << id << " code=" << code << " message=" << ec.message();
 
                             auto range = m_pool.equal_range(serv.pier);
                             m_pool.erase(std::find_if(range.first, range.second, [id](const auto& item)
@@ -246,7 +258,7 @@ namespace slipway
 
                 auto on_error = [serv](const identity&, const identity&, const std::string& error)
                 {
-                    std::cout << "can't start export: service=" << serv.name << " pier=" << serv.pier << " error=" << error << std::endl;
+                    _err_ << "can't start export: service=" << serv.name << " pier=" << serv.pier << " error=" << error;
                 };
 
                 for (const auto& peer : peers)
@@ -281,14 +293,16 @@ namespace slipway
                             "--service=" + serv.address,
                             "--gateway=" + stringify(bind),
                             "--faraway=" + stringify(mate.endpoint),
-                            "--obscure=" + std::to_string(serv.obscure ? self.puzzle ^ mate.puzzle : 0)
+                            "--obscure=" + std::to_string(serv.obscure ? self.puzzle ^ mate.puzzle : 0),
+                            "--log-file=" + (conf.log.folder.empty() ? "" : conf.log.folder + "/import.%p.log"),
+                            "--log-level=" + std::to_string(conf.log.level)
                         });
 
-                        std::cout << "launch import process: service=" << serv.name << " pier=" << serv.pier << " pid=" << proc.id() << std::endl;
+                        _inf_ << "launch import process: service=" << serv.name << " pier=" << serv.pier << " pid=" << proc.id();
 
                         proc.async_wait([this, conf, serv, id = proc.id()](const boost::system::error_code& ec, int code)
                         {
-                            std::cout << "joined import process: pid=" << id << " code=" << code << " message=" << ec.message() << std::endl;
+                            _inf_ << "joined import process: pid=" << id << " code=" << code << " message=" << ec.message();
 
                             auto range = m_pool.equal_range(serv.pier);
                             m_pool.erase(std::find_if(range.first, range.second, [id](const auto& item)
@@ -312,7 +326,7 @@ namespace slipway
 
                 auto on_error = [this, conf, serv](const identity&, const identity&, const std::string& error)
                 {
-                    std::cout << "can't start import: service=" << serv.name << " pier=" << serv.pier << " error=" << error << std::endl;
+                    _err_ << "can't start import: service=" << serv.name << " pier=" << serv.pier << " error=" << error;
 
                     m_io.post([this, conf, serv]()
                     {
@@ -403,6 +417,10 @@ namespace slipway
                 return webpier::config {
                     doc.get<std::string>("pier"),
                     doc.get<std::string>("context"),
+                    webpier::journal {
+                        doc.get<std::string>("log.folder", ""),
+                        webpier::journal::severity(doc.get<int>("log.level", webpier::journal::info))
+                    },
                     webpier::puncher {
                         doc.get<std::string>("nat.stun"),
                         doc.get<uint8_t>("nat.hops", 7)
@@ -484,6 +502,11 @@ namespace slipway
                 boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(guard);
 
                 webpier::config conf = load_config();
+
+                wormhole::log::set(
+                    wormhole::log::severity(conf.log.level),
+                    conf.log.folder.empty() ? "" : conf.log.folder + "/slipway." + stringify(std::chrono::system_clock::time_point()) + ".log"
+                    );
 
                 std::map<handle, spawner> pool;
                 for (auto const& owner : std::filesystem::directory_iterator(conf.repo))
@@ -684,7 +707,7 @@ namespace slipway
                     if (error)
                     {
                         if (error != boost::asio::error::operation_aborted)
-                            std::cerr << error.message() << std::endl;
+                            _err_ << error.message();
 
                         error = socket.close(error);
                         return;
@@ -696,7 +719,7 @@ namespace slipway
                     if (error)
                     {
                         if (error != boost::asio::error::operation_aborted)
-                            std::cerr << error.message() << std::endl;
+                            _err_ << error.message();
 
                         error = socket.close(error);
                         return;

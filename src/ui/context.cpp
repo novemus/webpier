@@ -21,7 +21,7 @@ namespace WebPier
         wxString home;
         if (!wxGetEnv("WEBPIER_HOME", &home))
             home = wxStandardPaths::Get().GetUserLocalDataDir();
-
+        
         if (!wxFileName::Exists(home) && !wxFileName::Mkdir(home))
         {
             CMessageDialog dialog(nullptr, _("can't create home directory ") + home, wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
@@ -29,7 +29,8 @@ namespace WebPier
             throw webpier::usage_error("no context");
         }
 
-        auto context = webpier::open_context(home.ToStdString(wxGet_wxConvUTF8()));
+        auto path = home.ToStdString(wxGet_wxConvUTF8());
+        auto context = webpier::open_context(path);
 
         webpier::config config;
         context->get_config(config);
@@ -38,7 +39,11 @@ namespace WebPier
         {
             CStartupDialog dialog(nullptr);
             if (dialog.ShowModal() == wxID_OK)
+            {
                 config.pier = dialog.GetIdentity().ToStdString(wxGet_wxConvUTF8());
+                config.repo = path + "/" + webpier::to_hexadecimal(config.pier.data(), config.pier.size());
+                config.log.folder = path + "/journal";
+            }
 
             if (config.pier.empty())
                 throw webpier::usage_error("can't init context");
@@ -213,10 +218,10 @@ namespace WebPier
 
         void Store() noexcept(false) override
         {
-            auto pier = Pier.ToStdString(wxGet_wxConvUTF8());
             webpier::config actual {
-                pier,
-                webpier::to_hexadecimal(pier.data(), pier.size()),
+                Pier.ToStdString(wxGet_wxConvUTF8()),
+                Repo.ToStdString(wxGet_wxConvUTF8()),
+                { LogFolder.ToStdString(wxGet_wxConvUTF8()), webpier::journal::severity(LogLevel) },
                 { StunServer.ToStdString(wxGet_wxConvUTF8()), PunchHops },
                 { DhtBootstrap.ToStdString(wxGet_wxConvUTF8()), DhtPort },
                 { 
@@ -239,6 +244,9 @@ namespace WebPier
         void Revert() noexcept(true) override
         {
             Pier = wxString::FromUTF8(m_origin.pier);
+            Repo = wxString::FromUTF8(m_origin.repo);
+            LogFolder = wxString::FromUTF8(m_origin.log.folder);
+            LogLevel = Logging(m_origin.log.level);
             StunServer = wxString::FromUTF8(m_origin.nat.stun);
             PunchHops = m_origin.nat.hops;
             DhtBootstrap = wxString::FromUTF8(m_origin.dht.bootstrap);
