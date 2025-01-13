@@ -50,7 +50,7 @@ namespace slipway
 
         boost::filesystem::path get_exec()
         {
-            const char* exec = std::getenv("WEBPIER_EXEC");
+            const char* exec = std::getenv("WORMHOLE_EXEC");
             return exec ? boost::filesystem::path(exec) : boost::process::v2::environment::find_executable("wormhole");
         }
 
@@ -151,7 +151,7 @@ namespace slipway
                             m_io.run(ec);
 
                             if (ec)
-                                _err_ << "spawn error: " << ec.message();
+                                _err_ << "session failed: error=" << ec.message();
 
                             return ec;
                         });
@@ -211,12 +211,12 @@ namespace slipway
                 auto opts = make_options(conf, serv);
                 auto host = make_identity(conf.pier);
 
-                std::set<std::string> peers;
-                boost::split(peers, conf.pier, boost::is_any_of(" "));
+                std::set<std::string> piers;
+                boost::split(piers, conf.pier, boost::is_any_of(" "));
 
                 for(auto& item : m_pool)
                 {
-                    if (peers.find(item.first) == peers.end())
+                    if (piers.find(item.first) == piers.end())
                         item.second.terminate();
                 }
 
@@ -235,7 +235,7 @@ namespace slipway
                             "--log-level=" + std::to_string(conf.log.level)
                         });
 
-                        _inf_ << "launch export process: service=" << serv.name << " pier=" << serv.pier << " pid=" << proc.id();
+                        _inf_ << "launch export process: pid=" << proc.id() << " service=" << serv.name << " pier=" << serv.pier;
 
                         proc.async_wait([this, serv, id = proc.id()](const boost::system::error_code& ec, int code)
                         {
@@ -258,8 +258,11 @@ namespace slipway
                     _err_ << "can't start export: service=" << serv.name << " pier=" << serv.pier << " error=" << error;
                 };
 
-                for (const auto& peer : peers)
-                    m_work->spawn_accept(opts, host, make_identity(peer), on_accept, on_error);
+                for (const auto& pier : piers)
+                {
+                    _dbg_ << "start export: service=" << serv.name << " pier=" << pier;
+                    m_work->spawn_accept(opts, host, make_identity(pier), on_accept, on_error);
+                }
             }
 
             void start_import(const webpier::config& conf, const webpier::service& serv)
@@ -295,7 +298,7 @@ namespace slipway
                             "--log-level=" + std::to_string(conf.log.level)
                         });
 
-                        _inf_ << "launch import process: service=" << serv.name << " pier=" << serv.pier << " pid=" << proc.id();
+                        _inf_ << "launch import process: pid=" << proc.id() << " service=" << serv.name << " pier=" << serv.pier;
 
                         proc.async_wait([this, conf, serv, id = proc.id()](const boost::system::error_code& ec, int code)
                         {
@@ -338,6 +341,7 @@ namespace slipway
                     });
                 };
 
+                _dbg_ << "start import: service=" << serv.name << " pier=" << serv.pier;
                 m_work->spawn_invite(opts, host, peer, on_invite, on_error);
             }
 
@@ -531,6 +535,8 @@ namespace slipway
                             else
                                 iter = pool.emplace(id, spawner(m_io)).first;
 
+                            _inf_ << (serv.autostart ? "restore" : "suspend") << " service " << serv.name << " of " << pier;
+
                             serv.autostart
                                 ? iter->second.restore(pier, conf, serv)
                                 : iter->second.suspend();
@@ -553,6 +559,8 @@ namespace slipway
                 if (iter == m_pool.end())
                     iter = m_pool.emplace(id, spawner(m_io)).first;
 
+                _inf_ << (serv.autostart ? "restore" : "suspend") << " service " << id.service << " of " << id.pier;
+
                 if (serv.autostart)
                     iter->second.restore(id.pier, conf, serv);
                 else
@@ -562,14 +570,20 @@ namespace slipway
             void unplug() noexcept(false)
             {
                 for (auto& item : m_pool)
+                {
+                    _inf_ << "suspend service " << item.first.service << " of " << item.first.pier;
                     item.second.suspend();
+                }
             }
 
             void unplug(const slipway::handle& id) noexcept(false)
             {
                 auto iter = m_pool.find(id);
                 if (iter != m_pool.end())
+                {
+                    _inf_ << "suspend service " << id.service << " of " << id.pier;
                     iter->second.suspend();
+                }
             }
     
             void reboot() noexcept(false)
@@ -633,6 +647,9 @@ namespace slipway
                 try
                 {
                     slipway::pull_message(buffer, req);
+
+                    _trc_ << "handle request: action=" << req.action << " payload=" << req.payload.index();
+
                     switch (req.action)
                     {
                         case slipway::message::unplug:
@@ -680,10 +697,11 @@ namespace slipway
                 }
                 catch (const std::exception& ex)
                 {
+                    _err_ << "can't handle request: error=" << ex.what();
                     res = slipway::message::make(req.action, ex.what());
                 }
 
-                slipway::push_message(buffer, req);
+                slipway::push_message(buffer, res);
             }
         };
 
