@@ -125,15 +125,6 @@ namespace slipway
             return ep.address().to_string() + ":" + std::to_string(ep.port());
         }
 
-        std::string stringify(const std::chrono::system_clock::time_point& time)
-        {
-            std::time_t tt = std::chrono::system_clock::to_time_t(time);
-            std::tm tm = *std::gmtime(&tt);
-            std::stringstream ss;
-            ss << std::put_time(&tm, "%Y%m%d%H%M%S");
-            return ss.str();
-        }
-
         class spawner
         {
             class session
@@ -417,7 +408,7 @@ namespace slipway
 
                 return webpier::config {
                     doc.get<std::string>("pier"),
-                    doc.get<std::string>("context"),
+                    doc.get<std::string>("repo"),
                     webpier::journal {
                         doc.get<std::string>("log.folder", ""),
                         webpier::journal::severity(doc.get<int>("log.level", webpier::journal::info))
@@ -506,7 +497,7 @@ namespace slipway
 
                 wormhole::log::set(
                     wormhole::log::severity(conf.log.level),
-                    conf.log.folder.empty() ? "" : conf.log.folder + "/slipway." + stringify(std::chrono::system_clock::time_point()) + ".log"
+                    conf.log.folder.empty() ? "" : conf.log.folder + "/slipway.%p.log"
                     );
 
                 std::map<handle, spawner> pool;
@@ -553,18 +544,15 @@ namespace slipway
                 boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(guard);
 
                 webpier::config conf = load_config();
-                webpier::service serv = load_config(std::filesystem::path(conf.repo) / id.pier, id.service);
+                webpier::service serv = load_config(std::filesystem::path(conf.repo) / id.pier / conf_file_name, id.service);
 
                 auto iter = m_pool.find(id);
                 if (iter == m_pool.end())
                     iter = m_pool.emplace(id, spawner(m_io)).first;
 
-                _inf_ << (serv.autostart ? "restore" : "suspend") << " service " << id.service << " of " << id.pier;
+                _inf_ << "restore service " << id.service << " of " << id.pier;
 
-                if (serv.autostart)
-                    iter->second.restore(id.pier, conf, serv);
-                else
-                    iter->second.suspend();
+                iter->second.restore(id.pier, conf, serv);
             }
 
             void unplug() noexcept(false)
@@ -584,18 +572,6 @@ namespace slipway
                     _inf_ << "suspend service " << id.service << " of " << id.pier;
                     iter->second.suspend();
                 }
-            }
-    
-            void reboot() noexcept(false)
-            {
-                m_pool.clear();
-                engage();
-            }
-
-            void reboot(const slipway::handle& id) noexcept(false)
-            {
-                m_pool.erase(id);
-                engage(id);
             }
 
             std::vector<slipway::health> status() noexcept(false)
@@ -634,10 +610,11 @@ namespace slipway
 
         public:
 
-            engine(boost::asio::io_context& io, const std::filesystem::path& config)
+            engine(boost::asio::io_context& io, const std::filesystem::path& home)
                 : m_io(io)
-                , m_config(config)
+                , m_config(home / conf_file_name)
             {
+                engage();
             }
 
             void handle_request(boost::asio::streambuf& buffer) noexcept(true)
@@ -666,14 +643,6 @@ namespace slipway
                                 ? engage(std::get<slipway::handle>(req.payload)) 
                                 : engage();
                             res = slipway::message::make(slipway::message::engage);
-                            break;
-                        }
-                        case slipway::message::reboot:
-                        {
-                            req.payload.index() == 1 
-                                ? reboot(std::get<slipway::handle>(req.payload)) 
-                                : reboot();
-                            res = slipway::message::make(slipway::message::reboot);
                             break;
                         }
                         case slipway::message::status:

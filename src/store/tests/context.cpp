@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_CASE(context)
     webpier::config in {
         peer,
         prep.string(),
-        {},
+        { dest.string() },
         {},
         {},
         {

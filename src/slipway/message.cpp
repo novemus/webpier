@@ -151,7 +151,7 @@ namespace slipway
         {
             boost::property_tree::ptree health;
             health = doc.get_child("health", health);
-            if (health.count(""))
+            if (health.count("") || health.empty())
             {
                 std::vector<slipway::health> list;
                 for (const auto& item : health)
@@ -167,7 +167,7 @@ namespace slipway
         {
             boost::property_tree::ptree report;
             report = doc.get_child("report", report);
-            if (report.count(""))
+            if (report.count("") || report.empty())
             {
                 std::vector<slipway::report> list;
                 for (const auto& item : report)

@@ -107,19 +107,14 @@ namespace slipway
                 perform(message::make(message::engage));
             }
 
-            void reboot() noexcept(false) override
-            {
-                perform(message::make(message::reboot));
-            }
-
             void status(std::vector<slipway::health>& result) noexcept(false) override
             {
-                perform<std::vector<slipway::health>>(message::make(message::status));
+                result = perform<std::vector<slipway::health>>(message::make(message::status));
             }
 
             void review(std::vector<slipway::report>& result) noexcept(false) override
             {
-                perform<std::vector<slipway::report>>(message::make(message::review));
+                result = perform<std::vector<slipway::report>>(message::make(message::review));
             }
 
             void unplug(const handle& service) noexcept(false) override
@@ -132,19 +127,14 @@ namespace slipway
                 perform(message::make(message::engage, service));
             }
 
-            void reboot(const handle& service) noexcept(false) override
-            {
-                perform(message::make(message::reboot, service));
-            }
-
             void status(const handle& service, slipway::health& result) noexcept(false) override
             {
-                perform<slipway::health>(message::make(message::status, service));
+                result = perform<slipway::health>(message::make(message::status, service));
             }
 
             void review(const handle& service, slipway::report& result) noexcept(false) override
             {
-                perform<slipway::report>(message::make(message::review, service));
+                result = perform<slipway::report>(message::make(message::review, service));
             }
         };
     }

@@ -9,7 +9,7 @@ namespace webpier
 {
     constexpr const char* default_stun_server = "stun.ekiga.net";
     constexpr const char* default_dht_bootstrap = "bootstrap.jami.net:4222";
-    constexpr const uint16_t default_dht_port = 7222;
+    constexpr const uint16_t default_dht_port = 0;
 
     struct stale_error : public std::runtime_error { stale_error(const std::string& what) : std::runtime_error(what) {} };
     struct usage_error : public std::runtime_error { usage_error(const std::string& what) : std::runtime_error(what) {} };

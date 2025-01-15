@@ -4,16 +4,16 @@
 
 BOOST_AUTO_TEST_CASE(message)
 {
-    slipway::message initial = slipway::message::make(slipway::message::reboot), replica;
+    slipway::message initial = slipway::message::make(slipway::message::naught), replica;
     boost::asio::streambuf buffer;
 
-    BOOST_CHECK(initial.ok());
-    BOOST_CHECK_EQUAL(initial.action, slipway::message::reboot);
+    BOOST_CHECK(!initial.ok());
+    BOOST_CHECK_EQUAL(initial.action, slipway::message::naught);
     BOOST_CHECK_EQUAL(initial.payload.index(), 0);
 
     BOOST_REQUIRE_NO_THROW(slipway::push_message(buffer, initial));
     BOOST_REQUIRE_NO_THROW(slipway::pull_message(buffer, replica));
-    BOOST_CHECK(replica.ok());
+    BOOST_CHECK(!replica.ok());
     BOOST_CHECK_EQUAL(replica.action, initial.action);
     BOOST_CHECK_EQUAL(replica.payload.index(), initial.payload.index());
 
@@ -87,6 +87,21 @@ BOOST_AUTO_TEST_CASE(message)
     BOOST_CHECK_EQUAL(replica.action, initial.action);
     BOOST_CHECK_EQUAL(replica.payload.index(), initial.payload.index());
     BOOST_CHECK(std::get<slipway::report>(replica.payload) == std::get<slipway::report>(initial.payload));
+
+    std::vector<slipway::health> empty;
+    initial = slipway::message::make(slipway::message::status, empty);
+
+    BOOST_CHECK(initial.ok());
+    BOOST_CHECK_EQUAL(initial.action, slipway::message::status);
+    BOOST_CHECK_EQUAL(initial.payload.index(), 4);
+    BOOST_CHECK(std::get<std::vector<slipway::health>>(initial.payload) == empty);
+
+    BOOST_REQUIRE_NO_THROW(slipway::push_message(buffer, initial));
+    BOOST_REQUIRE_NO_THROW(slipway::pull_message(buffer, replica));
+    BOOST_CHECK(replica.ok());
+    BOOST_CHECK_EQUAL(replica.action, initial.action);
+    BOOST_CHECK_EQUAL(replica.payload.index(), initial.payload.index());
+    BOOST_CHECK(std::get<std::vector<slipway::health>>(replica.payload) == std::get<std::vector<slipway::health>>(initial.payload));
 
     std::vector<slipway::health> states { state, state };
     initial = slipway::message::make(slipway::message::status, states);

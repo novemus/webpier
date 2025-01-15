@@ -67,10 +67,16 @@ namespace WebPier
         if (s_client)
             return s_client;
 
-        auto home = GetHome().ToStdString(wxGet_wxConvUTF8());
+        auto context = GetContext();
+        webpier::config config;
+        context->get_config(config);
 
-        const char* exec = std::getenv("SLIPWAY_EXEC");
-        boost::process::spawn(exec ? boost::filesystem::path(exec) : boost::process::search_path("slipway"), home);
+        auto home = GetHome().ToStdString(wxGet_wxConvUTF8());
+        if (config.autostart == false)
+        {
+            const char* exec = std::getenv("SLIPWAY_EXEC");
+            boost::process::spawn(exec ? boost::filesystem::path(exec) : boost::process::search_path("slipway"), home);
+        }
 
         return s_client = slipway::create_client(home);
     }
