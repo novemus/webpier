@@ -1,5 +1,6 @@
 #include "message.h"
 #include <store/context.h>
+#include <store/utils.h>
 #include <plexus/plexus.h>
 #include <wormhole/logger.h>
 #include <boost/asio.hpp>
@@ -46,12 +47,6 @@ namespace slipway
             }
 
             return boost::posix_time::seconds(20);
-        }
-
-        boost::filesystem::path get_exec()
-        {
-            const char* exec = std::getenv("WORMHOLE_EXEC");
-            return exec ? boost::filesystem::path(exec) : boost::process::v2::environment::find_executable("wormhole");
         }
 
         template<class protocol>
@@ -215,7 +210,7 @@ namespace slipway
                 {
                     m_io.post([this, conf, serv, bind, self, mate]()
                     {
-                        boost::process::v2::process proc(m_io, get_exec(), 
+                        boost::process::v2::process proc(m_io, webpier::find_exec("WORMHOLE_EXEC", WORMHOLE_EXEC), 
                         {
                             "--purpose=export", 
                             "--service=" + serv.address,
@@ -278,7 +273,7 @@ namespace slipway
                 {
                     m_io.post([this, conf, serv, bind, self, mate]()
                     {
-                        boost::process::v2::process proc(m_io, get_exec(), 
+                        boost::process::v2::process proc(m_io, webpier::find_exec("WORMHOLE_EXEC", WORMHOLE_EXEC), 
                         {
                             "--purpose=import", 
                             "--service=" + serv.address,

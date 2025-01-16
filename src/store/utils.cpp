@@ -8,6 +8,7 @@
 #include <openssl/pem.h>
 #include <openssl/rand.h>
 #include <openssl/err.h>
+#include <boost/process.hpp>
 
 namespace webpier
 {
@@ -175,5 +176,20 @@ namespace webpier
             out << std::setw(2) << std::setfill('0') << std::hex << (int)((uint8_t*)data)[i];
         }
         return out.str();
+    }
+
+    boost::filesystem::path find_exec(const std::string& env, const std::string& def)
+    {
+        boost::filesystem::path file(def);
+
+        const char* val = std::getenv(env.c_str());
+        if (val && boost::filesystem::exists(val))
+            return boost::filesystem::path(env);
+
+        auto exe = boost::process::search_path(file.filename());
+        if (boost::filesystem::exists(exe))
+            return exe.string();
+
+        return file;
     }
 }
