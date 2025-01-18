@@ -20,9 +20,11 @@ namespace slipway
 
                 boost::asio::spawn(m_io, [&](boost::asio::yield_context yield)
                 {
+                    static constexpr const int REQUEST_TIMEOUT = 30;
+
                     boost::asio::deadline_timer timer(m_io);
 
-                    timer.expires_from_now(boost::posix_time::seconds(30));
+                    timer.expires_from_now(boost::posix_time::seconds(REQUEST_TIMEOUT));
                     timer.async_wait([&](const boost::system::error_code& error)
                     {
                         if(error)
@@ -89,8 +91,26 @@ namespace slipway
             {
                 execute([&](boost::asio::yield_context yield)
                 {
+                    static constexpr const size_t MAX_ATTEMPTS = 4;
+
                     boost::system::error_code ec;
-                    m_socket.async_connect(home + "/" + jack_file_name, yield[ec]);
+                    for(size_t i = 0; i < MAX_ATTEMPTS; ++i)
+                    {
+                        if (ec.value() == boost::system::errc::no_such_file_or_directory)
+                        {
+                            boost::asio::deadline_timer timer(m_io);
+                            timer.expires_from_now(boost::posix_time::seconds(i * 2));
+                            timer.async_wait(yield[ec]);
+
+                            if (ec)
+                                break;
+                        }
+ 
+                        m_socket.async_connect(home + "/" + jack_file_name, yield[ec]);
+
+                        if (ec.value() != boost::system::errc::no_such_file_or_directory)
+                            break;
+                    }
 
                     if (ec)
                         throw pipe_error(ec.message());

@@ -36,7 +36,7 @@ class CImportPage : public wxPanel
     wxStaticText* m_rendLabel;
     wxStaticText* m_rendValue;
 
-    wxVector<WebPier::ServicePtr> m_import;
+    wxVector<WebPier::Context::ServicePtr> m_import;
 
     void onListItemSelected( wxCommandEvent& event );
     void onServiceCtrlKillFocus( wxFocusEvent& event );
@@ -45,11 +45,11 @@ class CImportPage : public wxPanel
 
 public:
 
-    CImportPage(const wxString& pier, const WebPier::ServiceList& forImport, wxWindow* parent);
+    CImportPage(const wxString& pier, const WebPier::Context::ServiceList& forImport, wxWindow* parent);
     ~CImportPage();
 
     bool ValidateData();
-    WebPier::ServiceList GetImport() const;
+    WebPier::Context::ServiceList GetImport() const;
 };
 
 class CExportPage : public wxPanel
@@ -66,17 +66,17 @@ class CExportPage : public wxPanel
     wxStaticText* m_rendLabel;
     wxStaticText* m_rendValue;
 
-    wxVector<WebPier::ServicePtr> m_export;
+    wxVector<WebPier::Context::ServicePtr> m_export;
 
     void onListItemSelected( wxCommandEvent& event );
     void populate(int line);
 
 public:
 
-    CExportPage(const wxString& pier, const WebPier::ServiceList& forExport, wxWindow* parent);
+    CExportPage(const wxString& pier, const WebPier::Context::ServiceList& forExport, wxWindow* parent);
     ~CExportPage();
 
-    WebPier::ServiceList GetExport() const;
+    WebPier::Context::ServiceList GetExport() const;
 };
 
 class CExchangeDialog : public wxDialog
@@ -94,13 +94,13 @@ class CExchangeDialog : public wxDialog
 
 public:
 
-    CExchangeDialog(const wxString& pier, const WebPier::ServiceList& forImport, const WebPier::ServiceList& forExport, wxWindow* parent);
-    CExchangeDialog(const wxString& pier, const WebPier::ServiceList& forExport, wxWindow* parent);
+    CExchangeDialog(const wxString& pier, const WebPier::Context::ServiceList& forImport, const WebPier::Context::ServiceList& forExport, wxWindow* parent);
+    CExchangeDialog(const wxString& pier, const WebPier::Context::ServiceList& forExport, wxWindow* parent);
 
     ~CExchangeDialog();
 
     bool NeedImportMerge() const { return !m_purge->IsChecked(); }
     bool NeedExportReply() const { return m_reply->IsChecked(); }
-    WebPier::ServiceList GetImport() const { return m_importPage->GetImport(); }
-    WebPier::ServiceList GetExport() const { return m_exportPage->GetExport(); }
+    WebPier::Context::ServiceList GetImport() const { return m_importPage->GetImport(); }
+    WebPier::Context::ServiceList GetExport() const { return m_exportPage->GetExport(); }
 };

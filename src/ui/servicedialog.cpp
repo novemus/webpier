@@ -2,7 +2,7 @@
 #include "messagedialog.h"
 #include <wx/valnum.h>
 
-CServiceDialog::CServiceDialog(WebPier::ConfigPtr config, WebPier::ServicePtr service, wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style)
+CServiceDialog::CServiceDialog(WebPier::Context::ConfigPtr config, WebPier::Context::ServicePtr service, wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style)
     : wxDialog(parent, id, title, pos, size, style)
     , m_config(config)
     , m_service(service)
@@ -16,7 +16,7 @@ CServiceDialog::CServiceDialog(WebPier::ConfigPtr config, WebPier::ServicePtr se
     rendChoice.Add(wxT("Email"));
     rendChoice.Add(wxT("DHT"));
 
-    auto pierChoice = WebPier::GetPiers();
+    auto pierChoice = WebPier::Context::GetPiers();
 
     mainSizer->SetMinSize( wxSize( 400,-1 ) );
     m_propGrid = new wxPropertyGrid(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPG_BOLD_MODIFIED|wxPG_HIDE_MARGIN);

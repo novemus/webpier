@@ -3,7 +3,7 @@
 #include <wx/msgdlg.h> 
 #include <wx/valnum.h>
 
-CSettingsDialog::CSettingsDialog(WebPier::ConfigPtr config, wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style)
+CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style)
     : wxDialog(parent, id, title, pos, size, style)
     , m_config(config)
 {

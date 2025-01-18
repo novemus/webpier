@@ -9,7 +9,7 @@
 #include <wx/stdpaths.h>
 #include <wx/filename.h>
 
-wxVector<wxVariant> ToVariantList(WebPier::ServicePtr service)
+wxVector<wxVariant> ToVariantList(WebPier::Context::ServicePtr service)
 {
     wxVector<wxVariant> data;
     data.push_back(wxVariant(wxDataViewIconText(service->Name, ::GetGreyCircleImage())));
@@ -125,9 +125,9 @@ void CMainFrame::Populate()
     {
         m_serviceList->DeleteAllItems();
 
-        m_config = WebPier::GetConfig();
-        m_export = WebPier::GetExportServices();
-        m_import = WebPier::GetImportServices();
+        m_config = WebPier::Context::GetConfig();
+        m_export = WebPier::Context::GetExportServices();
+        m_import = WebPier::Context::GetImportServices();
 
         m_pierLabel->SetLabel(m_config->Pier);
 
@@ -192,7 +192,7 @@ void CMainFrame::onSettingsMenuSelection(wxCommandEvent& event)
 
 void CMainFrame::onAddServiceButtonClick(wxCommandEvent& event)
 {
-    WebPier::ServicePtr service = m_exportBtn->GetValue() ? WebPier::CreateExportService() : WebPier::CreateImportService();
+    WebPier::Context::ServicePtr service = m_exportBtn->GetValue() ? WebPier::Context::CreateExportService() : WebPier::Context::CreateImportService();
 
     CServiceDialog dialog(m_config, service, this);
     if (dialog.ShowModal() == wxID_OK)
@@ -221,7 +221,7 @@ void CMainFrame::onEditServiceButtonClick(wxCommandEvent& event)
 
     auto& services = m_exportBtn->GetValue() ? m_export : m_import;
     auto iter = services.find(m_serviceList->GetItemData(m_serviceList->GetSelection()));
-    WebPier::ServicePtr service = iter != services.end() ? iter->second : WebPier::ServicePtr();
+    WebPier::Context::ServicePtr service = iter != services.end() ? iter->second : WebPier::Context::ServicePtr();
 
     try
     {
@@ -257,8 +257,8 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
         if (fileDialog.ShowModal() == wxID_CANCEL)
             return;
 
-        WebPier::Offer offer;
-        WebPier::ReadOffer(fileDialog.GetPath(), offer);
+        WebPier::Context::Offer offer;
+        WebPier::Context::ReadOffer(fileDialog.GetPath(), offer);
 
         if (m_config->Pier == offer.Pier)
         {
@@ -268,10 +268,10 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
         }
 
         bool replacePier = false;
-        bool createPier = WebPier::IsUnknownPier(offer.Pier);
+        bool createPier = WebPier::Context::IsUnknownPier(offer.Pier);
         if (!createPier)
         {
-            if (offer.Certificate != WebPier::GetCertificate(offer.Pier))
+            if (offer.Certificate != WebPier::Context::GetCertificate(offer.Pier))
             {
                 CMessageDialog dialog(this, _("Such pier is already exists, but has a different certificate. Do you want to replace existing pier and its services?"), wxDEFAULT_DIALOG_STYLE | wxICON_QUESTION);
                 if (dialog.ShowModal() != wxID_YES)
@@ -292,10 +292,10 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
             return;
 
         if (replacePier)
-            WebPier::DelPier(offer.Pier);
+            WebPier::Context::DelPier(offer.Pier);
 
         if (createPier || replacePier)
-            WebPier::AddPier(offer.Pier, offer.Certificate);
+            WebPier::Context::AddPier(offer.Pier, offer.Certificate);
 
         auto exports = dialog.GetExport();
         auto imports = dialog.GetImport();
@@ -314,8 +314,8 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
         {
             for (auto& item : imports)
             {
-                WebPier::ServicePtr next = item.second;
-                WebPier::ServicePtr curr;
+                WebPier::Context::ServicePtr next = item.second;
+                WebPier::Context::ServicePtr curr;
                 for (auto& pair : m_import)
                 {
                     if (pair.second->Name == next->Name && pair.second->Pier == next->Pier)
@@ -327,7 +327,7 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
 
                 if (curr)
                 {
-                    if (!WebPier::IsEqual(curr, next))
+                    if (!WebPier::Context::IsEqual(curr, next))
                     {
                         CMessageDialog dialog(this, wxString::Format(_("Service '%s' is already imported from '%s', but differs from the new one. Do you want to replace it?"), next->Name, next->Pier), wxDEFAULT_DIALOG_STYLE | wxICON_QUESTION);
                         if (dialog.ShowModal() == wxID_YES)
@@ -360,7 +360,7 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
             if (fileDialog.ShowModal() == wxID_CANCEL)
                 return;
 
-            WebPier::WriteOffer(fileDialog.GetPath(), WebPier::Offer{ m_config->Pier, WebPier::GetCertificate(m_config->Pier), exports });
+            WebPier::Context::WriteOffer(fileDialog.GetPath(), WebPier::Context::Offer{ m_config->Pier, WebPier::Context::GetCertificate(m_config->Pier), exports });
         }
     }
     catch (const std::exception& ex)
@@ -382,7 +382,7 @@ void CMainFrame::onExportMenuSelection(wxCommandEvent& event)
         if (fileDialog.ShowModal() == wxID_CANCEL)
             return;
 
-        WebPier::WriteOffer(fileDialog.GetPath(), WebPier::Offer { m_config->Pier, WebPier::GetCertificate(m_config->Pier), dialog.GetExport() });
+        WebPier::Context::WriteOffer(fileDialog.GetPath(), WebPier::Context::Offer { m_config->Pier, WebPier::Context::GetCertificate(m_config->Pier), dialog.GetExport() });
     }
     catch (const std::exception& ex)
     {

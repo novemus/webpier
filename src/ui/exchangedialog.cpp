@@ -1,7 +1,7 @@
 #include "exchangedialog.h"
 #include "messagedialog.h"
 
-CImportPage::CImportPage(const wxString& pier, const WebPier::ServiceList& forImport, wxWindow* parent) 
+CImportPage::CImportPage(const wxString& pier, const WebPier::Context::ServiceList& forImport, wxWindow* parent) 
     : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxEmptyString)
 {
     this->SetLabel(_("Select services to import"));
@@ -186,22 +186,22 @@ bool CImportPage::ValidateData()
     return true;
 }
 
-WebPier::ServiceList CImportPage::GetImport() const
+WebPier::Context::ServiceList CImportPage::GetImport() const
 {
     wxArrayInt checked;
     m_serviceList->GetCheckedItems(checked);
 
-    WebPier::ServiceList imports;
+    WebPier::Context::ServiceList imports;
     for(auto index : checked)
     {
-        WebPier::ServicePtr next = m_import.at(index);
+        WebPier::Context::ServicePtr next = m_import.at(index);
         imports[wxUIntPtr(next.get())] = next;
     }
 
     return imports;
 }
 
-CExportPage::CExportPage(const wxString& pier, const WebPier::ServiceList& forExport, wxWindow* parent)
+CExportPage::CExportPage(const wxString& pier, const WebPier::Context::ServiceList& forExport, wxWindow* parent)
     : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxEmptyString)
 {
     this->SetLabel(_("Select services to export"));
@@ -342,22 +342,22 @@ void CExportPage::onListItemSelected(wxCommandEvent& event)
     event.Skip();
 }
 
-WebPier::ServiceList CExportPage::GetExport() const
+WebPier::Context::ServiceList CExportPage::GetExport() const
 {
     wxArrayInt checked;
     m_serviceList->GetCheckedItems(checked);
 
-    WebPier::ServiceList exports;
+    WebPier::Context::ServiceList exports;
     for(auto index : checked)
     {
-        WebPier::ServicePtr next = m_export.at(index);
+        WebPier::Context::ServicePtr next = m_export.at(index);
         exports[wxUIntPtr(next.get())] = next;
     }
 
     return exports;
 }
 
-CExchangeDialog::CExchangeDialog(const wxString& pier, const WebPier::ServiceList& forImport, const WebPier::ServiceList& forExport, wxWindow* parent) 
+CExchangeDialog::CExchangeDialog(const wxString& pier, const WebPier::Context::ServiceList& forImport, const WebPier::Context::ServiceList& forExport, wxWindow* parent) 
     : wxDialog( parent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE )
 {
     this->SetSizeHints( wxDefaultSize, wxDefaultSize );
@@ -414,8 +414,8 @@ CExchangeDialog::CExchangeDialog(const wxString& pier, const WebPier::ServiceLis
     m_next->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CExchangeDialog::onNextButtonClick ), NULL, this );
 }
 
-CExchangeDialog::CExchangeDialog(const wxString& host, const WebPier::ServiceList& forExport, wxWindow* parent)
-    : CExchangeDialog(host, WebPier::ServiceList(), forExport, parent)
+CExchangeDialog::CExchangeDialog(const wxString& host, const WebPier::Context::ServiceList& forExport, wxWindow* parent)
+    : CExchangeDialog(host, WebPier::Context::ServiceList(), forExport, parent)
 {
     m_back->Hide();
     m_purge->Hide();

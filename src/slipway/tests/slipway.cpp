@@ -34,8 +34,6 @@ BOOST_AUTO_TEST_CASE(client)
     BOOST_REQUIRE_NO_THROW(context->add_export_service(foo));
 
     boost::process::child server(webpier::find_exec("SLIPWAY_EXEC", SLIPWAY_EXEC), home.string());
-    BOOST_REQUIRE_EQUAL(server.wait_for(std::chrono::seconds(1)), false);
-
     auto client = slipway::create_client(home);
 
     slipway::handle foo_handle { host , "foo" };

@@ -44,12 +44,12 @@ class CSettingsDialog : public wxDialog
     wxFilePickerCtrl* m_caPicker;
     wxButton* m_cancelBtn;
     wxButton* m_okBtn;
-    WebPier::ConfigPtr m_config;
+    WebPier::Context::ConfigPtr m_config;
 
     void onOkButtonClick( wxCommandEvent& event );
 
 public:
 
-    CSettingsDialog( WebPier::ConfigPtr config, wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Settings"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER );
+    CSettingsDialog( WebPier::Context::ConfigPtr config, wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Settings"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER );
     ~CSettingsDialog();
 };

@@ -30,8 +30,8 @@ class CServiceDialog : public wxDialog
     wxPGProperty* m_bootItem;
     wxButton* m_ok;
     wxButton* m_cancel;
-    WebPier::ConfigPtr m_config;
-    WebPier::ServicePtr m_service;
+    WebPier::Context::ConfigPtr m_config;
+    WebPier::Context::ServicePtr m_service;
 
     void onPropertyChanged( wxPropertyGridEvent& event );
     void onOKButtonClick( wxCommandEvent& event );
@@ -39,8 +39,8 @@ class CServiceDialog : public wxDialog
 public:
 
     CServiceDialog(
-        WebPier::ConfigPtr config,
-        WebPier::ServicePtr service,
+        WebPier::Context::ConfigPtr config,
+        WebPier::Context::ServicePtr service,
         wxWindow* parent,
         wxWindowID id = wxID_ANY,
         const wxString& title = _("Service"),

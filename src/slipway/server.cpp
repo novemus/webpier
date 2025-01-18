@@ -521,7 +521,7 @@ namespace slipway
                             else
                                 iter = pool.emplace(id, spawner(m_io)).first;
 
-                            _inf_ << (serv.autostart ? "restore" : "suspend") << " service " << serv.name << " of " << pier;
+                            _inf_ << (serv.autostart ? "restore " : "suspend ") << serv.name << " of " << pier;
 
                             serv.autostart
                                 ? iter->second.restore(pier, conf, serv)
@@ -545,7 +545,7 @@ namespace slipway
                 if (iter == m_pool.end())
                     iter = m_pool.emplace(id, spawner(m_io)).first;
 
-                _inf_ << "restore service " << id.service << " of " << id.pier;
+                _inf_ << "restore " << id.service << " of " << id.pier;
 
                 iter->second.restore(id.pier, conf, serv);
             }
@@ -554,7 +554,7 @@ namespace slipway
             {
                 for (auto& item : m_pool)
                 {
-                    _inf_ << "suspend service " << item.first.service << " of " << item.first.pier;
+                    _inf_ << "suspend " << item.first.service << " of " << item.first.pier;
                     item.second.suspend();
                 }
             }
@@ -564,7 +564,7 @@ namespace slipway
                 auto iter = m_pool.find(id);
                 if (iter != m_pool.end())
                 {
-                    _inf_ << "suspend service " << id.service << " of " << id.pier;
+                    _inf_ << "suspend " << id.service << " of " << id.pier;
                     iter->second.suspend();
                 }
             }

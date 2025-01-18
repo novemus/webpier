@@ -184,11 +184,16 @@ namespace webpier
 
         const char* val = std::getenv(env.c_str());
         if (val && boost::filesystem::exists(val))
-            return boost::filesystem::path(env);
+            return boost::filesystem::path(val);
 
-        auto exe = boost::process::search_path(file.filename());
-        if (boost::filesystem::exists(exe))
-            return exe.string();
+        auto name = file.filename();
+        auto path = boost::process::search_path(name);
+
+        if (boost::filesystem::exists(path))
+            return path;
+
+        if (boost::filesystem::exists(name))
+            return name;
 
         return file;
     }
