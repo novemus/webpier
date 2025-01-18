@@ -381,7 +381,7 @@ CExchangeDialog::CExchangeDialog(const wxString& pier, const WebPier::ServiceLis
     m_purge->SetValue(false);
     footSizer->Add( m_purge, 1, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 
-    m_reply = new wxCheckBox( this, wxID_ANY, _("Make a reply advertisement"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_reply = new wxCheckBox( this, wxID_ANY, _("Make a counter offer"), wxDefaultPosition, wxDefaultSize, 0 );
     m_reply->SetValue(true);
     footSizer->Add( m_reply, 1, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
     m_reply->Hide();

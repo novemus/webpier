@@ -58,7 +58,7 @@ CSettingsDialog::CSettingsDialog(WebPier::ConfigPtr config, wxWindow* parent, wx
     idSizer->Add( idGridSizer, 1, wxALL|wxEXPAND, 5 );
     basicSizer->Add( idSizer, 0, wxEXPAND|wxALL, 10 );
 
-    m_daemonCtrl = new wxCheckBox( basicPanel, wxID_ANY, _("Start with system"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_daemonCtrl = new wxCheckBox( basicPanel, wxID_ANY, _("Start daemon with system"), wxDefaultPosition, wxDefaultSize, 0 );
     m_daemonCtrl->SetValue(config->Autostart);
     basicSizer->Add( m_daemonCtrl, 0, wxALL, 5 );
 

@@ -31,14 +31,14 @@ CMainFrame::CMainFrame() : wxFrame(nullptr, wxID_ANY, wxT("WebPier"), wxDefaultP
 
     fileMenu->AppendSeparator();
 
-    m_exportItem = fileMenu->Append( new wxMenuItem( fileMenu, wxID_ANY, wxString( _("&Advertise pier...") ) , wxEmptyString, wxITEM_NORMAL ) );
+    m_exportItem = fileMenu->Append( new wxMenuItem( fileMenu, wxID_ANY, wxString( _("&Create an offer...") ) , wxEmptyString, wxITEM_NORMAL ) );
     m_exportItem->Enable(false);
 
-    m_importItem = fileMenu->Append( new wxMenuItem( fileMenu, wxID_ANY, wxString( _("&Introduce pier...") ) , wxEmptyString, wxITEM_NORMAL ) );
+    m_importItem = fileMenu->Append( new wxMenuItem( fileMenu, wxID_ANY, wxString( _("&Upload an offer...") ) , wxEmptyString, wxITEM_NORMAL ) );
     m_importItem->Enable(false);
 
     fileMenu->AppendSeparator();
-    wxMenuItem* exitItem = fileMenu->Append( new wxMenuItem( fileMenu, wxID_ANY, wxString( _("E&xit") ) , wxEmptyString, wxITEM_NORMAL ) );
+    wxMenuItem* exitItem = fileMenu->Append( new wxMenuItem( fileMenu, wxID_ANY, wxString( _("&Exit") ) , wxEmptyString, wxITEM_NORMAL ) );
 
     menubar->Append( fileMenu, _("&File") );
 
@@ -252,15 +252,15 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
 {
     try
     {
-        wxFileDialog fileDialog(this, _("Open advertisement file"), wxStandardPaths::Get().GetUserDir(wxStandardPathsBase::Dir_Downloads), "", "*.*", wxFD_OPEN|wxFD_FILE_MUST_EXIST);
+        wxFileDialog fileDialog(this, _("Open offer"), wxStandardPaths::Get().GetUserDir(wxStandardPathsBase::Dir_Downloads), "", "*.*", wxFD_OPEN|wxFD_FILE_MUST_EXIST);
 
         if (fileDialog.ShowModal() == wxID_CANCEL)
             return;
 
-        WebPier::Exchange data;
-        WebPier::ReadExchangeFile(fileDialog.GetPath(), data);
+        WebPier::Offer offer;
+        WebPier::ReadOffer(fileDialog.GetPath(), offer);
 
-        if (m_config->Pier == data.Pier)
+        if (m_config->Pier == offer.Pier)
         {
             CMessageDialog dialog(this, _("Pier name is the same as the local pier"), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
             dialog.ShowModal();
@@ -268,10 +268,10 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
         }
 
         bool replacePier = false;
-        bool createPier = WebPier::IsUnknownPier(data.Pier);
+        bool createPier = WebPier::IsUnknownPier(offer.Pier);
         if (!createPier)
         {
-            if (data.Certificate != WebPier::GetCertificate(data.Pier))
+            if (offer.Certificate != WebPier::GetCertificate(offer.Pier))
             {
                 CMessageDialog dialog(this, _("Such pier is already exists, but has a different certificate. Do you want to replace existing pier and its services?"), wxDEFAULT_DIALOG_STYLE | wxICON_QUESTION);
                 if (dialog.ShowModal() != wxID_YES)
@@ -284,18 +284,18 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
         if (replacePier)
         {
             for (auto& item : m_export)
-                item.second->DelPier(data.Pier);
+                item.second->DelPier(offer.Pier);
         }
 
-        CExchangeDialog dialog(data.Pier, data.Services, m_export, this);
+        CExchangeDialog dialog(offer.Pier, offer.Services, m_export, this);
         if (dialog.ShowModal() != wxID_OK)
             return;
 
         if (replacePier)
-            WebPier::DelPier(data.Pier);
+            WebPier::DelPier(offer.Pier);
 
         if (createPier || replacePier)
-            WebPier::AddPier(data.Pier, data.Certificate);
+            WebPier::AddPier(offer.Pier, offer.Certificate);
 
         auto exports = dialog.GetExport();
         auto imports = dialog.GetImport();
@@ -303,9 +303,9 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
         for (auto& item : m_export)
         {
             if (exports.find(item.first) == exports.end())
-                item.second->DelPier(data.Pier);
+                item.second->DelPier(offer.Pier);
             else
-                item.second->AddPier(data.Pier);
+                item.second->AddPier(offer.Pier);
 
             item.second->Store();
         }
@@ -345,7 +345,7 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
         {
             for (auto& item : m_import)
             {
-                if (item.second->Pier == data.Pier)
+                if (item.second->Pier == offer.Pier)
                     item.second->Purge();
             }
             for (auto& item : imports)
@@ -356,12 +356,11 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
 
         if (dialog.NeedExportReply())
         {
-            wxFileDialog fileDialog(this, _("Save advertisement file"), wxStandardPaths::Get().GetUserDir(wxStandardPathsBase::Dir_Desktop), "", "*.*", wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
+            wxFileDialog fileDialog(this, _("Save offer"), wxStandardPaths::Get().GetUserDir(wxStandardPathsBase::Dir_Desktop), "", "*.*", wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
             if (fileDialog.ShowModal() == wxID_CANCEL)
                 return;
 
-            WebPier::Exchange data { m_config->Pier, WebPier::GetCertificate(m_config->Pier), exports };
-            WebPier::WriteExchangeFile(fileDialog.GetPath(), data);
+            WebPier::WriteOffer(fileDialog.GetPath(), WebPier::Offer{ m_config->Pier, WebPier::GetCertificate(m_config->Pier), exports });
         }
     }
     catch (const std::exception& ex)
@@ -379,12 +378,11 @@ void CMainFrame::onExportMenuSelection(wxCommandEvent& event)
         if (dialog.ShowModal() != wxID_OK)
             return;
 
-        wxFileDialog fileDialog(this, _("Save advertisement file"), wxStandardPaths::Get().GetUserDir(wxStandardPathsBase::Dir_Desktop), "webpier.info", "*.*", wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
+        wxFileDialog fileDialog(this, _("Save offer"), wxStandardPaths::Get().GetUserDir(wxStandardPathsBase::Dir_Desktop), "webpier.offer", "*.*", wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
         if (fileDialog.ShowModal() == wxID_CANCEL)
             return;
 
-        WebPier::Exchange data { m_config->Pier, WebPier::GetCertificate(m_config->Pier), dialog.GetExport() };
-        WebPier::WriteExchangeFile(fileDialog.GetPath(), data);
+        WebPier::WriteOffer(fileDialog.GetPath(), WebPier::Offer { m_config->Pier, WebPier::GetCertificate(m_config->Pier), dialog.GetExport() });
     }
     catch (const std::exception& ex)
     {

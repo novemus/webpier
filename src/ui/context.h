@@ -75,7 +75,7 @@ namespace WebPier
 
     using ConfigPtr = wxSharedPtr<Config>;
 
-    struct Exchange
+    struct Offer
     {
         wxString Pier;
         wxString Certificate;
@@ -92,6 +92,6 @@ namespace WebPier
     void DelPier(const wxString& pier) noexcept(false);
     wxString GetCertificate(const wxString& pier) noexcept(false);
     wxString GetFingerprint(const wxString& pier) noexcept(false);
-    void WriteExchangeFile(const wxString& file, const Exchange& data) noexcept(false);
-    void ReadExchangeFile(const wxString& file, Exchange& data) noexcept(false);
+    void WriteOffer(const wxString& file, const Offer& offer) noexcept(false);
+    void ReadOffer(const wxString& file, Offer& offer) noexcept(false);
 }

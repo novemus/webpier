@@ -382,14 +382,14 @@ namespace WebPier
         return GetContext()->get_fingerprint(id.ToStdString(wxGet_wxConvUTF8()));
     }
 
-    void WriteExchangeFile(const wxString& file, const Exchange& data) noexcept(false)
+    void WriteOffer(const wxString& file, const Offer& offer) noexcept(false)
     {
         boost::property_tree::ptree doc;
-        doc.put("pier", data.Pier.ToStdString(wxGet_wxConvUTF8()));
-        doc.put("certificate", data.Certificate.ToStdString(wxGet_wxConvUTF8()));
+        doc.put("pier", offer.Pier.ToStdString(wxGet_wxConvUTF8()));
+        doc.put("certificate", offer.Certificate.ToStdString(wxGet_wxConvUTF8()));
 
         boost::property_tree::ptree array;
-        for (const auto& pair : data.Services)
+        for (const auto& pair : offer.Services)
         {
             boost::property_tree::ptree item;
             item.put("name", pair.second->Name.ToStdString(wxGet_wxConvUTF8()));
@@ -402,23 +402,23 @@ namespace WebPier
         boost::property_tree::write_json(file.ToStdString(wxGet_wxConvUTF8()), doc);
     }
 
-    void ReadExchangeFile(const wxString& file, Exchange& data) noexcept(false)
+    void ReadOffer(const wxString& file, Offer& offer) noexcept(false)
     {
         boost::property_tree::ptree doc;
         boost::property_tree::read_json(file.ToStdString(wxGet_wxConvUTF8()), doc);
 
-        data.Pier = wxString::FromUTF8(doc.get<std::string>("pier", ""));
-        data.Certificate = wxString::FromUTF8(doc.get<std::string>("certificate", ""));
+        offer.Pier = wxString::FromUTF8(doc.get<std::string>("pier", ""));
+        offer.Certificate = wxString::FromUTF8(doc.get<std::string>("certificate", ""));
 
         boost::property_tree::ptree array;
         for (auto& item : doc.get_child("services", array))
         {
             ServicePtr service(new ImportService());
             service->Name = wxString::FromUTF8(item.second.get<std::string>("name"));
-            service->Pier = data.Pier;
+            service->Pier = offer.Pier;
             service->Obscure = item.second.get<bool>("obscure");
             service->Rendezvous = wxString::FromUTF8(item.second.get<std::string>("rendezvous", ""));
-            data.Services[wxUIntPtr(service.get())] = service;
+            offer.Services[wxUIntPtr(service.get())] = service;
         }
     }
 }
