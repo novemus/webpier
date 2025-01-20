@@ -482,7 +482,7 @@ namespace slipway
                 return std::vector<webpier::service>(std::move(res));
             }
 
-            void engage() noexcept(false)
+            void adjust() noexcept(false)
             {
                 boost::interprocess::file_lock guard(m_config.string().c_str());
                 boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(guard);
@@ -608,7 +608,7 @@ namespace slipway
                 : m_io(io)
                 , m_config(home / conf_file_name)
             {
-                engage();
+                adjust();
             }
 
             void handle_request(boost::asio::streambuf& buffer) noexcept(true)
@@ -631,11 +631,15 @@ namespace slipway
                             res = slipway::message::make(slipway::message::unplug);
                             break;
                         }
+                        case slipway::message::adjust:
+                        {
+                            adjust();
+                            res = slipway::message::make(slipway::message::adjust);
+                            break;
+                        }
                         case slipway::message::engage:
                         {
-                            req.payload.index() == 1 
-                                ? engage(std::get<slipway::handle>(req.payload)) 
-                                : engage();
+                            engage(std::get<slipway::handle>(req.payload));
                             res = slipway::message::make(slipway::message::engage);
                             break;
                         }

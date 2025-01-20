@@ -110,9 +110,9 @@ namespace WebPier
         {
             enum Status
             {
-                asleep,
-                failed,
-                active
+                ASLEEP,
+                FAILED,
+                ACTIVE
             };
 
             Status State;
@@ -130,7 +130,7 @@ namespace WebPier
         };
 
         void Unplug() noexcept(false);
-        void Engage() noexcept(false);
+        void Adjust() noexcept(false);
         wxVector<Health> Status() noexcept(false);
         wxVector<Report> Review() noexcept(false);
         void Unplug(const Handle& handle) noexcept(false);

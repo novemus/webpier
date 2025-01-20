@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(client)
     BOOST_CHECK(result[0] == bar_active);
     BOOST_CHECK(result[1] == foo_asleep);
 
-    BOOST_REQUIRE_NO_THROW(client->engage());
+    BOOST_REQUIRE_NO_THROW(client->adjust());
     BOOST_REQUIRE_NO_THROW(client->status(result));
     BOOST_REQUIRE_EQUAL(result.size(), 2);
     BOOST_CHECK(result[0] == bar_active);
@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_CASE(client)
 
     BOOST_REQUIRE_NO_THROW(context->del_export_service("foo"));
 
-    BOOST_REQUIRE_NO_THROW(client->engage());
+    BOOST_REQUIRE_NO_THROW(client->adjust());
     BOOST_REQUIRE_NO_THROW(client->status(result));
     BOOST_REQUIRE_EQUAL(result.size(), 1);
     BOOST_CHECK(result[0] == bar_active);

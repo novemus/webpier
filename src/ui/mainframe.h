@@ -56,10 +56,8 @@ protected:
 
 public:
 
-    CMainFrame();
+    CMainFrame(const wxIcon& icon);
     ~CMainFrame();
 
     void Populate();
-    wxMenu* BuildImportMenu();
-    wxMenu* BuildExportMenu();
 };

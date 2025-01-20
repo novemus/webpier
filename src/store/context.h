@@ -29,7 +29,7 @@ namespace webpier
         };
 
         std::string folder;
-        severity level = info;
+        severity level = debug;
     };
 
     struct puncher

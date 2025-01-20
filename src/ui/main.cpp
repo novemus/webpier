@@ -1,5 +1,8 @@
 #include <wx/wx.h>
 #include <wx/taskbar.h>
+#include <wx/notifmsg.h>
+#include <wx/snglinst.h>
+#include <wx/stdpaths.h>
 #include "mainframe.h"
 #include "logo.h"
 
@@ -475,6 +478,22 @@ const wxBitmap& GetGreyCircleImage()
     return s_image;
 }
 
+void ShowCommandErrorMessage()
+{
+    wxNotificationMessage msg(wxEmptyString, _("Couldn't execute the command!"), nullptr, wxICON_ERROR);
+    msg.Show();
+}
+
+CMainFrame* CreateMainFrame(const wxIcon& icon)
+{
+    CMainFrame* frame = new CMainFrame(icon);
+
+    frame->Populate();
+    frame->Show(true);
+
+    return frame;
+}
+
 class CTaskBarIcon : public wxTaskBarIcon
 {
     CMainFrame* m_frame;
@@ -482,21 +501,16 @@ class CTaskBarIcon : public wxTaskBarIcon
 public:
 
 #if defined(__WXOSX__) && wxOSX_USE_COCOA
-    CTaskBarIcon(wxTaskBarIconType iconType = wxTBI_DEFAULT_TYPE)
+    CTaskBarIcon(const wxIcon& icon, wxTaskBarIconType iconType = wxTBI_DEFAULT_TYPE)
         : wxTaskBarIcon(iconType)
 #else
-    CTaskBarIcon()
+    CTaskBarIcon(const wxIcon& icon)
 #endif
     {
-        m_frame = new CMainFrame();
-
-        wxIcon icon;
-        icon.CopyFromBitmap(::GetLogo());
         this->SetIcon(icon);
-        m_frame->SetIcon(icon);
+
+        m_frame = CreateMainFrame(icon);
         m_frame->Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( CTaskBarIcon::OnFrameClose ), NULL, this);
-        m_frame->Populate();
-        m_frame->Show(!wxTaskBarIcon::IsAvailable());
     }
 
     ~CTaskBarIcon() override
@@ -541,12 +555,89 @@ protected:
     wxMenu* CreatePopupMenu() wxOVERRIDE
     {
         wxMenu* menu = new wxMenu();
-        wxMenuItem* config = menu->Append(wxID_ANY, _("&Configure..."));
+        menu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CTaskBarIcon::OnMenuConfigure ), this, menu->Append(wxID_ANY, _("&Configure..."))->GetId());
 
-        menu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CTaskBarIcon::OnMenuConfigure ), this, config->GetId());
+        menu->AppendSeparator();
 
-        menu->Append(wxID_ANY, "&Import", m_frame->BuildImportMenu());
-        menu->Append(wxID_ANY, "&Export", m_frame->BuildExportMenu());
+        wxMenu* imports = new wxMenu();
+        wxMenu* exports = new wxMenu();
+
+        auto config = WebPier::Context::GetConfig();
+        auto status = WebPier::Daemon::Status();
+
+        bool isPassive = true;
+        for (const auto& item : status)
+        {
+            wxMenu* menu = item.Pier == config->Pier ? exports : imports;
+            wxMenuItem* check = menu->AppendCheckItem(wxID_ANY, item.Pier + wxT(":") + item.Service);
+
+            if (item.State == WebPier::Daemon::Health::ASLEEP)
+            {
+                check->Check(false);
+                menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [item](wxCommandEvent&)
+                {
+                    try
+                    {
+                        WebPier::Daemon::Engage(item);
+                    }
+                    catch(const std::exception& ex)
+                    {
+                        ShowCommandErrorMessage();
+                    }
+                }, check->GetId());
+            }
+            else
+            {
+                isPassive = false;
+                check->Check(true);
+                menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [item](wxCommandEvent&)
+                {
+                    try
+                    {
+                        WebPier::Daemon::Unplug(item);
+                    }
+                    catch(const std::exception& ex)
+                    {
+                        ShowCommandErrorMessage();
+                    }
+                }, check->GetId());
+            }
+        }
+
+        menu->Append(wxID_ANY, "&Import", imports);
+        menu->Append(wxID_ANY, "&Export", exports);
+
+        wxMenuItem* unplug = menu->Append(wxID_ANY, _("&Unplug"));
+        wxMenuItem* adjust = menu->Append(wxID_ANY, _("&Adjust"));
+
+        menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [](wxCommandEvent&)
+        {
+            try
+            {
+                WebPier::Daemon::Unplug();
+            }
+            catch(const std::exception& ex)
+            {
+                ShowCommandErrorMessage();
+            }
+        }, unplug->GetId());
+
+        menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [](wxCommandEvent&)
+        {
+            try
+            {
+                WebPier::Daemon::Adjust();
+            }
+            catch(const std::exception& ex)
+            {
+                ShowCommandErrorMessage();
+            }
+        }, adjust->GetId());
+
+        if (isPassive)
+            unplug->Enable(false);
+
+        menu->AppendSeparator();
 
 #ifdef __WXOSX__
         if (OSXIsStatusItem())
@@ -568,7 +659,10 @@ wxEND_EVENT_TABLE()
 
 class CWebPierApp : public wxApp
 {
+    wxSingleInstanceChecker* m_checker;
+
 public:
+
     bool OnInit() override
     {
         if (!wxApp::OnInit())
@@ -576,10 +670,25 @@ public:
 
         wxImage::AddHandler(new wxPNGHandler);
 
-        CTaskBarIcon* icon = new CTaskBarIcon();
-        (void)icon;
+        wxIcon icon;
+        icon.CopyFromBitmap(::GetLogo());
 
-        return true;
+        m_checker = new wxSingleInstanceChecker(wxApp::GetAppName() + '-' + wxGetUserId(), wxStandardPaths::Get().GetTempDir());
+        if (m_checker->IsAnotherRunning())
+        {
+            delete m_checker;
+            m_checker = nullptr;
+
+            return (bool)CreateMainFrame(icon);
+        }
+
+        return (bool)new CTaskBarIcon(icon);
+    }
+
+    int OnExit() override
+    {
+        delete m_checker;
+        return wxApp::OnExit();
     }
 };
 

@@ -6,10 +6,8 @@
 #include <slipway/slipway.h>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/process.hpp>
-#include <wx/utils.h> 
 #include <wx/stdpaths.h>
-#include <wx/dataview.h>
-#include <wx/regex.h>
+#include <wx/timer.h>
 
 namespace WebPier
 {
@@ -61,7 +59,21 @@ namespace WebPier
             }
 
             if (!config.autostart)
-                boost::process::spawn(webpier::find_exec("SLIPWAY_EXEC", SLIPWAY_EXEC), home);
+            {
+                static boost::process::child s_daemon(webpier::find_exec("SLIPWAY_EXEC", SLIPWAY_EXEC), home);
+                static wxTimer s_timer;
+
+                s_timer.Bind(wxEVT_TIMER, [&](wxTimerEvent&)
+                {
+                    if (s_daemon.running())
+                        s_daemon.detach();
+                    else
+                        s_daemon.join();
+                    s_timer.Unlink();
+                }, s_timer.GetId());
+
+                s_timer.Start(5000, true);
+            }
 
             return s_context = context;
         }
@@ -466,10 +478,10 @@ namespace WebPier
             client->engage(Convert(handle));
         }
 
-        void Engage() noexcept(false)
+        void Adjust() noexcept(false)
         {
             auto client = GetDaemon();
-            client->engage();
+            client->adjust();
         }
 
         Health Status(const Handle& handle) noexcept(false)

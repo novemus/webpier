@@ -20,8 +20,9 @@ wxVector<wxVariant> ToVariantList(WebPier::Context::ServicePtr service)
     return data;
 }
 
-CMainFrame::CMainFrame() : wxFrame(nullptr, wxID_ANY, wxT("WebPier"), wxDefaultPosition, wxSize(950, 500), wxDEFAULT_FRAME_STYLE | wxTAB_TRAVERSAL)
+CMainFrame::CMainFrame(const wxIcon& icon) : wxFrame(nullptr, wxID_ANY, wxT("WebPier"), wxDefaultPosition, wxSize(950, 500), wxDEFAULT_FRAME_STYLE | wxTAB_TRAVERSAL)
 {
+    this->SetIcon(icon);
     this->SetSizeHints( wxDefaultSize, wxDefaultSize );
     this->SetBackgroundColour( wxSystemSettings::GetColour( wxSYS_COLOUR_MENU ) );
 
@@ -153,16 +154,6 @@ void CMainFrame::Populate()
     }
 
     this->Layout();
-}
-
-wxMenu* CMainFrame::BuildImportMenu()
-{
-    return new wxMenu();
-}
-
-wxMenu* CMainFrame::BuildExportMenu()
-{
-    return new wxMenu();
 }
 
 void CMainFrame::onExitMenuSelection(wxCommandEvent&)
