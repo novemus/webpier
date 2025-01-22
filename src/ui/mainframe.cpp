@@ -130,6 +130,8 @@ void CMainFrame::Populate()
         m_export = WebPier::Context::GetExportServices();
         m_import = WebPier::Context::GetImportServices();
 
+        auto status = WebPier::Daemon::Status();
+
         m_pierLabel->SetLabel(m_config->Pier);
 
         for (auto& item : m_importBtn->GetValue() ? m_import : m_export)

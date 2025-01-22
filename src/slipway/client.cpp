@@ -91,15 +91,15 @@ namespace slipway
             {
                 execute([&](boost::asio::yield_context yield)
                 {
-                    static constexpr const size_t MAX_ATTEMPTS = 4;
+                    static constexpr const size_t MAX_ATTEMPTS = 5;
 
                     boost::system::error_code ec;
                     for(size_t i = 0; i < MAX_ATTEMPTS; ++i)
                     {
-                        if (ec.value() == boost::system::errc::no_such_file_or_directory)
+                        if (ec.value() == boost::system::errc::no_such_file_or_directory || ec.value() == boost::system::errc::connection_refused)
                         {
                             boost::asio::deadline_timer timer(m_io);
-                            timer.expires_from_now(boost::posix_time::seconds(i * 2));
+                            timer.expires_from_now(boost::posix_time::milliseconds(i * 500));
                             timer.async_wait(yield[ec]);
 
                             if (ec)
@@ -108,7 +108,7 @@ namespace slipway
  
                         m_socket.async_connect(home + "/" + jack_file_name, yield[ec]);
 
-                        if (ec.value() != boost::system::errc::no_such_file_or_directory)
+                        if (ec.value() != boost::system::errc::no_such_file_or_directory && ec.value() != boost::system::errc::connection_refused)
                             break;
                     }
 

@@ -701,35 +701,35 @@ namespace slipway
             boost::asio::io_context& m_io;
             boost::asio::local::stream_protocol::acceptor m_acceptor;
             slipway::engine m_engine;
+            size_t m_score;
 
             void handle(boost::asio::local::stream_protocol::socket client)
             {
                 boost::asio::spawn(m_io, [this, socket = std::move(client)](boost::asio::yield_context yield) mutable
                 {
                     boost::asio::streambuf buffer;
-                    boost::system::error_code error;
+                    boost::system::error_code ec;
 
-                    boost::asio::async_read_until(socket, buffer, '\n', yield[error]);
-                    if (error)
+                    auto cleanup = [&]()
                     {
-                        if (error != boost::asio::error::operation_aborted)
-                            _err_ << error.message();
+                        if (ec != boost::asio::error::operation_aborted)
+                            _wrn_ << ec.message();
 
-                        error = socket.close(error);
-                        return;
-                    }
+                        if (--m_score == 0)
+                            m_io.stop();
+
+                        ec = socket.close(ec);
+                    };
+
+                    boost::asio::async_read_until(socket, buffer, '\n', yield[ec]);
+                    if (ec)
+                        return cleanup();
 
                     m_engine.handle_request(buffer);
 
-                    boost::asio::async_write(socket, buffer, yield[error]);
-                    if (error)
-                    {
-                        if (error != boost::asio::error::operation_aborted)
-                            _err_ << error.message();
-
-                        error = socket.close(error);
-                        return;
-                    }
+                    boost::asio::async_write(socket, buffer, yield[ec]);
+                    if (ec)
+                        return cleanup();
 
                     handle(std::move(socket));
                 });
@@ -748,6 +748,8 @@ namespace slipway
                         return;
                     }
 
+                    ++m_score;
+
                     handle(std::move(socket));
                     accept();
                 });
@@ -755,10 +757,11 @@ namespace slipway
 
         public:
 
-            server(boost::asio::io_context& io, const boost::asio::local::stream_protocol::endpoint& ep, const std::filesystem::path& home)
+            server(boost::asio::io_context& io, const boost::asio::local::stream_protocol::endpoint& ep, const std::filesystem::path& home, bool steady)
                 : m_io(io)
                 , m_acceptor(io, ep.protocol())
                 , m_engine(io, home)
+                , m_score(steady ? 1 : 0)
             {
                 m_acceptor.bind(ep);
                 m_acceptor.listen();
@@ -773,7 +776,7 @@ int main(int argc, char* argv[])
 {
     try
     {
-        if (argc == 0)
+        if (argc < 2)
         {
             std::cerr << "no home argument" << std::endl;
             return 1;
@@ -808,7 +811,7 @@ int main(int argc, char* argv[])
 #endif
 
         boost::asio::io_context io;
-        slipway::server server(io, socket.string(), home);
+        slipway::server server(io, socket.string(), home, argc == 3 && std::strcmp(argv[2], "daemon") == 0);
         io.run();
     }
     catch (const std::exception& ex)
