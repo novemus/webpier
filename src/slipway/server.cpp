@@ -120,12 +120,16 @@ namespace slipway
             return ep.address().to_string() + ":" + std::to_string(ep.port());
         }
 
-        std::string stringify(const std::chrono::system_clock::time_point& time)
+        std::string make_log_path(const std::string& folder)
         {
-            std::time_t tt = std::chrono::system_clock::to_time_t(time);
-            std::tm tm = *std::gmtime(&tt);
+            if (folder.empty())
+                return "";
+
+            std::time_t time = std::time(0);
+            std::tm tm = *std::localtime(&time);
             std::stringstream ss;
-            ss << std::put_time(&tm, "%Y%m%d");
+            ss << folder << std::put_time(&tm, "/slipway.%Y%m%d.log");
+
             return ss.str();
         }
 
@@ -133,22 +137,28 @@ namespace slipway
         {
             class session
             {
+                health::status m_state;
                 boost::asio::io_context m_io;
-                std::future<boost::system::error_code> m_job;
+                std::future<bool> m_job;
 
                 void start()
                 {
                     if (!m_job.valid())
                     {
+                        m_state = health::active;
                         m_job = std::async(std::launch::async, [=]()
                         {
-                            boost::system::error_code ec;
-                            m_io.run(ec);
-
-                            if (ec)
-                                _err_ << "session failed: error=" << ec.message();
-
-                            return ec;
+                            bool ok = true;
+                            try
+                            {
+                                m_io.run();
+                            }
+                            catch(const std::exception& ex)
+                            {
+                                ok = false;
+                                _err_ << "session failed: " << ex.what();
+                            }
+                            return ok;
                         });
                     }
                 }
@@ -159,12 +169,13 @@ namespace slipway
                     {
                         m_io.stop();
                         m_job.wait();
+                        m_state = health::status::asleep;
                     }
                 }
 
             public:
 
-                session()
+                session() : m_state(health::status::asleep)
                 {
                 }
 
@@ -187,13 +198,12 @@ namespace slipway
 
                 health::status state()
                 {
-                    if (!m_job.valid())
-                        return health::asleep;
-
-                    if (m_job.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
-                        return m_job.get() ? health::failed : health::asleep;
-
-                    return health::active;
+                    if (m_job.valid() && m_job.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
+                    {
+                        if (!m_job.get())
+                            m_state = health::failed;
+                    }
+                    return m_state;
                 }
             };
 
@@ -498,10 +508,7 @@ namespace slipway
 
                 webpier::config conf = load_config();
 
-                wormhole::log::set(
-                    wormhole::log::severity(conf.log.level),
-                    conf.log.folder.empty() ? "" : conf.log.folder + "/slipway." + stringify(std::chrono::system_clock::now()) + ".log"
-                    );
+                wormhole::log::set(wormhole::log::severity(conf.log.level), make_log_path(conf.log.folder));
 
                 _inf_ << "adjust...";
 
