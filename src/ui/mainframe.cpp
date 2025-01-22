@@ -7,12 +7,17 @@
 #include "messagedialog.h"
 #include "logo.h"
 #include <wx/stdpaths.h>
-#include <wx/filename.h>
 
-wxVector<wxVariant> ToVariantList(WebPier::Context::ServicePtr service)
+wxVector<wxVariant> ToVariantList(const WebPier::Daemon::Handle& handle, WebPier::Context::ServicePtr service)
 {
+    WebPier::Daemon::Health health = WebPier::Daemon::Status(handle);
+
+    const wxBitmap& bitmap = health.State == WebPier::Daemon::Health::ASLEEP 
+        ? ::GetGreyCircleImage() : health.State == WebPier::Daemon::Health::ACTIVE 
+        ? ::GetGreenCircleImage() : ::GetRedCircleImage();
+
     wxVector<wxVariant> data;
-    data.push_back(wxVariant(wxDataViewIconText(service->Name, ::GetGreyCircleImage())));
+    data.push_back(wxVariant(wxDataViewIconText(service->Name, bitmap)));
     data.push_back(wxVariant(wxString(service->Pier)));
     data.push_back(wxVariant(wxString(service->Address)));
     data.push_back(wxVariant(wxString(service->Rendezvous.IsEmpty() ? wxT("Email") : wxT("DHT"))));
@@ -130,12 +135,13 @@ void CMainFrame::Populate()
         m_export = WebPier::Context::GetExportServices();
         m_import = WebPier::Context::GetImportServices();
 
-        auto status = WebPier::Daemon::Status();
-
         m_pierLabel->SetLabel(m_config->Pier);
 
         for (auto& item : m_importBtn->GetValue() ? m_import : m_export)
-            m_serviceList->AppendItem(ToVariantList(item.second), item.first);
+        {
+            WebPier::Daemon::Handle handle{m_importBtn->GetValue() ? item.second->Pier : m_config->Pier, item.second->Name};
+            m_serviceList->AppendItem(ToVariantList(handle, item.second), item.first);
+        }
 
         m_importItem->Enable(true);
         m_exportItem->Enable(true);
@@ -197,7 +203,9 @@ void CMainFrame::onAddServiceButtonClick(wxCommandEvent& event)
                 m_export[wxUIntPtr(service.get())] = service;
             else
                 m_import[wxUIntPtr(service.get())] = service;
-            m_serviceList->AppendItem(ToVariantList(service), wxUIntPtr(service.get()));
+
+            WebPier::Daemon::Handle handle{m_importBtn->GetValue() ? service->Pier : m_config->Pier, service->Name};
+            m_serviceList->AppendItem(ToVariantList(handle, service), wxUIntPtr(service.get()));
         }
         catch(const std::exception& ex)
         {
@@ -227,7 +235,9 @@ void CMainFrame::onEditServiceButtonClick(wxCommandEvent& event)
             service->Store();
             auto row = m_serviceList->GetSelectedRow();
             m_serviceList->DeleteItem(row);
-            m_serviceList->InsertItem(row, ToVariantList(service), wxUIntPtr(service.get()));
+
+            WebPier::Daemon::Handle handle{m_importBtn->GetValue() ? service->Pier : m_config->Pier, service->Name};
+            m_serviceList->InsertItem(row, ToVariantList(handle, service), wxUIntPtr(service.get()));
             m_serviceList->SelectRow(row);
         }
     }
