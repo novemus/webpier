@@ -120,6 +120,15 @@ namespace slipway
             return ep.address().to_string() + ":" + std::to_string(ep.port());
         }
 
+        std::string stringify(const std::chrono::system_clock::time_point& time)
+        {
+            std::time_t tt = std::chrono::system_clock::to_time_t(time);
+            std::tm tm = *std::gmtime(&tt);
+            std::stringstream ss;
+            ss << std::put_time(&tm, "%Y%m%d");
+            return ss.str();
+        }
+
         class spawner
         {
             class session
@@ -491,8 +500,10 @@ namespace slipway
 
                 wormhole::log::set(
                     wormhole::log::severity(conf.log.level),
-                    conf.log.folder.empty() ? "" : conf.log.folder + "/slipway.%p.log"
+                    conf.log.folder.empty() ? "" : conf.log.folder + "/slipway." + stringify(std::chrono::system_clock::now()) + ".log"
                     );
+
+                _inf_ << "adjust...";
 
                 std::map<handle, spawner> pool;
                 for (auto const& owner : std::filesystem::directory_iterator(conf.repo))
@@ -520,11 +531,16 @@ namespace slipway
                             else
                                 iter = pool.emplace(id, spawner(m_io)).first;
 
-                            _inf_ << (serv.autostart ? "restore " : "suspend ") << pier << ":" << serv.name;
-
-                            serv.autostart
-                                ? iter->second.restore(pier, conf, serv)
-                                : iter->second.suspend();
+                            if (serv.autostart)
+                            {
+                                _inf_ << "restore " << pier << ":" << serv.name;
+                                iter->second.restore(pier, conf, serv);
+                            } 
+                            else if (iter->second.state() != slipway::health::asleep)
+                            {
+                                _inf_ << "suspend " << pier << ":" << serv.name;
+                                iter->second.suspend();
+                            }
                         }
                     }
                 }
@@ -551,10 +567,15 @@ namespace slipway
 
             void unplug() noexcept(false)
             {
+                _inf_ << "unplug...";
+
                 for (auto& item : m_pool)
                 {
-                    _inf_ << "suspend " << item.first.pier << ":" <<  item.first.service;
-                    item.second.suspend();
+                    if (item.second.state() != slipway::health::asleep)
+                    {
+                        _inf_ << "suspend " << item.first.pier << ":" <<  item.first.service;
+                        item.second.suspend();
+                    }
                 }
             }
 
@@ -563,8 +584,11 @@ namespace slipway
                 auto iter = m_pool.find(id);
                 if (iter != m_pool.end())
                 {
-                    _inf_ << "suspend " << id.pier << ":" << id.service;
-                    iter->second.suspend();
+                    if (iter->second.state() != slipway::health::asleep)
+                    {
+                        _inf_ << "suspend " << id.pier << ":" << id.service;
+                        iter->second.suspend();
+                    }
                 }
             }
 
