@@ -39,7 +39,7 @@ namespace slipway
         struct spawn
         {
             std::string pier;
-            int pid;
+            uint32_t pid;
 
             bool operator<(const spawn& other) const { return pier < other.pier || pid < other.pid; }
             bool operator==(const spawn& other) const { return pier == other.pier && pid == other.pid; }

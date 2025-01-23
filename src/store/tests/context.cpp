@@ -21,7 +21,7 @@ BOOST_AUTO_TEST_CASE(context)
     } 
     BOOST_SCOPE_EXIT_END
 
-    auto context = webpier::open_context(dest);
+    auto context = webpier::open_context(dest.string());
 
     webpier::config in {
         peer,

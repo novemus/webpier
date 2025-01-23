@@ -30,9 +30,10 @@ namespace slipway
         constexpr char stun_server_default_port[] = "3478";
         constexpr char smtp_server_default_port[] = "smtps";
         constexpr char imap_server_default_port[] = "imaps";
-        constexpr const char* conf_file_name = "webpier.json";
-        constexpr const char* lock_file_name = "slipway.lock";
-        constexpr const char* jack_file_name = "slipway.jack";
+        constexpr const char* webpier_conf_file_name = "webpier.json";
+        constexpr const char* webpier_lock_file_name = "webpier.lock";
+        constexpr const char* slipway_lock_file_name = "slipway.lock";
+        constexpr const char* slipway_jack_file_name = "slipway.jack";
 
         boost::posix_time::seconds get_retry_timeout()
         {
@@ -393,7 +394,7 @@ namespace slipway
                 std::vector<report::spawn> res;
 
                 for(auto& item : m_pool)
-                    res.emplace_back(report::spawn{ item.first, item.second.id() });
+                    res.emplace_back(report::spawn{ item.first, static_cast<uint32_t>(item.second.id()) });
 
                 return std::vector<report::spawn>(std::move(res));
             }
@@ -410,14 +411,15 @@ namespace slipway
         {
             boost::asio::io_context& m_io;
             std::map<handle, spawner> m_pool;
-            std::filesystem::path m_config;
+            std::filesystem::path m_home;
 
             webpier::config load_config() noexcept(false)
             {
+                auto file = m_home / webpier_conf_file_name;
                 webpier::config conf;
 
                 boost::property_tree::ptree doc;
-                boost::property_tree::read_json(m_config.string(), doc);
+                boost::property_tree::read_json(file.string(), doc);
 
                 return webpier::config {
                     doc.get<std::string>("pier"),
@@ -503,7 +505,8 @@ namespace slipway
 
             void adjust() noexcept(false)
             {
-                boost::interprocess::file_lock guard(m_config.string().c_str());
+                auto locker = m_home / webpier_lock_file_name;
+                boost::interprocess::file_lock guard(locker.string().c_str());
                 boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(guard);
 
                 webpier::config conf = load_config();
@@ -523,7 +526,7 @@ namespace slipway
                         if (!pin.is_directory())
                             continue;
 
-                        auto file = pin.path() / conf_file_name;
+                        auto file = pin.path() / webpier_conf_file_name;
                         if (!std::filesystem::exists(file))
                             continue;
 
@@ -557,11 +560,12 @@ namespace slipway
 
             void engage(const slipway::handle& id) noexcept(false)
             {
-                boost::interprocess::file_lock guard(m_config.string().c_str());
+                auto locker = m_home / webpier_lock_file_name;
+                boost::interprocess::file_lock guard(locker.string().c_str());
                 boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(guard);
 
                 webpier::config conf = load_config();
-                webpier::service serv = load_config(std::filesystem::path(conf.repo) / id.pier / conf_file_name, id.service);
+                webpier::service serv = load_config(std::filesystem::path(conf.repo) / id.pier / webpier_conf_file_name, id.service);
 
                 auto iter = m_pool.find(id);
                 if (iter == m_pool.end())
@@ -637,7 +641,7 @@ namespace slipway
 
             engine(boost::asio::io_context& io, const std::filesystem::path& home)
                 : m_io(io)
-                , m_config(home / conf_file_name)
+                , m_home(home)
             {
                 adjust();
             }
@@ -757,6 +761,8 @@ namespace slipway
 
                     ++m_score;
 
+                    _trc_ << "accepted client";
+
                     handle(std::move(socket));
                     accept();
                 });
@@ -790,14 +796,14 @@ int main(int argc, char* argv[])
         }
 
         std::filesystem::path home = std::filesystem::path(argv[1]);
-        if (!std::filesystem::exists(home) || !std::filesystem::exists(home / slipway::conf_file_name))
+        if (!std::filesystem::exists(home) || !std::filesystem::exists(home / slipway::webpier_conf_file_name))
         {
             std::cerr << "wrong home argument" << std::endl;
             return 2;
         }
 
-        std::filesystem::path socket = home / slipway::jack_file_name;
-        std::filesystem::path locker = home / slipway::lock_file_name;
+        std::filesystem::path socket = home / slipway::slipway_jack_file_name;
+        std::filesystem::path locker = home / slipway::slipway_lock_file_name;
 
         if (!std::filesystem::exists(locker))
             std::ofstream(locker).close();

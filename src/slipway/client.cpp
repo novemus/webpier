@@ -96,7 +96,11 @@ namespace slipway
                     boost::system::error_code ec;
                     for(size_t i = 0; i < MAX_ATTEMPTS; ++i)
                     {
+#ifdef WIN32
+                        if (ec.value() == WSAECONNREFUSED)
+#else
                         if (ec.value() == boost::system::errc::no_such_file_or_directory || ec.value() == boost::system::errc::connection_refused)
+#endif
                         {
                             boost::asio::deadline_timer timer(m_io);
                             timer.expires_from_now(boost::posix_time::milliseconds(i * 500));
@@ -108,8 +112,14 @@ namespace slipway
  
                         m_socket.async_connect(home + "/" + jack_file_name, yield[ec]);
 
+#ifdef WIN32
+                        if (ec.value() != WSAECONNREFUSED)
+#else
                         if (ec.value() != boost::system::errc::no_such_file_or_directory && ec.value() != boost::system::errc::connection_refused)
+#endif
+                        {
                             break;
+                        }
                     }
 
                     if (ec)

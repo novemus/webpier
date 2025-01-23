@@ -6,6 +6,9 @@
 #include <slipway/slipway.h>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/process.hpp>
+#ifdef WIN32
+#include <boost/process/windows.hpp>
+#endif
 #include <wx/stdpaths.h>
 #include <wx/timer.h>
 
@@ -60,7 +63,11 @@ namespace WebPier
 
             if (!config.autostart)
             {
+#ifdef WIN32
+                static boost::process::child s_daemon(webpier::find_exec("SLIPWAY_EXEC", SLIPWAY_EXEC), home, boost::process::windows::hide);
+#else
                 static boost::process::child s_daemon(webpier::find_exec("SLIPWAY_EXEC", SLIPWAY_EXEC), home);
+#endif
                 static wxTimer s_timer;
 
                 s_timer.Bind(wxEVT_TIMER, [&](wxTimerEvent&)

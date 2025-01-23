@@ -14,7 +14,8 @@ namespace webpier
         constexpr const char* cert_file_name = "cert.crt";
         constexpr const char* key_file_name = "private.key";
         constexpr const char* conf_file_name = "webpier.json";
-        
+        constexpr const char* lock_file_name = "webpier.lock";
+
         struct locker
         {
             locker(const std::filesystem::path& file)
@@ -220,7 +221,7 @@ namespace webpier
         public:
 
             context_impl(const std::filesystem::path& home)
-                : m_guard(home / conf_file_name)
+                : m_guard(home / lock_file_name)
             {
                 soft_lock lock(m_guard);
 

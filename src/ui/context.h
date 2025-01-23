@@ -123,7 +123,7 @@ namespace WebPier
             struct Spawn
             {
                 std::string Pier;
-                int Pid;
+                wxUint32 Pid;
             };
 
             wxVector<Spawn> Asset;

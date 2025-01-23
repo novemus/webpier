@@ -7,12 +7,21 @@ set(wxWidgets_USE_STATIC ON)
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
     if(BUILD_TESTING)
-        find_package(Boost REQUIRED COMPONENTS filesystem property_tree coroutine unit_test_framework)
+        find_package(Boost REQUIRED COMPONENTS filesystem process property_tree coroutine unit_test_framework)
     else()
-        find_package(Boost REQUIRED COMPONENTS filesystem property_tree coroutine)
+        find_package(Boost REQUIRED COMPONENTS filesystem process property_tree coroutine)
     endif()
     find_package(wxWidgets CONFIG REQUIRED core base propgrid)
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    add_definitions(
+        -D_CRT_NO_VA_START_VALIDATION
+        -D_CRT_SECURE_NO_WARNINGS
+        -D_WIN32_WINNT=0x0600
+        -D_WINSOCK_DEPRECATED_NO_WARNINGS
+        -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING
+        -D_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
+        -DBOOST_COROUTINES_NO_DEPRECATION_WARNING
+    )
+    set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO RELEASE)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
     set(WEBPIER_INSTALL_BINDIR ${PROJECT_NAME}-${${PROJECT_NAME}_VERSION}/${CMAKE_INSTALL_BINDIR})
@@ -62,7 +71,7 @@ message("*** wormhole Include: ${wormhole_INCLUDE_DIR}")
 message("*** wormhole Library: ${wormhole_LIB}")
 message("*** wormhole Binary: ${wormhole_BIN}")
 
-find_package(tubus REQUIRED)
+find_package(tubus REQUIRED DEBUG)
 
 message("*** tubus Version: ${tubus_VERSION}")
 message("*** tubus Include: ${tubus_INCLUDE_DIR}")
@@ -107,7 +116,7 @@ include_directories(${nettle_INCLUDE_DIR})
 link_directories(${nettle_LIBDIR})
 
 set(SLIPWAY_MODULE slipway)
-add_executable(${SLIPWAY_MODULE} WIN32 src/slipway/message.cpp src/slipway/server.cpp src/store/utils.cpp)
+add_executable(${SLIPWAY_MODULE} src/slipway/message.cpp src/slipway/server.cpp src/store/utils.cpp)
 target_compile_definitions(${SLIPWAY_MODULE} PRIVATE PLEXUS_EXPORTS BOOST_BIND_GLOBAL_PLACEHOLDERS WORMHOLE_EXEC="${wormhole_BIN}")
 target_include_directories(${SLIPWAY_MODULE} PRIVATE src ${plexus_INCLUDE_DIR} ${wormhole_INCLUDE_DIR} ${tubus_INCLUDE_DIR})
 if(WIN32)

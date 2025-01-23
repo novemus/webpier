@@ -22,8 +22,8 @@ BOOST_AUTO_TEST_CASE(client)
     } 
     BOOST_SCOPE_EXIT_END
 
-    auto context = webpier::open_context(home);
-    webpier::config conf { host, repo.string(), { home.string(), webpier::journal::debug }, {}, { webpier::default_dht_bootstrap, webpier::default_dht_port, 0 }, {}, false };
+    auto context = webpier::open_context(home.string());
+    webpier::config conf { host, repo.string(), { home.string(), webpier::journal::trace }, {}, { webpier::default_dht_bootstrap, webpier::default_dht_port, 0 }, {}, false };
 
     BOOST_REQUIRE_NO_THROW(context->set_config(conf));
     BOOST_REQUIRE_NO_THROW(context->add_pier(peer, webpier::load_x509_cert(home / repo / host / "cert.crt")));
@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE(client)
     BOOST_REQUIRE_NO_THROW(context->add_export_service(foo));
 
     boost::process::child server(webpier::find_exec("SLIPWAY_EXEC", SLIPWAY_EXEC), home.string());
-    auto client = slipway::create_client(home);
+    auto client = slipway::create_client(home.string());
 
     slipway::handle foo_handle { host , "foo" };
     slipway::health foo_asleep { foo_handle, slipway::health::asleep };
@@ -84,5 +84,6 @@ BOOST_AUTO_TEST_CASE(client)
     BOOST_REQUIRE_EQUAL(result.size(), 1);
     BOOST_CHECK(result[0] == bar_active);
 
-    server.terminate();
+    BOOST_REQUIRE_NO_THROW(client.reset());
+    BOOST_REQUIRE_NO_THROW(server.join());
 }
