@@ -24,8 +24,9 @@ namespace slipway
         enum status
         {
             asleep,
-            failed,
-            active
+            broken,
+            lonely,
+            burden
         };
 
         status state;

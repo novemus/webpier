@@ -110,9 +110,10 @@ namespace WebPier
         {
             enum Status
             {
-                ASLEEP,
-                FAILED,
-                ACTIVE
+                Asleep,
+                Broken,
+                Lonely,
+                Burden
             };
 
             Status State;

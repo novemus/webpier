@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_CASE(message)
 
     slipway::health state { 
         ident,
-        slipway::health::active
+        slipway::health::lonely
         };
     initial = slipway::message::make(slipway::message::status, state);
 

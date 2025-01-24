@@ -12,9 +12,10 @@ wxVector<wxVariant> ToVariantList(const WebPier::Daemon::Handle& handle, WebPier
 {
     WebPier::Daemon::Health health = WebPier::Daemon::Status(handle);
 
-    const wxBitmap& bitmap = health.State == WebPier::Daemon::Health::ASLEEP 
-        ? ::GetGreyCircleImage() : health.State == WebPier::Daemon::Health::ACTIVE 
-        ? ::GetGreenCircleImage() : ::GetRedCircleImage();
+    const wxBitmap& bitmap = health.State == WebPier::Daemon::Health::Asleep 
+        ? ::GetGreyCircleImage() : health.State == WebPier::Daemon::Health::Broken 
+        ? ::GetRedCircleImage() : health.State == WebPier::Daemon::Health::Lonely
+        ? ::GetBlueCircleImage() : ::GetGreenCircleImage();
 
     wxVector<wxVariant> data;
     data.push_back(wxVariant(wxDataViewIconText(service->Name, bitmap)));

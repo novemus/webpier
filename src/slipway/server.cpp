@@ -138,28 +138,23 @@ namespace slipway
         {
             class session
             {
-                health::status m_state;
                 boost::asio::io_context m_io;
-                std::future<bool> m_job;
+                std::future<void> m_job;
 
                 void start()
                 {
                     if (!m_job.valid())
                     {
-                        m_state = health::active;
                         m_job = std::async(std::launch::async, [=]()
                         {
-                            bool ok = true;
                             try
                             {
                                 m_io.run();
                             }
                             catch(const std::exception& ex)
                             {
-                                ok = false;
                                 _err_ << "session failed: " << ex.what();
                             }
-                            return ok;
                         });
                     }
                 }
@@ -170,13 +165,12 @@ namespace slipway
                     {
                         m_io.stop();
                         m_job.wait();
-                        m_state = health::status::asleep;
                     }
                 }
 
             public:
 
-                session() : m_state(health::status::asleep)
+                session()
                 {
                 }
 
@@ -197,14 +191,9 @@ namespace slipway
                     start();
                 }
 
-                health::status state()
+                bool broken()
                 {
-                    if (m_job.valid() && m_job.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
-                    {
-                        if (!m_job.get())
-                            m_state = health::failed;
-                    }
-                    return m_state;
+                    return !m_job.valid() || m_job.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready;
                 }
             };
 
@@ -386,7 +375,13 @@ namespace slipway
 
             health::status state()
             {
-                return m_work ? m_work->state() : health::asleep;
+                if (!m_work)
+                    return health::asleep;
+
+                if (m_work->broken())
+                    return health::broken;
+
+                return m_pool.empty() ? health::lonely : health::burden;
             }
 
             std::vector<report::spawn> asset()

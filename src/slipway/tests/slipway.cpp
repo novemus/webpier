@@ -38,11 +38,11 @@ BOOST_AUTO_TEST_CASE(client)
 
     slipway::handle foo_handle { host , "foo" };
     slipway::health foo_asleep { foo_handle, slipway::health::asleep };
-    slipway::health foo_active { foo_handle, slipway::health::active };
+    slipway::health foo_active { foo_handle, slipway::health::lonely };
 
     slipway::handle bar_handle { host , "bar" };
     slipway::health bar_asleep { bar_handle, slipway::health::asleep };
-    slipway::health bar_active { bar_handle, slipway::health::active };
+    slipway::health bar_active { bar_handle, slipway::health::lonely };
 
     std::vector<slipway::health> result;
     BOOST_REQUIRE_NO_THROW(client->status(result));

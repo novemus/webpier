@@ -571,7 +571,7 @@ protected:
             wxMenu* menu = item.Pier == config->Pier ? exports : imports;
             wxMenuItem* check = menu->AppendCheckItem(wxID_ANY, item.Pier + wxT(":") + item.Service);
 
-            if (item.State == WebPier::Daemon::Health::ASLEEP)
+            if (item.State == WebPier::Daemon::Health::Asleep)
             {
                 check->Check(false);
                 menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [item](wxCommandEvent&)
