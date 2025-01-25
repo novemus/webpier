@@ -498,7 +498,7 @@ namespace slipway
                 return std::vector<webpier::service>(std::move(res));
             }
 
-            void adjust() noexcept(false)
+            void engage() noexcept(false)
             {
                 auto locker = m_home / webpier_lock_file_name;
                 boost::interprocess::file_lock guard(locker.string().c_str());
@@ -508,7 +508,7 @@ namespace slipway
 
                 wormhole::log::set(wormhole::log::severity(conf.log.level), make_log_path(conf.log.folder));
 
-                _inf_ << "adjust...";
+                _inf_ << "engage...";
 
                 std::map<handle, spawner> pool;
                 for (auto const& owner : std::filesystem::directory_iterator(conf.repo))
@@ -638,7 +638,7 @@ namespace slipway
                 : m_io(io)
                 , m_home(home)
             {
-                adjust();
+                engage();
             }
 
             void handle_request(boost::asio::streambuf& buffer) noexcept(true)
@@ -661,15 +661,11 @@ namespace slipway
                             res = slipway::message::make(slipway::message::unplug);
                             break;
                         }
-                        case slipway::message::adjust:
-                        {
-                            adjust();
-                            res = slipway::message::make(slipway::message::adjust);
-                            break;
-                        }
                         case slipway::message::engage:
                         {
-                            engage(std::get<slipway::handle>(req.payload));
+                            req.payload.index() == 1 
+                                ? engage(std::get<slipway::handle>(req.payload)) 
+                                : engage();
                             res = slipway::message::make(slipway::message::engage);
                             break;
                         }

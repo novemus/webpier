@@ -17,10 +17,10 @@ BOOST_AUTO_TEST_CASE(message)
     BOOST_CHECK_EQUAL(replica.action, initial.action);
     BOOST_CHECK_EQUAL(replica.payload.index(), initial.payload.index());
 
-    initial = slipway::message::make(slipway::message::adjust, "error");
+    initial = slipway::message::make(slipway::message::engage, "error");
 
     BOOST_CHECK(!initial.ok());
-    BOOST_CHECK_EQUAL(initial.action, slipway::message::adjust);
+    BOOST_CHECK_EQUAL(initial.action, slipway::message::engage);
     BOOST_CHECK_EQUAL(initial.payload.index(), 0);
     BOOST_CHECK_EQUAL(std::get<std::string>(initial.payload), "error");
 

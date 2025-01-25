@@ -485,10 +485,10 @@ namespace WebPier
             client->engage(Convert(handle));
         }
 
-        void Adjust() noexcept(false)
+        void Engage() noexcept(false)
         {
             auto client = GetDaemon();
-            client->adjust();
+            client->engage();
         }
 
         Health Status(const Handle& handle) noexcept(false)

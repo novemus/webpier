@@ -12,7 +12,7 @@ namespace slipway
         // suspend all services
         virtual void unplug() noexcept(false) = 0;
         // start or restart auto services and suspend others
-        virtual void adjust() noexcept(false) = 0;
+        virtual void engage() noexcept(false) = 0;
         // get actual status of all services
         virtual void status(std::vector<slipway::health>& result) noexcept(false) = 0;
         // get reports on all service

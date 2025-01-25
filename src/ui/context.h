@@ -131,7 +131,7 @@ namespace WebPier
         };
 
         void Unplug() noexcept(false);
-        void Adjust() noexcept(false);
+        void Engage() noexcept(false);
         wxVector<Health> Status() noexcept(false);
         wxVector<Report> Review() noexcept(false);
         void Unplug(const Handle& handle) noexcept(false);

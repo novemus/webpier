@@ -132,9 +132,9 @@ namespace slipway
                 perform(message::make(message::unplug));
             }
 
-            void adjust() noexcept(false) override
+            void engage() noexcept(false) override
             {
-                perform(message::make(message::adjust));
+                perform(message::make(message::engage));
             }
 
             void status(std::vector<slipway::health>& result) noexcept(false) override

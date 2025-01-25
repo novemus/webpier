@@ -608,7 +608,7 @@ protected:
         menu->Append(wxID_ANY, "&Export", exports);
 
         wxMenuItem* unplug = menu->Append(wxID_ANY, _("&Unplug"));
-        wxMenuItem* adjust = menu->Append(wxID_ANY, _("&Adjust"));
+        wxMenuItem* reboot = menu->Append(wxID_ANY, _("&Reboot"));
 
         menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [](wxCommandEvent&)
         {
@@ -626,13 +626,13 @@ protected:
         {
             try
             {
-                WebPier::Daemon::Adjust();
+                WebPier::Daemon::Engage();
             }
             catch(const std::exception& ex)
             {
                 ShowCommandErrorMessage();
             }
-        }, adjust->GetId());
+        }, reboot->GetId());
 
         if (isPassive)
             unplug->Enable(false);
