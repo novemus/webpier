@@ -389,17 +389,23 @@ CExchangeDialog::CExchangeDialog(const wxString& pier, const WebPier::Context::S
     footSizer->Add( 0, 0, 1, wxEXPAND, 5 );
 
     m_back = new wxButton( this, wxID_BACKWARD, _("Back"), wxDefaultPosition, wxDefaultSize, 0 );
+#ifndef WIN32
     m_back->SetBitmap( wxArtProvider::GetBitmap( wxASCII_STR(wxART_GO_BACK), wxASCII_STR(wxART_BUTTON) ) );
+#endif
     m_back->Disable();
     footSizer->Add( m_back, 0, wxALL, 5 );
 
     m_next = new wxButton( this, wxID_FORWARD, _("Next"), wxDefaultPosition, wxDefaultSize, 0 );
+#ifndef WIN32
     m_next->SetBitmap( wxArtProvider::GetBitmap( wxASCII_STR(wxART_GO_FORWARD), wxASCII_STR(wxART_BUTTON) ) );
     m_next->SetBitmapPosition( wxRIGHT );
+#endif
     footSizer->Add( m_next, 0, wxALL, 5 );
 
     m_cancel = new wxButton( this, wxID_CANCEL, _("Cancel"), wxDefaultPosition, wxDefaultSize, 0 );
+#ifndef WIN32
     m_cancel->SetBitmap( wxArtProvider::GetBitmap( wxASCII_STR(wxART_CROSS_MARK), wxASCII_STR(wxART_BUTTON) ) );
+#endif
     footSizer->Add( m_cancel, 0, wxALL, 5 );
 
     mainSizer->Add( footSizer, 0, wxEXPAND, 0 );
@@ -422,9 +428,10 @@ CExchangeDialog::CExchangeDialog(const wxString& host, const WebPier::Context::S
     m_importPage->Hide();
     m_exportPage->Show();
     m_next->SetLabel(_("OK"));
+#ifndef WIN32
     m_next->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_TICK_MARK), wxASCII_STR(wxART_BUTTON)));
     m_next->SetBitmapPosition(wxLEFT);
-
+#endif
     this->SetTitle(m_exportPage->GetLabel());
     this->Layout();
 }
@@ -449,8 +456,10 @@ void CExchangeDialog::onBackButtonClick(wxCommandEvent& event)
     m_purge->Show();
 
     m_next->SetLabel(_("Next"));
+#ifndef WIN32
     m_next->SetBitmap( wxArtProvider::GetBitmap( wxASCII_STR(wxART_GO_FORWARD), wxASCII_STR(wxART_BUTTON) ) );
     m_next->SetBitmapPosition( wxRIGHT );
+#endif
 
     this->SetTitle(m_importPage->GetLabel());
     this->Layout();
@@ -475,9 +484,10 @@ void CExchangeDialog::onNextButtonClick(wxCommandEvent& event)
             m_back->Enable();
 
             m_next->SetLabel(_("OK"));
+#ifndef WIN32
             m_next->SetBitmap( wxArtProvider::GetBitmap( wxASCII_STR(wxART_TICK_MARK), wxASCII_STR(wxART_BUTTON) ) );
             m_next->SetBitmapPosition( wxLEFT );
-
+#endif
             this->SetTitle(m_exportPage->GetLabel());
             this->Layout();
         }

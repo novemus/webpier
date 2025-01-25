@@ -223,15 +223,16 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, wxWindow* p
     footSizer = new wxBoxSizer( wxHORIZONTAL );
 
     footSizer->Add( 0, 0, 1, wxEXPAND, 5 );
-
     m_cancelBtn = new wxButton( this, wxID_CANCEL, _("Cancel"), wxDefaultPosition, wxDefaultSize, 0 );
 
-    m_cancelBtn->SetBitmap( wxArtProvider::GetBitmap( wxASCII_STR(wxART_CROSS_MARK), wxASCII_STR(wxART_BUTTON) ) );
     footSizer->Add( m_cancelBtn, 0, wxTOP|wxBOTTOM|wxLEFT, 5 );
-
     m_okBtn = new wxButton( this, wxID_OK, _("Ok"), wxDefaultPosition, wxDefaultSize, 0 );
 
+#ifndef WIN32
+    m_cancelBtn->SetBitmap( wxArtProvider::GetBitmap( wxASCII_STR(wxART_CROSS_MARK), wxASCII_STR(wxART_BUTTON) ) );
     m_okBtn->SetBitmap( wxArtProvider::GetBitmap( wxASCII_STR(wxART_TICK_MARK), wxASCII_STR(wxART_BUTTON) ) );
+#endif
+
     footSizer->Add( m_okBtn, 0, wxALL, 5 );
 
     mainSizer->Add( footSizer, 0, wxEXPAND, 5 );

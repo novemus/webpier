@@ -498,7 +498,7 @@ namespace WebPier
             client->status(Convert(handle), result);
             return Convert(result);
         }
-    
+
         wxVector<Health> Status() noexcept(false)
         {
             auto client = GetDaemon();

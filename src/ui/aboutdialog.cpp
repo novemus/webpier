@@ -74,8 +74,9 @@ CAboutDialog::CAboutDialog( wxWindow* parent, wxWindowID id, const wxString& tit
     mainSizer->Add( m_panel, 1, wxEXPAND | wxALL, 5 );
 
     m_ok = new wxButton( this, wxID_OK, _("OK"), wxDefaultPosition, wxDefaultSize, 0 );
-
+#ifndef WIN32
     m_ok->SetBitmap( wxArtProvider::GetBitmap( wxASCII_STR(wxART_TICK_MARK), wxASCII_STR(wxART_BUTTON) ) );
+#endif
     mainSizer->Add( m_ok, 0, wxALIGN_RIGHT|wxALL, 5 );
 
     this->SetSizer( mainSizer );
