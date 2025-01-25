@@ -174,6 +174,7 @@ namespace webpier
                             unit.name = item.second.get<std::string>("name", "");
                             unit.pier = item.second.get<std::string>("pier", "");
                             unit.address = item.second.get<std::string>("address", "");
+                            unit.gateway = item.second.get<std::string>("gateway", default_gateway);
                             unit.rendezvous = item.second.get<std::string>("rendezvous", "");
                             unit.autostart = item.second.get<bool>("autostart", false);
                             unit.obscure = item.second.get<bool>("obscure", true);
@@ -201,6 +202,7 @@ namespace webpier
                         item.put("name", unit.second.name);
                         item.put("pier", unit.second.pier);
                         item.put("address", unit.second.address);
+                        item.put("gateway", unit.second.gateway);
                         item.put("autostart", unit.second.autostart);
                         item.put("obscure", unit.second.obscure);
                         item.put("rendezvous", unit.second.rendezvous);

@@ -104,6 +104,7 @@ namespace WebPier
                 && lhs->Name == rhs->Name
                 && lhs->Pier == rhs->Pier
                 && lhs->Address == rhs->Address
+                && lhs->Gateway == rhs->Gateway
                 && lhs->Rendezvous == rhs->Rendezvous
                 && lhs->Autostart == rhs->Autostart
                 && lhs->Obscure == rhs->Obscure;
@@ -130,6 +131,7 @@ namespace WebPier
                     Name.ToStdString(wxGet_wxConvUTF8()),
                     Pier.ToStdString(wxGet_wxConvUTF8()),
                     Address.ToStdString(wxGet_wxConvUTF8()),
+                    Gateway.ToStdString(wxGet_wxConvUTF8()),
                     Rendezvous.ToStdString(wxGet_wxConvUTF8()),
                     Autostart,
                     Obscure
@@ -172,6 +174,7 @@ namespace WebPier
                 Name = wxString::FromUTF8(m_origin.name);
                 Pier = wxString::FromUTF8(m_origin.pier);
                 Address = wxString::FromUTF8(m_origin.address);
+                Gateway = wxString::FromUTF8(m_origin.gateway);
                 Rendezvous = wxString::FromUTF8(m_origin.rendezvous);
                 Autostart = m_origin.autostart;
                 Obscure = m_origin.obscure;
@@ -218,6 +221,7 @@ namespace WebPier
                 return Name.ToStdString(wxGet_wxConvUTF8()) != m_origin.name
                     || Pier.ToStdString(wxGet_wxConvUTF8()) != m_origin.pier
                     || Address.ToStdString(wxGet_wxConvUTF8()) != m_origin.address
+                    || Gateway.ToStdString(wxGet_wxConvUTF8()) != m_origin.gateway
                     || Rendezvous.ToStdString(wxGet_wxConvUTF8()) != m_origin.rendezvous
                     || Autostart != m_origin.autostart
                     || Obscure != m_origin.obscure;

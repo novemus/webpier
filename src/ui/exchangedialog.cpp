@@ -45,14 +45,19 @@ CImportPage::CImportPage(const wxString& pier, const WebPier::Context::ServiceLi
 
     m_addressLabel = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _("Address"), wxDefaultPosition, wxDefaultSize, 0 );
     m_addressLabel->Wrap( -1 );
-    m_addressLabel->SetToolTip( _("Local endpoint to map remote service") );
-
     serviceSizer->Add( m_addressLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
     m_addressCtrl = new wxTextCtrl( pierSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
     m_addressCtrl->SetToolTip( _("Local endpoint to map remote service") );
-
     serviceSizer->Add( m_addressCtrl, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
+
+    m_gatewayLabel = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _("Gateway"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_gatewayLabel->Wrap( -1 );
+    serviceSizer->Add( m_gatewayLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
+
+    m_gatewayCtrl = new wxTextCtrl( pierSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+    m_gatewayCtrl->SetToolTip( _("Local endpoint to to bind tunnel") );
+    serviceSizer->Add( m_gatewayCtrl, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
     m_startLabel = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _("Autostart"), wxDefaultPosition, wxDefaultSize, 0 );
     m_startLabel->Wrap( -1 );
@@ -107,6 +112,8 @@ CImportPage::~CImportPage()
     delete m_nameValue;
     delete m_addressLabel;
     delete m_addressCtrl;
+    delete m_gatewayLabel;
+    delete m_gatewayCtrl;
     delete m_startLabel;
     delete m_startCtrl;
     delete m_obscureLabel;
@@ -124,6 +131,7 @@ void CImportPage::populate(int line)
 
     m_nameValue->SetLabel(service->Name);
     m_addressCtrl->SetValue(service->Address);
+    m_gatewayCtrl->SetValue(service->Gateway);
     m_startCtrl->SetValue(service->Autostart);
     m_obscureValue->SetLabel(service->Obscure ? _("yes") : _("no"));
     m_rendValue->SetLabel(service->Rendezvous.IsEmpty() ? _("Email") : _("DHT"));
@@ -252,13 +260,19 @@ CExportPage::CExportPage(const wxString& pier, const WebPier::Context::ServiceLi
 
     m_addressLabel = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _("Address"), wxDefaultPosition, wxDefaultSize, 0 );
     m_addressLabel->Wrap( -1 );
-    m_addressLabel->SetToolTip( _("Endpoint of the local service") );
-
     serviceSizer->Add( m_addressLabel, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     m_addressValue = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _("0.0.0.0:0"), wxDefaultPosition, wxDefaultSize, 0 );
     m_addressValue->Wrap( -1 );
     serviceSizer->Add( m_addressValue, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    m_gatewayLabel = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _("Gateway"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_gatewayLabel->Wrap( -1 );
+    serviceSizer->Add( m_gatewayLabel, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    m_gatewayValue = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _("0.0.0.0:0"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_gatewayValue->Wrap( -1 );
+    serviceSizer->Add( m_gatewayValue, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     m_startLabel = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _("Autostart"), wxDefaultPosition, wxDefaultSize, 0 );
     m_startLabel->Wrap( -1 );
@@ -312,6 +326,8 @@ CExportPage::~CExportPage()
     delete m_nameValue;
     delete m_addressLabel;
     delete m_addressValue;
+    delete m_gatewayLabel;
+    delete m_gatewayValue;
     delete m_startLabel;
     delete m_startValue;
     delete m_obscureLabel;
@@ -329,6 +345,7 @@ void CExportPage::populate(int line)
 
     m_nameValue->SetLabel(service->Name);
     m_addressValue->SetLabel(service->Address);
+    m_gatewayValue->SetLabel(service->Gateway);
     m_startValue->SetLabel(service->Autostart ? _("yes") : _("no"));
     m_obscureValue->SetLabel(service->Obscure ? _("yes") : _("no"));
     m_rendValue->SetLabel(service->Rendezvous.IsEmpty() ? _("Email") : _("DHT"));

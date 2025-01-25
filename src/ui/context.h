@@ -16,6 +16,7 @@ namespace WebPier
             wxString Name;
             wxString Pier;
             wxString Address;
+            wxString Gateway;
             wxString Rendezvous;
             bool Autostart;
             bool Obscure;

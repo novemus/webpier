@@ -67,6 +67,7 @@ BOOST_AUTO_TEST_CASE(context)
         "foo",
         peer,
         "127.0.0.1:1234",
+        "127.0.0.1:4321",
         "bootstrap.dht",
         true,
         false
@@ -112,6 +113,7 @@ BOOST_AUTO_TEST_CASE(context)
     BOOST_CHECK_EQUAL(service.name, locals[0].name);
     BOOST_CHECK_EQUAL(service.pier, locals[0].pier);
     BOOST_CHECK_EQUAL(service.address, locals[0].address);
+    BOOST_CHECK_EQUAL(service.gateway, locals[0].gateway);
     BOOST_CHECK_EQUAL(service.rendezvous, locals[0].rendezvous);
     BOOST_CHECK_EQUAL(service.autostart, locals[0].autostart);
     BOOST_CHECK_EQUAL(service.obscure, locals[0].obscure);
@@ -123,6 +125,7 @@ BOOST_AUTO_TEST_CASE(context)
     BOOST_CHECK_EQUAL(service.name, remotes[0].name);
     BOOST_CHECK_EQUAL(service.pier, remotes[0].pier);
     BOOST_CHECK_EQUAL(service.address, remotes[0].address);
+    BOOST_CHECK_EQUAL(service.gateway, remotes[0].gateway);
     BOOST_CHECK_EQUAL(service.rendezvous, remotes[0].rendezvous);
     BOOST_CHECK_EQUAL(service.autostart, remotes[0].autostart);
     BOOST_CHECK_EQUAL(service.obscure, remotes[0].obscure);

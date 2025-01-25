@@ -28,6 +28,7 @@ namespace slipway
     namespace 
     {
         constexpr char stun_server_default_port[] = "3478";
+        constexpr char stun_client_default_port[] = "0";
         constexpr char smtp_server_default_port[] = "smtps";
         constexpr char imap_server_default_port[] = "imaps";
         constexpr const char* webpier_conf_file_name = "webpier.json";
@@ -84,7 +85,7 @@ namespace slipway
                 service.name,
                 config.repo,
                 resolve<boost::asio::ip::udp>(config.nat.stun, stun_server_default_port),
-                {},
+                resolve<boost::asio::ip::udp>(service.gateway, stun_client_default_port),
                 config.nat.hops,
                 service.rendezvous.empty()
                     ? plexus::rendezvous {
@@ -461,6 +462,7 @@ namespace slipway
                                 item.second.get<std::string>("name"),
                                 item.second.get<std::string>("pier"),
                                 item.second.get<std::string>("address"),
+                                item.second.get<std::string>("gateway", webpier::default_gateway),
                                 item.second.get<std::string>("rendezvous", ""),
                                 item.second.get<bool>("autostart", false),
                                 item.second.get<bool>("obscure", true),
@@ -488,6 +490,7 @@ namespace slipway
                             item.second.get<std::string>("name"),
                             item.second.get<std::string>("pier"),
                             item.second.get<std::string>("address"),
+                            item.second.get<std::string>("gateway", webpier::default_gateway),
                             item.second.get<std::string>("rendezvous", ""),
                             item.second.get<bool>("autostart", false),
                             item.second.get<bool>("obscure", true)

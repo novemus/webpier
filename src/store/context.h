@@ -9,6 +9,7 @@ namespace webpier
 {
     constexpr const char* default_stun_server = "stun.ekiga.net";
     constexpr const char* default_dht_bootstrap = "bootstrap.jami.net:4222";
+    constexpr const char* default_gateway = "127.0.0.1:0";
     constexpr const uint16_t default_dht_port = 0;
 
     struct stale_error : public std::runtime_error { stale_error(const std::string& what) : std::runtime_error(what) {} };
@@ -72,6 +73,7 @@ namespace webpier
         std::string name;
         std::string pier;
         std::string address;
+        std::string gateway = default_gateway;
         std::string rendezvous = default_dht_bootstrap;
         bool autostart = false;
         bool obscure = true;
