@@ -127,7 +127,7 @@ namespace slipway
         }
 
         std::ostream stream(&buffer);
-        boost::property_tree::write_json(stream, doc, true);
+        boost::property_tree::write_json(stream, doc, false);
 #ifdef WIN32
        stream << '\n';
 #endif

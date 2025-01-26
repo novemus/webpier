@@ -59,6 +59,7 @@ namespace slipway
             naught,
             unplug,
             engage,
+            adjust,
             status,
             review
         };

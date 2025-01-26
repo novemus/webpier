@@ -151,6 +151,16 @@ namespace WebPier
                     context->add_import_service(actual);
                 }
                 m_origin = actual;
+
+                WebPier::Daemon::Handle handle{IsExport() ? Context::Pier() : Pier, Name};
+                try
+                {
+                    WebPier::Daemon::Adjust(handle);
+                }
+                catch(const std::exception& ex)
+                {
+                    std::cout << "Can't adjust service " << handle.Pier << ":" << handle.Service;
+                }
             }
 
             void Purge() noexcept(false) override
@@ -166,6 +176,17 @@ namespace WebPier
                     if (!m_origin.name.empty() && !m_origin.pier.empty())
                         context->del_import_service(m_origin.pier, m_origin.name);
                 }
+
+                WebPier::Daemon::Handle handle{IsExport() ? Context::Pier() : Pier, Name};
+                try
+                {
+                    WebPier::Daemon::Adjust(handle);
+                }
+                catch(const std::exception& ex)
+                {
+                    std::cout << "Can't adjust service " << handle.Pier << ":" << handle.Service;
+                }
+
                 m_origin = {};
             }
 
@@ -308,6 +329,11 @@ namespace WebPier
                 Autostart = m_origin.autostart;
             }
         };
+
+        wxString Pier() noexcept(false)
+        {
+            return wxString::FromUTF8(GetContext()->pier());
+        }
 
         ConfigPtr GetConfig() noexcept(false)
         {
@@ -489,10 +515,22 @@ namespace WebPier
             client->engage(Convert(handle));
         }
 
+        void Adjust(const Handle& handle) noexcept(false)
+        {
+            auto client = GetDaemon();
+            client->adjust(Convert(handle));
+        }
+
         void Engage() noexcept(false)
         {
             auto client = GetDaemon();
             client->engage();
+        }
+
+        void Adjust() noexcept(false)
+        {
+            auto client = GetDaemon();
+            client->adjust();
         }
 
         Health Status(const Handle& handle) noexcept(false)

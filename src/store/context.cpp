@@ -254,6 +254,11 @@ namespace webpier
                 }
             }
 
+            std::string pier() const noexcept(true) override
+            {
+                return m_config.pier;
+            }
+
             void get_config(config& info) const noexcept(true) override
             {
                 info = m_config; 
@@ -386,11 +391,11 @@ namespace webpier
                 }
             }
 
-            void add_pier(const std::string& id, const std::string& cert) noexcept(false) override
+            void add_pier(const std::string& pier, const std::string& cert) noexcept(false) override
             {
                 hard_lock lock(m_guard);
 
-                auto path = std::filesystem::path(m_config.repo) / id;
+                auto path = std::filesystem::path(m_config.repo) / pier;
 
                 if (std::filesystem::exists(path))
                     throw usage_error("pier already exists");
@@ -398,20 +403,20 @@ namespace webpier
                 std::filesystem::create_directories(path);
                 save_x509_cert(path / cert_file_name, cert);
 
-                m_bundle.emplace(id, bundle::mapped_type());
+                m_bundle.emplace(pier, bundle::mapped_type());
             }
 
-            void del_pier(const std::string& id) noexcept(false) override
+            void del_pier(const std::string& pier) noexcept(false) override
             {
-                if (m_config.pier == id)
+                if (m_config.pier == pier)
                     throw usage_error("can't delete local pier");
 
                 hard_lock lock(m_guard);
-                m_bundle.erase(id);
+                m_bundle.erase(pier);
 
                 try
                 {
-                    std::filesystem::remove_all(std::filesystem::path(m_config.repo) / id);
+                    std::filesystem::remove_all(std::filesystem::path(m_config.repo) / pier);
                 }
                 catch(const std::exception& e)
                 {
@@ -419,16 +424,16 @@ namespace webpier
                 }
             }
 
-            std::string get_fingerprint(const std::string& id) const noexcept(false) override
+            std::string get_fingerprint(const std::string& pier) const noexcept(false) override
             {
                 soft_lock lock(m_guard);
-                return get_x509_public_sha1(std::filesystem::path(m_config.repo) / id / cert_file_name);
+                return get_x509_public_sha1(std::filesystem::path(m_config.repo) / pier / cert_file_name);
             }
 
-            std::string get_certificate(const std::string& id) const noexcept(false) override
+            std::string get_certificate(const std::string& pier) const noexcept(false) override
             {
                 soft_lock lock(m_guard);
-                return load_x509_cert(std::filesystem::path(m_config.repo) / id / cert_file_name);
+                return load_x509_cert(std::filesystem::path(m_config.repo) / pier / cert_file_name);
             }
         };
     }

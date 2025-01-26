@@ -11,8 +11,10 @@ namespace slipway
         virtual ~daemon() {}
         // suspend all services
         virtual void unplug() noexcept(false) = 0;
-        // start or restart auto services and suspend others
+        // reset all services according to its configurations and drop removed ones
         virtual void engage() noexcept(false) = 0;
+        // soft restart active services, boot new ones according to its configurations and drop removed ones
+        virtual void adjust() noexcept(false) = 0;
         // get actual status of all services
         virtual void status(std::vector<slipway::health>& result) noexcept(false) = 0;
         // get reports on all service
@@ -21,6 +23,8 @@ namespace slipway
         virtual void unplug(const slipway::handle& service) noexcept(false) = 0;
         // start or restart the specified service
         virtual void engage(const slipway::handle& service) noexcept(false) = 0;
+        // restart active service or boot new one according to it configuration
+        virtual void adjust(const slipway::handle& service) noexcept(false) = 0;
         // get actual status of the specified service
         virtual void status(const slipway::handle& service, slipway::health& result) noexcept(false) = 0;
         // get a report on the specified service

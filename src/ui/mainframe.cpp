@@ -8,8 +8,9 @@
 #include "logo.h"
 #include <wx/stdpaths.h>
 
-wxVector<wxVariant> ToVariantList(const WebPier::Daemon::Handle& handle, WebPier::Context::ServicePtr service)
+wxVector<wxVariant> ToVariantList(WebPier::Context::ServicePtr service)
 {
+    WebPier::Daemon::Handle handle{service->IsExport() ? WebPier::Context::Pier() : service->Pier, service->Name};
     WebPier::Daemon::Health health = WebPier::Daemon::Status(handle);
 
     const wxBitmap& bitmap = health.State == WebPier::Daemon::Health::Asleep 
@@ -139,10 +140,7 @@ void CMainFrame::Populate()
         m_pierLabel->SetLabel(m_config->Pier);
 
         for (auto& item : m_importBtn->GetValue() ? m_import : m_export)
-        {
-            WebPier::Daemon::Handle handle{m_importBtn->GetValue() ? item.second->Pier : m_config->Pier, item.second->Name};
-            m_serviceList->AppendItem(ToVariantList(handle, item.second), item.first);
-        }
+            m_serviceList->AppendItem(ToVariantList(item.second), item.first);
 
         m_importItem->Enable(true);
         m_exportItem->Enable(true);
@@ -205,8 +203,7 @@ void CMainFrame::onAddServiceButtonClick(wxCommandEvent& event)
             else
                 m_import[wxUIntPtr(service.get())] = service;
 
-            WebPier::Daemon::Handle handle{m_importBtn->GetValue() ? service->Pier : m_config->Pier, service->Name};
-            m_serviceList->AppendItem(ToVariantList(handle, service), wxUIntPtr(service.get()));
+            m_serviceList->AppendItem(ToVariantList(service), wxUIntPtr(service.get()));
         }
         catch(const std::exception& ex)
         {
@@ -237,8 +234,7 @@ void CMainFrame::onEditServiceButtonClick(wxCommandEvent& event)
             auto row = m_serviceList->GetSelectedRow();
             m_serviceList->DeleteItem(row);
 
-            WebPier::Daemon::Handle handle{m_importBtn->GetValue() ? service->Pier : m_config->Pier, service->Name};
-            m_serviceList->InsertItem(row, ToVariantList(handle, service), wxUIntPtr(service.get()));
+            m_serviceList->InsertItem(row, ToVariantList(service), wxUIntPtr(service.get()));
             m_serviceList->SelectRow(row);
         }
     }
@@ -335,10 +331,7 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
                     {
                         CMessageDialog dialog(this, wxString::Format(_("Service '%s' is already imported from '%s', but differs from the new one. Do you want to replace it?"), next->Name, next->Pier), wxDEFAULT_DIALOG_STYLE | wxICON_QUESTION);
                         if (dialog.ShowModal() == wxID_YES)
-                        {
-                            curr->Purge();
                             next->Store();
-                        }
                     }
                 }
                 else

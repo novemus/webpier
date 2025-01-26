@@ -9,7 +9,7 @@ namespace webpier
 {
     constexpr const char* default_stun_server = "stun.ekiga.net";
     constexpr const char* default_dht_bootstrap = "bootstrap.jami.net:4222";
-    constexpr const char* default_gateway = "127.0.0.1:0";
+    constexpr const char* default_gateway = "0.0.0.0:0";
     constexpr const uint16_t default_dht_port = 0;
 
     struct stale_error : public std::runtime_error { stale_error(const std::string& what) : std::runtime_error(what) {} };
@@ -83,12 +83,14 @@ namespace webpier
     {
         virtual ~context() {}
 
+        virtual std::string pier() const noexcept(true) = 0;
+
         virtual void get_config(config& info) const noexcept(true) = 0;
         virtual void set_config(const config& info) noexcept(false) = 0;
 
         virtual void get_piers(std::vector<std::string>& list) const noexcept(true) = 0;
-        virtual void add_pier(const std::string& id, const std::string& cert) noexcept(false) = 0;
-        virtual void del_pier(const std::string& id) noexcept(false) = 0;
+        virtual void add_pier(const std::string& pier, const std::string& cert) noexcept(false) = 0;
+        virtual void del_pier(const std::string& pier) noexcept(false) = 0;
 
         virtual void get_export_services(std::vector<service>& list) const noexcept(true) = 0;
         virtual void get_import_services(std::vector<service>& list) const noexcept(true) = 0;

@@ -85,6 +85,7 @@ namespace WebPier
             ServiceList Services;
         };
 
+        wxString Pier() noexcept(false);
         ConfigPtr GetConfig() noexcept(false);
         ServiceList GetExportServices() noexcept(false);
         ServiceList GetImportServices() noexcept(false);
@@ -133,10 +134,12 @@ namespace WebPier
 
         void Unplug() noexcept(false);
         void Engage() noexcept(false);
+        void Adjust() noexcept(false);
         wxVector<Health> Status() noexcept(false);
         wxVector<Report> Review() noexcept(false);
         void Unplug(const Handle& handle) noexcept(false);
         void Engage(const Handle& handle) noexcept(false);
+        void Adjust(const Handle& handle) noexcept(false);
         Health Status(const Handle& handle) noexcept(false);
         Report Review(const Handle& handle) noexcept(false);
     }

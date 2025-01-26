@@ -137,6 +137,11 @@ namespace slipway
                 perform(message::make(message::engage));
             }
 
+            void adjust() noexcept(false) override
+            {
+                perform(message::make(message::adjust));
+            }
+
             void status(std::vector<slipway::health>& result) noexcept(false) override
             {
                 result = perform<std::vector<slipway::health>>(message::make(message::status));
@@ -155,6 +160,11 @@ namespace slipway
             void engage(const handle& service) noexcept(false) override
             {
                 perform(message::make(message::engage, service));
+            }
+
+            void adjust(const handle& service) noexcept(false) override
+            {
+                perform(message::make(message::adjust, service));
             }
 
             void status(const handle& service, slipway::health& result) noexcept(false) override
