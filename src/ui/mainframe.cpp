@@ -7,19 +7,29 @@
 #include "messagedialog.h"
 #include "logo.h"
 #include <wx/stdpaths.h>
+#include <wx/notifmsg.h>
 
-wxVector<wxVariant> ToVariantList(WebPier::Context::ServicePtr service)
+const wxBitmap& GetStatusBitmap(WebPier::Daemon::Health::Status state)
 {
-    WebPier::Daemon::Handle handle{service->IsExport() ? WebPier::Context::Pier() : service->Pier, service->Name};
-    WebPier::Daemon::Health health = WebPier::Daemon::Status(handle);
-
-    const wxBitmap& bitmap = health.State == WebPier::Daemon::Health::Asleep 
-        ? ::GetGreyCircleImage() : health.State == WebPier::Daemon::Health::Broken 
-        ? ::GetRedCircleImage() : health.State == WebPier::Daemon::Health::Lonely
+    return state == WebPier::Daemon::Health::Asleep 
+        ? ::GetGreyCircleImage() : state == WebPier::Daemon::Health::Broken 
+        ? ::GetRedCircleImage() : state == WebPier::Daemon::Health::Lonely
         ? ::GetBlueCircleImage() : ::GetGreenCircleImage();
+}
+
+wxVector<wxVariant> CMainFrame::makeListItem(WebPier::Context::ServicePtr service)
+{
+    WebPier::Daemon::Health::Status state = WebPier::Daemon::Health::Broken;
+
+    auto owner = service->IsExport() ? WebPier::Context::Pier() : service->Pier;
+    for (const auto& item : m_status)
+    {
+        if (item.Pier == owner && item.Service == service->Name)
+            state = item.State;
+    }
 
     wxVector<wxVariant> data;
-    data.push_back(wxVariant(wxDataViewIconText(service->Name, bitmap)));
+    data.push_back(wxVariant(wxDataViewIconText(service->Name, GetStatusBitmap(state))));
     data.push_back(wxVariant(wxString(service->Pier)));
     data.push_back(wxVariant(wxString(service->Address)));
     data.push_back(wxVariant(wxString(service->Rendezvous.IsEmpty() ? wxT("Email") : wxT("DHT"))));
@@ -113,6 +123,10 @@ CMainFrame::CMainFrame(const wxIcon& icon) : wxFrame(nullptr, wxID_ANY, wxT("Web
     m_editBtn->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CMainFrame::onEditServiceButtonClick ), NULL, this );
     m_deleteBtn->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CMainFrame::onDeleteServiceButtonClick ), NULL, this );
     m_serviceList->Connect( wxEVT_COMMAND_DATAVIEW_ITEM_CONTEXT_MENU, wxDataViewEventHandler( CMainFrame::onServiceItemContextMenu ), NULL, this );
+
+    m_timer = new wxTimer(this);
+    this->Bind( wxEVT_TIMER, wxTimerEventHandler(CMainFrame::onTimer), this, m_timer->GetId());
+    m_timer->Start(500, true);
 }
 
 CMainFrame::~CMainFrame()
@@ -125,6 +139,88 @@ CMainFrame::~CMainFrame()
     delete m_deleteBtn;
     delete m_serviceList;
     delete m_statusBar;
+    delete m_timer;
+}
+
+void CMainFrame::RefreshStatus(const WebPier::Daemon::Handle& handle)
+{
+    WebPier::Daemon::Health::Status state = WebPier::Daemon::Health::Broken;
+
+    try
+    {
+        auto status = WebPier::Daemon::Status(handle);
+        state = status.State;
+    }
+    catch(const std::exception& e)
+    {
+        wxNotificationMessage msg(wxEmptyString, _("Can't get status of the ") + handle.Pier + wxT(":") + handle.Service + _(" service!"), nullptr, wxICON_ERROR);
+        msg.Show();
+    }
+
+    for (auto& status : m_status)
+    {
+        if (handle.Pier == status.Pier && handle.Service == status.Service)
+        {
+            status.State = state;
+            break;
+        }
+    }
+
+    for(int i = 0; i < m_serviceList->GetItemCount(); ++i)
+    {
+        wxVariant value;
+        m_serviceList->GetValue(value, i, 0);
+
+        wxString service = value.GetAny().As<wxDataViewIconText>().GetText();
+        wxString pier = m_exportBtn->GetValue() ? WebPier::Context::Pier() : m_serviceList->GetTextValue(i, 1);
+
+        if (handle.Service == service && handle.Pier == pier)
+        {
+            m_serviceList->SetValue(wxVariant(wxDataViewIconText(service, GetStatusBitmap(state))), i, 0);
+            break;
+        }
+    }
+}
+
+void CMainFrame::RefreshStatus()
+{
+    try
+    {
+        m_status = WebPier::Daemon::Status();
+    }
+    catch(const std::exception& e)
+    {
+        wxNotificationMessage msg(wxEmptyString, _("Can't get status of the pier!"), nullptr, wxICON_ERROR);
+        msg.Show();
+        m_status.clear();
+    }
+
+    for(int i = 0; i < m_serviceList->GetItemCount(); ++i)
+    {
+        wxVariant value;
+        m_serviceList->GetValue(value, i, 0);
+
+        wxString service = value.GetAny().As<wxDataViewIconText>().GetText();
+        wxString pier = m_exportBtn->GetValue() ? WebPier::Context::Pier() : m_serviceList->GetTextValue(i, 1);
+
+        WebPier::Daemon::Health::Status state = WebPier::Daemon::Health::Broken;
+        for (const auto& item : m_status)
+        {
+            if (item.Pier == pier && item.Service == service)
+            {
+                state = item.State;
+                break;
+            }
+        }
+
+        m_serviceList->SetValue(wxVariant(wxDataViewIconText(service, GetStatusBitmap(state))), i, 0);
+    }
+}
+
+void CMainFrame::onTimer(wxTimerEvent& event)
+{
+    RefreshStatus();
+    m_timer->Start(30000, true);
 }
 
 void CMainFrame::Populate()
@@ -140,7 +236,7 @@ void CMainFrame::Populate()
         m_pierLabel->SetLabel(m_config->Pier);
 
         for (auto& item : m_importBtn->GetValue() ? m_import : m_export)
-            m_serviceList->AppendItem(ToVariantList(item.second), item.first);
+            m_serviceList->AppendItem(makeListItem(item.second), item.first);
 
         m_importItem->Enable(true);
         m_exportItem->Enable(true);
@@ -203,7 +299,7 @@ void CMainFrame::onAddServiceButtonClick(wxCommandEvent& event)
             else
                 m_import[wxUIntPtr(service.get())] = service;
 
-            m_serviceList->AppendItem(ToVariantList(service), wxUIntPtr(service.get()));
+            m_serviceList->AppendItem(makeListItem(service), wxUIntPtr(service.get()));
         }
         catch(const std::exception& ex)
         {
@@ -234,7 +330,7 @@ void CMainFrame::onEditServiceButtonClick(wxCommandEvent& event)
             auto row = m_serviceList->GetSelectedRow();
             m_serviceList->DeleteItem(row);
 
-            m_serviceList->InsertItem(row, ToVariantList(service), wxUIntPtr(service.get()));
+            m_serviceList->InsertItem(row, makeListItem(service), wxUIntPtr(service.get()));
             m_serviceList->SelectRow(row);
         }
     }

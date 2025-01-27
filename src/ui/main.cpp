@@ -478,12 +478,6 @@ const wxBitmap& GetGreyCircleImage()
     return s_image;
 }
 
-void ShowCommandErrorMessage()
-{
-    wxNotificationMessage msg(wxEmptyString, _("Couldn't execute the command!"), nullptr, wxICON_ERROR);
-    msg.Show();
-}
-
 CMainFrame* CreateMainFrame(const wxIcon& icon)
 {
     CMainFrame* frame = new CMainFrame(icon);
@@ -561,47 +555,60 @@ protected:
 
         wxMenu* imports = new wxMenu();
         wxMenu* exports = new wxMenu();
-
-        auto config = WebPier::Context::GetConfig();
-        auto status = WebPier::Daemon::Status();
-
+        
         bool isPassive = true;
-        for (const auto& item : status)
-        {
-            wxMenu* menu = item.Pier == config->Pier ? exports : imports;
-            wxMenuItem* check = menu->AppendCheckItem(wxID_ANY, item.Pier + wxT(":") + item.Service);
 
-            if (item.State == WebPier::Daemon::Health::Asleep)
+        try
+        {
+            auto pier = WebPier::Context::Pier();
+            auto status = WebPier::Daemon::Status();
+
+            for (const auto& item : status)
             {
-                check->Check(false);
-                menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [item](wxCommandEvent&)
+                wxMenu* menu = item.Pier == pier ? exports : imports;
+                wxMenuItem* check = menu->AppendCheckItem(wxID_ANY, item.Pier + wxT(":") + item.Service);
+
+                if (item.State == WebPier::Daemon::Health::Asleep)
                 {
-                    try
+                    check->Check(false);
+                    menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [this, item](wxCommandEvent&)
                     {
-                        WebPier::Daemon::Engage(item);
-                    }
-                    catch(const std::exception& ex)
-                    {
-                        ShowCommandErrorMessage();
-                    }
-                }, check->GetId());
-            }
-            else
-            {
-                isPassive = false;
-                check->Check(true);
-                menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [item](wxCommandEvent&)
+                        try
+                        {
+                            WebPier::Daemon::Engage(item);
+                        }
+                        catch(const std::exception& ex)
+                        {
+                            wxNotificationMessage msg(wxEmptyString, _("Can't start the ") + item.Pier + wxT(":") + item.Service + _(" service!"), nullptr, wxICON_ERROR);
+                            msg.Show();
+                        }
+                        m_frame->RefreshStatus(item);
+                    }, check->GetId());
+                }
+                else
                 {
-                    try
+                    isPassive = false;
+                    check->Check(true);
+                    menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [this, item](wxCommandEvent&)
                     {
-                        WebPier::Daemon::Unplug(item);
-                    }
-                    catch(const std::exception& ex)
-                    {
-                        ShowCommandErrorMessage();
-                    }
-                }, check->GetId());
+                        try
+                        {
+                            WebPier::Daemon::Unplug(item);
+                        }
+                        catch(const std::exception& ex)
+                        {
+                            wxNotificationMessage msg(wxEmptyString, _("Can't stop the ") + item.Pier + wxT(":") + item.Service + _(" service!"), nullptr, wxICON_ERROR);
+                            msg.Show();
+                        }
+                        m_frame->RefreshStatus(item);
+                    }, check->GetId());
+                }
             }
+        }
+        catch(const std::exception& ex)
+        {
+            wxNotificationMessage msg(wxEmptyString, _("Can't get status of the pier!"), nullptr, wxICON_ERROR);
+            msg.Show();
         }
 
         menu->Append(wxID_ANY, "&Import", imports);
@@ -610,7 +617,7 @@ protected:
         wxMenuItem* unplug = menu->Append(wxID_ANY, _("&Unplug"));
         wxMenuItem* reboot = menu->Append(wxID_ANY, _("&Reboot"));
 
-        menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [](wxCommandEvent&)
+        menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [this](wxCommandEvent&)
         {
             try
             {
@@ -618,11 +625,13 @@ protected:
             }
             catch(const std::exception& ex)
             {
-                ShowCommandErrorMessage();
+                wxNotificationMessage msg(wxEmptyString, _("Can't unplug the pier!"), nullptr, wxICON_ERROR);
+                msg.Show();
             }
+            m_frame->RefreshStatus();
         }, unplug->GetId());
 
-        menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [](wxCommandEvent&)
+        menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [this](wxCommandEvent&)
         {
             try
             {
@@ -630,8 +639,10 @@ protected:
             }
             catch(const std::exception& ex)
             {
-                ShowCommandErrorMessage();
+                wxNotificationMessage msg(wxEmptyString, _("Can't reboot the pier!"), nullptr, wxICON_ERROR);
+                msg.Show();
             }
+            m_frame->RefreshStatus();
         }, reboot->GetId());
 
         if (isPassive)

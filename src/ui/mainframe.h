@@ -23,6 +23,7 @@
 #include <wx/statusbr.h>
 #include <wx/frame.h>
 #include <wx/aboutdlg.h> 
+#include <wx/timer.h>
 
 class CMainFrame : public wxFrame
 {
@@ -36,11 +37,15 @@ class CMainFrame : public wxFrame
     wxBitmapButton* m_deleteBtn;
     wxDataViewListCtrl* m_serviceList;
     wxStatusBar* m_statusBar;
+    wxTimer* m_timer;
     WebPier::Context::ConfigPtr m_config;
     WebPier::Context::ServiceList m_export;
     WebPier::Context::ServiceList m_import;
+    wxVector<WebPier::Daemon::Health> m_status;
 
 protected:
+
+    wxVector<wxVariant> makeListItem(WebPier::Context::ServicePtr service);
 
     void onSettingsMenuSelection(wxCommandEvent& event);
     void onImportMenuSelection(wxCommandEvent& event);
@@ -53,6 +58,7 @@ protected:
     void onEditServiceButtonClick(wxCommandEvent& event);
     void onDeleteServiceButtonClick(wxCommandEvent& event);
     void onServiceItemContextMenu(wxDataViewEvent& event) { event.Skip(); }
+    void onTimer(wxTimerEvent& event);
 
 public:
 
@@ -60,4 +66,6 @@ public:
     ~CMainFrame();
 
     void Populate();
+    void RefreshStatus();
+    void RefreshStatus(const WebPier::Daemon::Handle& handle);
 };
