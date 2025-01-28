@@ -37,19 +37,19 @@ namespace slipway
 
     struct report : public health
     {
-        struct spawn
+        struct tunnel
         {
             std::string pier;
             uint32_t pid;
 
-            bool operator<(const spawn& other) const { return pier < other.pier || pid < other.pid; }
-            bool operator==(const spawn& other) const { return pier == other.pier && pid == other.pid; }
+            bool operator<(const tunnel& other) const { return pier < other.pier || pid < other.pid; }
+            bool operator==(const tunnel& other) const { return pier == other.pier && pid == other.pid; }
         };
 
-        std::vector<spawn> asset;
+        std::vector<tunnel> tunnels;
 
-        bool operator<(const report& other) const { return health::operator<(other) || asset < other.asset; }
-        bool operator==(const report& other) const { return health::operator==(other) && asset == other.asset; }
+        bool operator<(const report& other) const { return health::operator<(other) || burden < other.burden; }
+        bool operator==(const report& other) const { return health::operator==(other) && burden == other.burden; }
     };
 
     struct message

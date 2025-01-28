@@ -47,14 +47,14 @@ namespace slipway
             doc.put("state", obj.state);
 
             boost::property_tree::ptree context;
-            for(const auto& link : obj.asset)
+            for(const auto& link : obj.tunnels)
             {
                 boost::property_tree::ptree item;
                 item.put("pid", link.pid);
                 item.put("pier", link.pier);
                 context.push_back(std::make_pair("", item));
             }
-            doc.put_child("asset", context);
+            doc.put_child("tunnels", context);
             return doc;
         }
 
@@ -65,13 +65,13 @@ namespace slipway
             obj.service = doc.get<std::string>("service");
             obj.state = static_cast<health::status>(doc.get<int>("state"));
 
-            boost::property_tree::ptree asset;
-            for (auto& item : doc.get_child("asset", asset))
+            boost::property_tree::ptree tunnels;
+            for (auto& item : doc.get_child("tunnels", tunnels))
             {
-                report::spawn spawn;
-                spawn.pid = item.second.get<int>("pid");
-                spawn.pier = item.second.get<std::string>("pier");
-                obj.asset.emplace_back(std::move(spawn));
+                report::tunnel tunnel;
+                tunnel.pid = item.second.get<int>("pid");
+                tunnel.pier = item.second.get<std::string>("pier");
+                obj.tunnels.emplace_back(std::move(tunnel));
             }
             return obj;
         }

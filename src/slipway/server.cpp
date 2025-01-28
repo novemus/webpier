@@ -368,7 +368,7 @@ namespace slipway
                     item.second.terminate();
             }
 
-            void restore(const std::string& pier, const webpier::config& conf, const webpier::service& serv)
+            void restart(const std::string& pier, const webpier::config& conf, const webpier::service& serv)
             {
                 conf.pier == pier
                     ? start_export(conf, serv) 
@@ -386,14 +386,14 @@ namespace slipway
                 return m_pool.empty() ? health::lonely : health::burden;
             }
 
-            std::vector<report::spawn> asset()
+            std::vector<report::tunnel> tunnels()
             {
-                std::vector<report::spawn> res;
+                std::vector<report::tunnel> res;
 
                 for(auto& item : m_pool)
-                    res.emplace_back(report::spawn{ item.first, static_cast<uint32_t>(item.second.id()) });
+                    res.emplace_back(report::tunnel{ item.first, static_cast<uint32_t>(item.second.id()) });
 
-                return std::vector<report::spawn>(std::move(res));
+                return std::vector<report::tunnel>(std::move(res));
             }
 
         private:
@@ -559,10 +559,10 @@ namespace slipway
                         if (iter != m_pool.end())
                         {
                             iter = pool.emplace(id, std::move(iter->second)).first;
-                            if (serv.autostart && iter->second.state() != slipway::health::asleep)
+                            if (serv.autostart)
                             {
-                                _inf_ << "restore " << pier.first << ":" << serv.name;
-                                iter->second.restore(pier.first, conf, serv);
+                                _inf_ << "restart " << pier.first << ":" << serv.name;
+                                iter->second.restart(pier.first, conf, serv);
                             }
                             else if (!serv.autostart && iter->second.state() != slipway::health::asleep)
                             {
@@ -575,8 +575,8 @@ namespace slipway
                             iter = pool.emplace(id, spawner(m_io)).first;
                             if (serv.autostart)
                             {
-                                _inf_ << "restore " << pier.first << ":" << serv.name;
-                                iter->second.restore(pier.first, conf, serv);
+                                _inf_ << "restart " << pier.first << ":" << serv.name;
+                                iter->second.restart(pier.first, conf, serv);
                             }
                             else
                             {
@@ -617,8 +617,8 @@ namespace slipway
                             iter = pool.emplace(id, std::move(iter->second)).first;
                             if (iter->second.state() != slipway::health::asleep)
                             {
-                                _inf_ << "restore " << pier.first << ":" << serv.name;
-                                iter->second.restore(pier.first, conf, serv);
+                                _inf_ << "restart " << pier.first << ":" << serv.name;
+                                iter->second.restart(pier.first, conf, serv);
                             }
                         }
                         else
@@ -626,8 +626,8 @@ namespace slipway
                             iter = pool.emplace(id, spawner(m_io)).first;
                             if (serv.autostart)
                             {
-                                _inf_ << "restore " << pier.first << ":" << serv.name;
-                                iter->second.restore(pier.first, conf, serv);
+                                _inf_ << "restart " << pier.first << ":" << serv.name;
+                                iter->second.restart(pier.first, conf, serv);
                             }
                             else
                             {
@@ -668,9 +668,9 @@ namespace slipway
                 if (iter == m_pool.end())
                     iter = m_pool.emplace(id, spawner(m_io)).first;
 
-                _inf_ << "restore " << id.pier << ":" << id.service;
+                _inf_ << "restart " << id.pier << ":" << id.service;
 
-                iter->second.restore(id.pier, conf, serv);
+                iter->second.restart(id.pier, conf, serv);
             }
 
             void adjust(const slipway::handle& id) noexcept(false)
@@ -696,8 +696,8 @@ namespace slipway
                     iter = m_pool.emplace(id, spawner(m_io)).first;
                     if (serv.autostart)
                     {
-                        _inf_ << "restore " << id.pier << ":" << id.service;
-                        iter->second.restore(id.pier, conf, serv);
+                        _inf_ << "restart " << id.pier << ":" << id.service;
+                        iter->second.restart(id.pier, conf, serv);
                     }
                     else
                     {
@@ -707,8 +707,8 @@ namespace slipway
                 }
                 else if (iter->second.state() != slipway::health::asleep)
                 {
-                    _inf_ << "restore " << id.pier << ":" << id.service;
-                    iter->second.restore(id.pier, conf, serv);
+                    _inf_ << "restart " << id.pier << ":" << id.service;
+                    iter->second.restart(id.pier, conf, serv);
                 }
             }
 
@@ -803,7 +803,7 @@ namespace slipway
             {
                 std::vector<slipway::report> res;
                 for (auto& item : m_pool)
-                    res.emplace_back(slipway::report{ slipway::health{ item.first, item.second.state() }, item.second.asset() });
+                    res.emplace_back(slipway::report{ slipway::health{ item.first, item.second.state() }, item.second.tunnels() });
                 return res;
             }
 
@@ -811,7 +811,7 @@ namespace slipway
             {
                 auto iter = m_pool.find(id);
                 if (iter != m_pool.end())
-                    return slipway::report { slipway::health { iter->first, iter->second.state() }, iter->second.asset() };
+                    return slipway::report { slipway::health { iter->first, iter->second.state() }, iter->second.tunnels() };
 
                 throw std::runtime_error("unknown service");
             }

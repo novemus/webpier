@@ -486,8 +486,8 @@ namespace WebPier
             ret.Service = val.service;
             ret.State = static_cast<Health::Status>(val.state);
 
-            for (const auto& item : val.asset)
-                ret.Asset.push_back(Report::Spawn { item.pier, item.pid });
+            for (const auto& item : val.tunnels)
+                ret.Tunnels.push_back(Report::Tunnel { item.pier, item.pid });
             
             return ret;
         }

@@ -275,6 +275,76 @@ void CMainFrame::onServiceItemSelectionChanged(wxDataViewEvent& event)
     }
 }
 
+void CMainFrame::onServiceItemContextMenu(wxDataViewEvent& event)
+{
+    int row = m_serviceList->ItemToRow(event.GetItem());
+    if (row == wxNOT_FOUND)
+        return;
+    
+    wxVariant value;
+    m_serviceList->GetValue(value, row, 0);
+
+    wxString service = value.GetAny().As<wxDataViewIconText>().GetText();
+    wxString pier = m_exportBtn->GetValue() ? WebPier::Context::Pier() : m_serviceList->GetTextValue(row, 1);
+
+    try
+    {
+        auto info = WebPier::Daemon::Review(WebPier::Daemon::Handle{pier, service});
+
+        wxMenu* menu = new wxMenu();
+        if (info.State == WebPier::Daemon::Health::Asleep)
+        {
+            menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [this, info](wxCommandEvent&)
+            {
+                try
+                {
+                    WebPier::Daemon::Engage(info);
+                }
+                catch(const std::exception& ex)
+                {
+                    wxNotificationMessage msg(wxEmptyString, _("Can't start the ") + info.Pier + wxT(":") + info.Service + _(" service!"), nullptr, wxICON_ERROR);
+                    msg.Show();
+                }
+                RefreshStatus(info);
+            }, 
+            menu->Append(wxID_ANY, _("&Engage"))->GetId());
+        }
+        else
+        {
+            menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [this, info](wxCommandEvent&)
+            {
+                try
+                {
+                    WebPier::Daemon::Unplug(info);
+                }
+                catch(const std::exception& ex)
+                {
+                    wxNotificationMessage msg(wxEmptyString, _("Can't stop the ") + info.Pier + wxT(":") + info.Service + _(" service!"), nullptr, wxICON_ERROR);
+                    msg.Show();
+                }
+                RefreshStatus(info);
+            }, menu->Append(wxID_ANY, _("&Unplug"))->GetId());
+
+            if (info.State == WebPier::Daemon::Health::Burden || !info.Tunnels.empty())
+            {
+                wxMenu* tunnels = new wxMenu();
+                for (auto& tunnel : info.Tunnels)
+                {
+                    tunnels->Append(wxID_ANY, wxString::Format(wxT("pier=%s pid=%d"), tunnel.Pier, tunnel.Pid))->Enable(false);
+                }
+                menu->Append(wxID_ANY, "&Tunnels", tunnels);
+            }
+        }
+
+        PopupMenu(menu);
+    }
+    catch(const std::exception& e)
+    {
+        wxNotificationMessage msg(wxEmptyString, _("Can't review the ") + pier + wxT(":") + service + _(" service!"), nullptr, wxICON_ERROR);
+        msg.Show();
+    }
+}
+
 void CMainFrame::onStatusTimeout(wxTimerEvent& event)
 {
     RefreshStatus();

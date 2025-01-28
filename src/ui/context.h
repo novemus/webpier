@@ -123,13 +123,13 @@ namespace WebPier
 
         struct Report : public Health
         {
-            struct Spawn
+            struct Tunnel
             {
                 std::string Pier;
                 wxUint32 Pid;
             };
 
-            wxVector<Spawn> Asset;
+            wxVector<Tunnel> Tunnels;
         };
 
         void Unplug() noexcept(false);
