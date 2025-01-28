@@ -11,10 +11,36 @@
 
 const wxBitmap& GetStatusBitmap(WebPier::Daemon::Health::Status state)
 {
-    return state == WebPier::Daemon::Health::Asleep 
-        ? ::GetGreyCircleImage() : state == WebPier::Daemon::Health::Broken 
-        ? ::GetRedCircleImage() : state == WebPier::Daemon::Health::Lonely
-        ? ::GetBlueCircleImage() : ::GetGreenCircleImage();
+    switch(state)
+    {
+        case WebPier::Daemon::Health::Asleep:
+            return ::GetGreyCircleImage();
+        case WebPier::Daemon::Health::Broken:
+            return ::GetRedCircleImage();
+        case WebPier::Daemon::Health::Lonely:
+            return ::GetBlueCircleImage();
+        default:
+            return ::GetGreenCircleImage();
+    }
+
+    return ::GetGreyCircleImage();
+}
+
+wxString Stringify(WebPier::Daemon::Health::Status state)
+{
+    switch(state)
+    {
+        case WebPier::Daemon::Health::Asleep:
+            return _("asleep");
+        case WebPier::Daemon::Health::Broken:
+            return _("broken");
+        case WebPier::Daemon::Health::Lonely:
+            return _("lonely");
+        default:
+            return _("burden");
+    }
+
+    return _("unknown");
 }
 
 wxVector<wxVariant> CMainFrame::makeListItem(WebPier::Context::ServicePtr service)
@@ -123,9 +149,10 @@ CMainFrame::CMainFrame(const wxIcon& icon) : wxFrame(nullptr, wxID_ANY, wxT("Web
     m_editBtn->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CMainFrame::onEditServiceButtonClick ), NULL, this );
     m_deleteBtn->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CMainFrame::onDeleteServiceButtonClick ), NULL, this );
     m_serviceList->Connect( wxEVT_COMMAND_DATAVIEW_ITEM_CONTEXT_MENU, wxDataViewEventHandler( CMainFrame::onServiceItemContextMenu ), NULL, this );
+    m_serviceList->Connect( wxEVT_COMMAND_DATAVIEW_SELECTION_CHANGED, wxDataViewEventHandler( CMainFrame::onServiceItemSelectionChanged ), NULL, this );
 
     m_timer = new wxTimer(this);
-    this->Bind( wxEVT_TIMER, wxTimerEventHandler(CMainFrame::onTimer), this, m_timer->GetId());
+    this->Bind( wxEVT_TIMER, wxTimerEventHandler(CMainFrame::onStatusTimeout), this, m_timer->GetId());
     m_timer->Start(500, true);
 }
 
@@ -166,6 +193,7 @@ void CMainFrame::RefreshStatus(const WebPier::Daemon::Handle& handle)
         }
     }
 
+    int current = m_serviceList->GetSelectedRow();
     for(int i = 0; i < m_serviceList->GetItemCount(); ++i)
     {
         wxVariant value;
@@ -177,6 +205,8 @@ void CMainFrame::RefreshStatus(const WebPier::Daemon::Handle& handle)
         if (handle.Service == service && handle.Pier == pier)
         {
             m_serviceList->SetValue(wxVariant(wxDataViewIconText(service, GetStatusBitmap(state))), i, 0);
+            if (current == i)
+                m_statusBar->SetStatusText(Stringify(state));
             break;
         }
     }
@@ -195,6 +225,7 @@ void CMainFrame::RefreshStatus()
         m_status.clear();
     }
 
+    int current = m_serviceList->GetSelectedRow();
     for(int i = 0; i < m_serviceList->GetItemCount(); ++i)
     {
         wxVariant value;
@@ -214,10 +245,37 @@ void CMainFrame::RefreshStatus()
         }
 
         m_serviceList->SetValue(wxVariant(wxDataViewIconText(service, GetStatusBitmap(state))), i, 0);
+        if (current == i)
+            m_statusBar->SetStatusText(Stringify(state));
     }
 }
 
-void CMainFrame::onTimer(wxTimerEvent& event)
+void CMainFrame::onServiceItemSelectionChanged(wxDataViewEvent& event)
+{
+    int row = m_serviceList->ItemToRow(event.GetItem());
+    if (row == wxNOT_FOUND)
+    {
+        m_statusBar->SetStatusText(wxEmptyString);
+        return;
+    }
+    
+    wxVariant value;
+    m_serviceList->GetValue(value, row, 0);
+
+    wxString service = value.GetAny().As<wxDataViewIconText>().GetText();
+    wxString pier = m_exportBtn->GetValue() ? WebPier::Context::Pier() : m_serviceList->GetTextValue(row, 1);
+
+    for (const auto& item : m_status)
+    {
+        if (item.Pier == pier && item.Service == service)
+        {
+            m_statusBar->SetStatusText(Stringify(item.State));
+            break;
+        }
+    }
+}
+
+void CMainFrame::onStatusTimeout(wxTimerEvent& event)
 {
     RefreshStatus();
     m_timer->Start(30000, true);

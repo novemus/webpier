@@ -58,7 +58,9 @@ protected:
     void onEditServiceButtonClick(wxCommandEvent& event);
     void onDeleteServiceButtonClick(wxCommandEvent& event);
     void onServiceItemContextMenu(wxDataViewEvent& event) { event.Skip(); }
-    void onTimer(wxTimerEvent& event);
+    void onMouseMotion(wxMouseEvent& event);
+    void onStatusTimeout(wxTimerEvent& event);
+    void onServiceItemSelectionChanged(wxDataViewEvent& event);
 
 public:
 
