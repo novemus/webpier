@@ -1,4 +1,4 @@
-#include "messagedialog.h"
+#include <ui/messagedialog.h>
 
 CMessageDialog::CMessageDialog( wxWindow* parent, const wxString& message, long style, wxWindowID id, const wxPoint& pos, const wxSize& size ) 
     : wxDialog( parent, id, style & wxICON_WARNING ? _("Warning") : style & wxICON_ERROR ? _("Error") : style & wxICON_QUESTION ? _("Question") : _("Info"), pos, size, style )

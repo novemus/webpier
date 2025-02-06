@@ -1,6 +1,6 @@
 #pragma once
 
-#include "message.h"
+#include <slipway/message.h>
 #include <string>
 #include <memory>
 

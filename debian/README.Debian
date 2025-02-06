@@ -1,0 +1,13 @@
+webpier for Debian
+=================
+
+This package contains the 'webpier' program.
+
+The 'webpier' program allows to exchange TCP services with remote hosts, including those located behind
+the NAT. Peers do not need to have public IP addresses and third-party relay servers. The 'webpier' creates
+a direct UDP tunnel between the hosts and imports the remote TCP service to the local interface, or exports
+the local TCP service to the remote side.
+
+https://github.com/novemus/webpier
+
+ -- Novemus Band <nineletters@mail.ru>  Fri, 7 Feb 2025 22:12:00 +0300

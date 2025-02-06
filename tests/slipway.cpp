@@ -1,4 +1,4 @@
-#include "../slipway.h"
+#include <slipway/slipway.h>
 #include <store/context.h>
 #include <store/utils.h>
 #include <boost/process.hpp>

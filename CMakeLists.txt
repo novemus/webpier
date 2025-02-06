@@ -1,42 +1,28 @@
-cmake_minimum_required(VERSION 3.5.0)
-project(webpier VERSION 1.0.0 LANGUAGES C CXX)
+message("***** plexus ***** ")
 
-set(Boost_USE_STATIC_LIBS ON)
-set(wxWidgets_USE_STATIC ON)
+########## setup ##########
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
-    if(BUILD_TESTING)
+cmake_minimum_required(VERSION 3.21)
+
+project(webpier VERSION 1.0.0 DESCRIPTION "The program for forwarding TCP applications via NAT" LANGUAGES CXX)
+
+option(WEBPIER_SKIP_TEST_RULES "Don't generate test rules" ON)
+option(WEBPIER_SKIP_INSTALL_RULES "Don't generate install rules" OFF)
+option(WEBPIER_SKIP_PACKAGE_RULES "Don't generate package rules" ON)
+
+########## dependencies ##########
+
+if(MSVC)
+    if(NOT WEBPIER_SKIP_TEST_RULES)
         find_package(Boost REQUIRED COMPONENTS filesystem process property_tree coroutine unit_test_framework)
     else()
         find_package(Boost REQUIRED COMPONENTS filesystem process property_tree coroutine)
     endif()
-    find_package(wxWidgets CONFIG REQUIRED core base propgrid)
-    add_definitions(
-        -D_CRT_NO_VA_START_VALIDATION
-        -D_CRT_SECURE_NO_WARNINGS
-        -D_WIN32_WINNT=0x0600
-        -D_WINSOCK_DEPRECATED_NO_WARNINGS
-        -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING
-        -D_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
-        -DBOOST_COROUTINES_NO_DEPRECATION_WARNING
-    )
-    set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO RELEASE)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
-    set(WEBPIER_INSTALL_BINDIR ${PROJECT_NAME}-${${PROJECT_NAME}_VERSION}/${CMAKE_INSTALL_BINDIR})
 else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall -fPIC -fvisibility=hidden")
-    if(BUILD_TESTING)
+    if(NOT WEBPIER_SKIP_TEST_RULES)
         find_package(Boost REQUIRED COMPONENTS filesystem coroutine unit_test_framework)
     else()
         find_package(Boost filesystem coroutine)
-    endif()
-    find_package(wxWidgets REQUIRED core base propgrid)
-    if(CMAKE_INSTALL_PREFIX MATCHES "^(/usr)|(/usr/local)$")
-        set(WEBPIER_INSTALL_BINDIR ${CMAKE_INSTALL_BINDIR})
-    else()
-        set(WEBPIER_INSTALL_BINDIR ${PROJECT_NAME}/${${PROJECT_NAME}_VERSION}/${CMAKE_INSTALL_BINDIR})
     endif()
 endif()
 
@@ -44,6 +30,8 @@ message("*** Boost Version: ${Boost_VERSION}")
 message("*** Boost Include Dirs: ${Boost_INCLUDE_DIRS}")
 message("*** Boost Librariy Dirs: ${Boost_LIBRARY_DIRS}")
 message("*** Boost Libraries: ${Boost_LIBRARIES}")
+
+find_package(wxWidgets REQUIRED core base propgrid)
 
 if(wxWidgets_USE_FILE)
     include(${wxWidgets_USE_FILE})
@@ -61,107 +49,189 @@ message("*** OpenSSL Libraries: ${OPENSSL_LIBRARIES}")
 find_package(plexus REQUIRED)
 
 message("*** plexus Version: ${plexus_VERSION}")
-message("*** plexus Include: ${plexus_INCLUDE_DIR}")
-message("*** plexus Library: ${plexus_LIB}")
+message("*** plexus Include: ${plexus_INCLUDE_DIRS}")
+message("*** plexus Library: ${plexus_LIBRARY}")
 
 find_package(wormhole REQUIRED)
 
 message("*** wormhole Version: ${wormhole_VERSION}")
-message("*** wormhole Include: ${wormhole_INCLUDE_DIR}")
-message("*** wormhole Library: ${wormhole_LIB}")
-message("*** wormhole Binary: ${wormhole_BIN}")
+message("*** wormhole Include: ${wormhole_INCLUDE_DIRS}")
+message("*** wormhole Library: ${wormhole_LIBRARY}")
+message("*** wormhole Binary: ${wormhole_BINRARY}")
 
 find_package(tubus REQUIRED DEBUG)
 
 message("*** tubus Version: ${tubus_VERSION}")
-message("*** tubus Include: ${tubus_INCLUDE_DIR}")
-message("*** tubus Library: ${tubus_LIB}")
+message("*** tubus Include: ${tubus_INCLUDE_DIRS}")
+message("*** tubus Library: ${tubus_LIBRARY}")
 
 find_package(PkgConfig REQUIRED)
 
 pkg_search_module(opendht REQUIRED IMPORTED_TARGET opendht>=3.2)
+
 message("* opendht Include Dir: ${opendht_INCLUDEDIR}")
 message("* opendht Lib Dir: ${opendht_LIBDIR}")
-include_directories(${opendht_INCLUDE_DIR})
-link_directories(${opendht_LIBDIR})
-
-pkg_search_module(JsonCpp REQUIRED IMPORTED_TARGET jsoncpp)
-message("* JsonCpp Include Dir: ${JsonCpp_INCLUDEDIR}")
-message("* JsonCpp Lib Dir: ${JsonCpp_LIBDIR}")
-include_directories(${JsonCpp_INCLUDE_DIR})
-link_directories(${JsonCpp_LIBDIR})
-
-pkg_search_module(libargon2 REQUIRED IMPORTED_TARGET libargon2)
-message("* libargon2 Include Dir: ${libargon2_INCLUDEDIR}")
-message("* libargon2 Lib Dir: ${libargon2_LIBDIR}")
-include_directories(${libargon2_INCLUDE_DIR})
-link_directories(${libargon2_LIBDIR})
-
-pkg_search_module(fmt REQUIRED IMPORTED_TARGET fmt)
-message("* fmt Include Dir: ${fmt_INCLUDEDIR}")
-message("* fmt Lib Dir: ${fmt_LIBDIR}")
-include_directories(${fmt_INCLUDE_DIR})
-link_directories(${fmt_LIBDIR})
-
-pkg_search_module(GnuTLS REQUIRED IMPORTED_TARGET gnutls)
-message("* GnuTLS Include Dir: ${GnuTLS_INCLUDEDIR}")
-message("* GnuTLS Lib Dir: ${GnuTLS_LIBDIR}")
-include_directories(${GnuTLS_INCLUDE_DIR})
-link_directories(${GnuTLS_LIBDIR})
 
 pkg_search_module(nettle REQUIRED IMPORTED_TARGET nettle)
+
 message("* nettle Include Dir: ${nettle_INCLUDEDIR}")
 message("* nettle Lib Dir: ${nettle_LIBDIR}")
-include_directories(${nettle_INCLUDE_DIR})
-link_directories(${nettle_LIBDIR})
 
-set(SLIPWAY_MODULE slipway)
-add_executable(${SLIPWAY_MODULE} src/slipway/message.cpp src/slipway/server.cpp src/store/utils.cpp)
-target_compile_definitions(${SLIPWAY_MODULE} PRIVATE PLEXUS_EXPORTS BOOST_BIND_GLOBAL_PLACEHOLDERS WORMHOLE_EXEC="${wormhole_BIN}")
-target_include_directories(${SLIPWAY_MODULE} PRIVATE src ${plexus_INCLUDE_DIR} ${wormhole_INCLUDE_DIR} ${tubus_INCLUDE_DIR})
-if(WIN32)
-    target_link_libraries(${SLIPWAY_MODULE} PRIVATE plexus wormhole tubus PkgConfig::opendht PkgConfig::fmt PkgConfig::libargon2 PkgConfig::GnuTLS PkgConfig::nettle PkgConfig::JsonCpp Boost::filesystem Boost::property_tree Boost::coroutine OpenSSL::SSL OpenSSL::Crypto Crypt32)
-else()
-    target_link_libraries(${SLIPWAY_MODULE} PRIVATE plexus wormhole tubus PkgConfig::opendht PkgConfig::fmt PkgConfig::libargon2 PkgConfig::GnuTLS PkgConfig::nettle PkgConfig::JsonCpp Boost::filesystem Boost::coroutine OpenSSL::SSL OpenSSL::Crypto)
-endif()
-set_target_properties(${SLIPWAY_MODULE} PROPERTIES DEBUG_POSTFIX "d")
+pkg_search_module(fmt REQUIRED IMPORTED_TARGET fmt)
 
-add_executable(${PROJECT_NAME} WIN32 
+message("* fmt Include Dir: ${fmt_INCLUDEDIR}")
+message("* fmt Lib Dir: ${fmt_LIBDIR}")
+
+pkg_search_module(libargon2 REQUIRED IMPORTED_TARGET libargon2)
+
+message("* libargon2 Include Dir: ${libargon2_INCLUDEDIR}")
+message("* libargon2 Lib Dir: ${libargon2_LIBDIR}")
+
+########## build ##########
+
+set(WEBPIER ${PROJECT_NAME})
+set(SLIPWAY slipway)
+
+add_executable(${WEBPIER} WIN32)
+add_executable(${PROJECT_NAME}::${WEBPIER} ALIAS ${WEBPIER})
+
+add_executable(${SLIPWAY})
+add_executable(${PROJECT_NAME}::${SLIPWAY} ALIAS ${SLIPWAY})
+
+target_sources(${WEBPIER} PRIVATE     
     src/ui/main.cpp
+    src/ui/mainframe.h
     src/ui/mainframe.cpp
+    src/ui/servicedialog.h
     src/ui/servicedialog.cpp
+    src/ui/settingsdialog.h
     src/ui/settingsdialog.cpp
+    src/ui/exchangedialog.h
     src/ui/exchangedialog.cpp
+    src/ui/aboutdialog.h
     src/ui/aboutdialog.cpp
+    src/ui/messagedialog.h
     src/ui/messagedialog.cpp
+    src/ui/startupdialog.h
     src/ui/startupdialog.cpp
+    src/ui/context.h
     src/ui/context.cpp
+    src/store/context.h
     src/store/context.cpp
+    src/store/utils.h
     src/store/utils.cpp
+    src/slipway/message.h
     src/slipway/message.cpp
+    src/slipway/slipway.h
     src/slipway/client.cpp
     )
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE BOOST_BIND_GLOBAL_PLACEHOLDERS SLIPWAY_EXEC="${CMAKE_INSTALL_PREFIX}/${WEBPIER_INSTALL_BINDIR}$<TARGET_FILE_NAME:${SLIPWAY_MODULE}>")
-target_include_directories(${PROJECT_NAME} PRIVATE src ${wxWidgets_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
-if(WIN32)
-    target_link_libraries(${PROJECT_NAME} PRIVATE ${wxWidgets_LIBRARIES} Boost::filesystem Boost::property_tree Boost::coroutine OpenSSL::SSL OpenSSL::Crypto Crypt32)
-else()
-    target_link_libraries(${PROJECT_NAME} PRIVATE ${wxWidgets_LIBRARIES} Boost::filesystem Boost::coroutine OpenSSL::SSL OpenSSL::Crypto)
-endif()
-set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "d")
+target_sources(${SLIPWAY} PRIVATE
+    src/slipway/message.h
+    src/slipway/message.cpp
+    src/slipway/slipway.h
+    src/slipway/server.cpp
+    src/store/utils.h
+    src/store/utils.cpp
+    )
 
-if(BUILD_TESTING)
-    set(WEBPIER_UT webpier_ut)
-    add_executable(${WEBPIER_UT} src/store/tests/utils.cpp src/store/tests/context.cpp src/slipway/tests/message.cpp src/slipway/tests/slipway.cpp src/store/context.cpp src/slipway/message.cpp src/slipway/client.cpp src/store/utils.cpp)
-    target_compile_definitions(${WEBPIER_UT} PRIVATE BOOST_BIND_GLOBAL_PLACEHOLDERS SLIPWAY_EXEC="$<TARGET_FILE:${SLIPWAY_MODULE}>")
-    target_include_directories(${WEBPIER_UT} PRIVATE src ${Boost_INCLUDE_DIRS})
-    if(WIN32)
-        target_link_libraries(${WEBPIER_UT} PRIVATE Boost::filesystem Boost::property_tree Boost::unit_test_framework Boost::coroutine OpenSSL::SSL OpenSSL::Crypto Crypt32 ws2_32)
+if(WIN32)
+    target_link_libraries(${WEBPIER} PRIVATE ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES} OpenSSL::SSL OpenSSL::Crypto Crypt32)
+    target_link_libraries(${SLIPWAY} PRIVATE ${Boost_LIBRARIES} plexus::libplexus wormhole::libwormhole tubus::libtubus PkgConfig::opendht PkgConfig::fmt PkgConfig::libargon2 PkgConfig::nettle OpenSSL::SSL OpenSSL::Crypto Crypt32)
+else()
+    target_link_libraries(${WEBPIER} PRIVATE ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES} OpenSSL::SSL OpenSSL::Crypto)
+    target_link_libraries(${SLIPWAY} PRIVATE ${Boost_LIBRARIES} plexus::libplexus wormhole::libwormhole tubus::libtubus PkgConfig::opendht PkgConfig::fmt PkgConfig::libargon2 PkgConfig::nettle OpenSSL::SSL OpenSSL::Crypto)
+endif()
+
+target_include_directories(${WEBPIER} PRIVATE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>" ${Boost_INCLUDE_DIRS})
+target_include_directories(${SLIPWAY} PRIVATE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>")
+
+set_target_properties(${WEBPIER} PROPERTIES DEBUG_POSTFIX "d")
+set_target_properties(${SLIPWAY} PROPERTIES DEBUG_POSTFIX "d")
+
+get_filename_component(SLIPWAY_EXEC "$<TARGET_FILE:webpier::slipway>" NAME)
+get_filename_component(WORMHOLE_EXEC "$<TARGET_FILE:wormhole::wormhole>" NAME)
+
+target_compile_definitions(${WEBPIER} PRIVATE SLIPWAY_EXEC="${SLIPWAY_EXEC}")
+target_compile_definitions(${SLIPWAY} PRIVATE WORMHOLE_EXEC="${WORMHOLE_EXEC}")
+
+if(MSVC)
+    add_definitions(-D_WIN32_WINNT=0x0601)
+endif()
+
+########## install ##########
+
+if(NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMAKE_SKIP_INSTALL_RULES)
+
+    include(GNUInstallDirs)
+
+    if(MSVC)
+        set(WEBPIER_INSTALL_BINDIR ${PROJECT_NAME}-${${PROJECT_NAME}_VERSION}/${CMAKE_INSTALL_BINDIR})
     else()
-        target_link_libraries(${WEBPIER_UT} PRIVATE Boost::filesystem Boost::unit_test_framework Boost::coroutine OpenSSL::SSL OpenSSL::Crypto)
+        if(CMAKE_INSTALL_PREFIX MATCHES "^(/usr)|(/usr/local)$")
+            set(WEBPIER_INSTALL_BINDIR ${CMAKE_INSTALL_BINDIR})
+        else()
+            set(WEBPIER_INSTALL_BINDIR ${PROJECT_NAME}-${${PROJECT_NAME}_VERSION}/${CMAKE_INSTALL_BINDIR})
+        endif()
     endif()
-    set_target_properties(${WEBPIER_UT} PROPERTIES DEBUG_POSTFIX "d")
+
+    install(TARGETS ${WEBPIER} EXPORT webpier_export RUNTIME DESTINATION ${WEBPIER_INSTALL_BINDIR} COMPONENT binary_files)
+    install(TARGETS ${SLIPWAY} EXPORT webpier_export RUNTIME DESTINATION ${WEBPIER_INSTALL_BINDIR} COMPONENT binary_files)
+
+    if(MSVC)
+        install(FILES "$<TARGET_PDB_FILE:${WEBPIER}>" COMPONENT pdb_files
+            CONFIGURATIONS Debug RelWithDebInfo
+            DESTINATION ${WEBPIER_INSTALL_BINDIR}
+            OPTIONAL)
+        install(FILES "$<TARGET_PDB_FILE:${SLIPWAY}>" COMPONENT pdb_files
+            CONFIGURATIONS Debug RelWithDebInfo
+            DESTINATION ${WEBPIER_INSTALL_BINDIR}
+            OPTIONAL)
+    endif()
+endif()
+
+########## tests ##########
+
+if(NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMAKE_SKIP_INSTALL_RULES)
+    set(WEBPIER_TEST webpier_ut)
+    add_executable(${WEBPIER_TEST} tests/utils.cpp tests/context.cpp tests/message.cpp tests/slipway.cpp src/store/context.cpp src/slipway/message.cpp src/slipway/client.cpp src/store/utils.cpp)
+    target_compile_definitions(${WEBPIER_TEST} PRIVATE SLIPWAY_EXEC="${SLIPWAY_EXEC}")
+    target_include_directories(${WEBPIER_TEST} PRIVATE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>" ${Boost_INCLUDE_DIRS})
+    if(WIN32)
+        target_link_libraries(${WEBPIER_TEST} PRIVATE Boost::filesystem Boost::property_tree Boost::unit_test_framework Boost::coroutine OpenSSL::SSL OpenSSL::Crypto Crypt32 ws2_32)
+    else()
+        target_link_libraries(${WEBPIER_TEST} PRIVATE Boost::filesystem Boost::unit_test_framework Boost::coroutine OpenSSL::SSL OpenSSL::Crypto)
+    endif()
+    set_target_properties(${WEBPIER_TEST} PROPERTIES DEBUG_POSTFIX "d")
     enable_testing()
-    add_test(NAME ${WEBPIER_UT} COMMAND ${WEBPIER_UT} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    add_test(NAME ${WEBPIER_TEST} COMMAND ${WEBPIER_TEST} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endif()
+
+########## package ##########
+
+if(NOT WEBPIER_SKIP_PACKAGE_RULES AND NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMAKE_SKIP_INSTALL_RULES)
+    if(CMAKE_HOST_SYSTEM_NAME MATCHES "Linux")
+        cmake_host_system_information(RESULT _DISTRIB QUERY DISTRIB_ID)
+        if(_DISTRIB MATCHES "(debian)|(ubuntu)|(kali)|(astra)")
+            if(CMAKE_INSTALL_PREFIX MATCHES "^(/usr)|(/usr/local)$")
+                set(_DOCDIR_PREFIX ${CMAKE_INSTALL_DOCDIR})
+            else()
+                set(_DOCDIR_PREFIX ${PROJECT_NAME}-${${PROJECT_NAME}_VERSION}/${CMAKE_INSTALL_DOCDIR})
+            endif()
+
+            add_custom_command(DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/debian/changelog"
+                COMMAND gzip -cn9 "${CMAKE_CURRENT_SOURCE_DIR}/debian/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz"
+                OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
+            add_custom_target(tubus_changelog ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
+            
+            set(_DEBIAN_DOC_FILES
+                ${CMAKE_CURRENT_BINARY_DIR}/changelog.gz
+                ${CMAKE_CURRENT_SOURCE_DIR}/debian/copyright
+                ${CMAKE_CURRENT_SOURCE_DIR}/debian/README.Debian
+                )
+            install(FILES ${_DEBIAN_DOC_FILES} DESTINATION ${_DOCDIR_PREFIX}/${WEBPIER}-${${PROJECT_NAME}_VERSION} COMPONENT bin_doc_files)
+        endif()
+    endif()
+
+    include(CPack)
 endif()

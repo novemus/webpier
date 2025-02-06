@@ -1,5 +1,5 @@
-#include "settingsdialog.h"
-#include "messagedialog.h"
+#include <ui/settingsdialog.h>
+#include <ui/messagedialog.h>
 #include <wx/msgdlg.h> 
 #include <wx/valnum.h>
 

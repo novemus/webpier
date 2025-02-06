@@ -1,5 +1,5 @@
-#include "exchangedialog.h"
-#include "messagedialog.h"
+#include <ui/exchangedialog.h>
+#include <ui/messagedialog.h>
 
 CImportPage::CImportPage(const wxString& pier, const WebPier::Context::ServiceList& forImport, wxWindow* parent) 
     : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxEmptyString)

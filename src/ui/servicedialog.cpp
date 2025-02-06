@@ -1,5 +1,5 @@
-#include "servicedialog.h"
-#include "messagedialog.h"
+#include <ui/servicedialog.h>
+#include <ui/messagedialog.h>
 #include <wx/valnum.h>
 
 CServiceDialog::CServiceDialog(WebPier::Context::ConfigPtr config, WebPier::Context::ServicePtr service, wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style)

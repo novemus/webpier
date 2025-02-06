@@ -1,0 +1,150 @@
+{
+    "version": 6,
+    "configurePresets": [
+        {
+            "name": "config-base",
+            "hidden": true,
+            "displayName": "Basic Config",
+            "description": "Basic Configure Preset",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "WEBPIER_SKIP_TEST_RULES": "OFF",
+                "WEBPIER_SKIP_INSTALL_RULES": "OFF",
+                "WEBPIER_SKIP_PACKAGE_RULES": "OFF",
+                "Boost_USE_STATIC_LIBS": "ON",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/build/install"
+            }
+        },
+        {
+            "name": "windows-static",
+            "displayName": "Static Config",
+            "description": "Configure static build context",
+            "binaryDir": "${sourceDir}/build/static",
+            "inherits": "config-base",
+            "cacheVariables": {
+                "BUILD_SHARED_LIBS": "OFF"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "linux-static-debug",
+            "displayName": "Static Debug Config",
+            "description": "Configure static build context",
+            "binaryDir": "${sourceDir}/build/static-debug",
+            "inherits": "config-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "BUILD_SHARED_LIBS": "OFF"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            }
+        },
+        {
+            "name": "linux-static-release",
+            "displayName": "Static Release Config",
+            "description": "Configure static build context",
+            "binaryDir": "${sourceDir}/build/static-release",
+            "inherits": "config-base",
+            "cacheVariables": {
+                "BUILD_SHARED_LIBS": "OFF",
+                "CMAKE_BUILD_TYPE": "Release"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "windows-static-debug",
+            "displayName": "Debug",
+            "configuration": "Debug",
+            "configurePreset": "windows-static"
+        },
+        {
+            "name": "windows-static-release",
+            "displayName": "Release",
+            "configuration": "Release",
+            "configurePreset": "windows-static"
+        },
+        {
+            "name": "linux-static-debug",
+            "displayName": "Debug",
+            "configuration": "Debug",
+            "configurePreset": "linux-static-debug"
+        },
+        {
+            "name": "linux-static-release",
+            "displayName": "Release",
+            "configuration": "Release",
+            "configurePreset": "linux-static-release"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "linux-static-release",
+            "configurePreset": "linux-static-release",
+            "displayName": "All",
+            "description": "All project tests",
+            "configuration": "Release",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
+            "name": "linux-static-debug",
+            "configurePreset": "linux-static-debug",
+            "displayName": "All",
+            "description": "All project tests",
+            "configuration": "Debug",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
+            "name": "windows-static-release",
+            "configurePreset": "windows-static",
+            "displayName": "All",
+            "description": "All project tests",
+            "configuration": "Release",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        },
+        {
+            "name": "windows-static-debug",
+            "configurePreset": "windows-static",
+            "displayName": "All",
+            "description": "All project tests",
+            "configuration": "Debug",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
+        }
+    ]
+}

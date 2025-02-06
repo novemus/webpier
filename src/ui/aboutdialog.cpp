@@ -1,5 +1,5 @@
-#include "aboutdialog.h"
-#include "logo.h"
+#include <ui/aboutdialog.h>
+#include <ui/logo.h>
 
 CAboutDialog::CAboutDialog( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxDialog( parent, id, title, pos, size, style )
 {

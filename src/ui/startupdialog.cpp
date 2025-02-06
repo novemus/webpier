@@ -1,6 +1,6 @@
-#include "startupdialog.h"
-#include "messagedialog.h"
-#include "logo.h"
+#include <ui/startupdialog.h>
+#include <ui/messagedialog.h>
+#include <ui/logo.h>
 #include <wx/valtext.h>
 
 CStartupDialog::CStartupDialog(wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style) :

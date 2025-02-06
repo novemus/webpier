@@ -1,4 +1,4 @@
-#include "message.h"
+#include <slipway/message.h>
 #include <boost/property_tree/json_parser.hpp>
 
 namespace slipway

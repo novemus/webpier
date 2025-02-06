@@ -1,5 +1,5 @@
-#include "../context.h"
-#include "../utils.h"
+#include <store/context.h>
+#include <store/utils.h>
 #include <boost/test/unit_test.hpp>
 #include <boost/scope_exit.hpp>
 #include <filesystem>

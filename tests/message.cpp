@@ -1,4 +1,4 @@
-#include "../message.h"
+#include <slipway/message.h>
 #include <boost/asio.hpp>
 #include <boost/test/unit_test.hpp>
 

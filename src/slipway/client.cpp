@@ -1,4 +1,4 @@
-#include "slipway.h"
+#include <slipway/slipway.h>
 #include <iostream>
 #include <boost/asio.hpp>
 #include <boost/asio/spawn.hpp>

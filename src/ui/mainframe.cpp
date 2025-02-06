@@ -1,11 +1,11 @@
-#include "mainframe.h"
-#include "context.h"
-#include "servicedialog.h"
-#include "settingsdialog.h"
-#include "exchangedialog.h"
-#include "aboutdialog.h"
-#include "messagedialog.h"
-#include "logo.h"
+#include <ui/mainframe.h>
+#include <ui/context.h>
+#include <ui/servicedialog.h>
+#include <ui/settingsdialog.h>
+#include <ui/exchangedialog.h>
+#include <ui/aboutdialog.h>
+#include <ui/messagedialog.h>
+#include <ui/logo.h>
 #include <wx/stdpaths.h>
 #include <wx/notifmsg.h>
 

@@ -1,6 +1,6 @@
-#include "context.h"
-#include "messagedialog.h"
-#include "startupdialog.h"
+#include <ui/context.h>
+#include <ui/messagedialog.h>
+#include <ui/startupdialog.h>
 #include <store/context.h>
 #include <store/utils.h>
 #include <slipway/slipway.h>

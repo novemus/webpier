@@ -1,4 +1,4 @@
-#include "message.h"
+#include <slipway/message.h>
 #include <store/context.h>
 #include <store/utils.h>
 #include <plexus/plexus.h>

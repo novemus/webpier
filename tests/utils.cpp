@@ -1,6 +1,6 @@
 #define BOOST_TEST_MODULE webpier_tests
 
-#include "../utils.h"
+#include <store/utils.h>
 #include <boost/test/unit_test.hpp>
 #include <boost/scope_exit.hpp>
 #include <filesystem>
