@@ -149,20 +149,12 @@ target_include_directories(${SLIPWAY} PRIVATE "$<BUILD_INTERFACE:${CMAKE_CURRENT
 set_target_properties(${WEBPIER} PROPERTIES DEBUG_POSTFIX "d")
 set_target_properties(${SLIPWAY} PROPERTIES DEBUG_POSTFIX "d")
 
-if(NOT WEBPIER_ID)
-    set(WEBPIER_ID "$<TARGET_FILE_NAME:webpier::webpier>")
-endif()
+set(WEBPIER_MODULE "$<IF:$<BOOL:${WEBPIER_MODULE}>,${WEBPIER_MODULE},webpier>")
+set(SLIPWAY_MODULE "$<IF:$<BOOL:${SLIPWAY_MODULE}>,${SLIPWAY_MODULE},slipway>")
+set(WORMHOLE_MODULE "$<IF:$<BOOL:${WORMHOLE_MODULE}>,${WORMHOLE_MODULE},wormhole>")
 
-if(NOT SLIPWAY_ID)
-    set(SLIPWAY_ID "$<TARGET_FILE_NAME:webpier::slipway>")
-endif()
-
-if(NOT WORMHOLE_ID)
-    set(WORMHOLE_ID "$<TARGET_FILE_NAME:wormhole::wormhole>")
-endif()
-
-target_compile_definitions(${WEBPIER} PRIVATE WEBPIER_ID="${WEBPIER_ID}" SLIPWAY_ID="${SLIPWAY_ID}" WORMHOLE_ID="${WORMHOLE_ID}")
-target_compile_definitions(${SLIPWAY} PRIVATE WEBPIER_ID="${WEBPIER_ID}" SLIPWAY_ID="${SLIPWAY_ID}" WORMHOLE_ID="${WORMHOLE_ID}")
+target_compile_definitions(${WEBPIER} PRIVATE WEBPIER_MODULE="${WEBPIER_MODULE}" SLIPWAY_MODULE="${SLIPWAY_MODULE}" WORMHOLE_MODULE="${WORMHOLE_MODULE}")
+target_compile_definitions(${SLIPWAY} PRIVATE WEBPIER_MODULE="${WEBPIER_MODULE}" SLIPWAY_MODULE="${SLIPWAY_MODULE}" WORMHOLE_MODULE="${WORMHOLE_MODULE}")
 
 if(MSVC)
     add_definitions(-D_WIN32_WINNT=0x0601)
@@ -204,7 +196,7 @@ endif()
 if(NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMAKE_SKIP_INSTALL_RULES)
     set(WEBPIER_TEST webpier_ut)
     add_executable(${WEBPIER_TEST} tests/utils.cpp tests/context.cpp tests/message.cpp tests/slipway.cpp src/store/context.cpp src/slipway/message.cpp src/slipway/client.cpp src/store/utils.cpp)
-    target_compile_definitions(${WEBPIER_TEST} PRIVATE WEBPIER_ID="${WEBPIER_ID}" SLIPWAY_ID="${SLIPWAY_ID}" WORMHOLE_ID="${WORMHOLE_ID}")
+    target_compile_definitions(${WEBPIER_TEST} PRIVATE WEBPIER_MODULE="${WEBPIER_MODULE}" SLIPWAY_MODULE="${SLIPWAY_MODULE}" WORMHOLE_MODULE="${WORMHOLE_MODULE}")
     target_include_directories(${WEBPIER_TEST} PRIVATE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>" ${Boost_INCLUDE_DIRS})
     if(WIN32)
         target_link_libraries(${WEBPIER_TEST} PRIVATE ${Boost_LIBRARIES} OpenSSL::SSL OpenSSL::Crypto Crypt32 ws2_32)
@@ -220,7 +212,7 @@ endif()
 
 if(NOT WEBPIER_SKIP_PACKAGE_RULES AND NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMAKE_SKIP_INSTALL_RULES)
 
-    if(CMAKE_HOST_SYSTEM_NAME MATCHES "Linux")
+    if(CMAKE_HOST_SYSTEM_MODULE MATCHES "Linux")
         cmake_host_system_information(RESULT _DISTRIB QUERY DISTRIB_ID)
         if(_DISTRIB MATCHES "(debian)|(ubuntu)|(kali)|(astra)")
             if(CMAKE_INSTALL_PREFIX MATCHES "^(/usr)|(/usr/local)$")
@@ -232,8 +224,8 @@ if(NOT WEBPIER_SKIP_PACKAGE_RULES AND NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMA
             add_custom_command(DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/debian/changelog"
                 COMMAND gzip -cn9 "${CMAKE_CURRENT_SOURCE_DIR}/debian/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz"
                 OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
-            add_custom_target(tubus_changelog ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
-            
+            add_custom_target(changelog ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
+
             set(_DEBIAN_DOC_FILES
                 ${CMAKE_CURRENT_BINARY_DIR}/changelog.gz
                 ${CMAKE_CURRENT_SOURCE_DIR}/debian/copyright

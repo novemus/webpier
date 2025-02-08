@@ -14,6 +14,22 @@
 
 namespace WebPier
 {
+    bool CheckModule()
+    {
+        try 
+        {
+            if (webpier::get_module_path(WEBPIER_MODULE) != wxStandardPaths::Get().GetExecutablePath().ToStdWstring())
+                throw std::runtime_error(_("wrong module path"));
+            return true;
+        }
+        catch (const std::exception& ex)
+        {
+            CMessageDialog dialog(nullptr, _("Can't start WebPier frontend: ") + ex.what() + _(". Try to reinstall app."), wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
+            dialog.ShowModal();
+        }
+        return false;
+    }
+
     namespace
     {
         wxString GetHome()
@@ -63,23 +79,31 @@ namespace WebPier
 
             if (!config.autostart)
             {
-#ifdef WIN32
-                static boost::process::child s_daemon(webpier::get_exec_path(SLIPWAY_ID), home, boost::process::windows::hide);
-#else
-                static boost::process::child s_daemon(webpier::get_exec_path(SLIPWAY_ID), home);
-#endif
-                static wxTimer s_timer;
-
-                s_timer.Bind(wxEVT_TIMER, [&](wxTimerEvent&)
+                try 
                 {
-                    if (s_daemon.running())
-                        s_daemon.detach();
-                    else
-                        s_daemon.join();
-                    s_timer.Unlink();
-                }, s_timer.GetId());
+#ifdef WIN32
+                    static boost::process::child s_daemon(webpier::get_module_path(SLIPWAY_MODULE), home, boost::process::windows::hide);
+#else
+                    static boost::process::child s_daemon(webpier::get_module_path(SLIPWAY_MODULE), home);
+#endif
+                    static wxTimer s_timer;
 
-                s_timer.Start(5000, true);
+                    s_timer.Bind(wxEVT_TIMER, [&](wxTimerEvent&)
+                    {
+                        if (s_daemon.running())
+                            s_daemon.detach();
+                        else
+                            s_daemon.join();
+                        s_timer.Unlink();
+                    }, s_timer.GetId());
+
+                    s_timer.Start(5000, true);
+                }
+                catch (const std::exception& ex)
+                {
+                    CMessageDialog dialog(nullptr, _("Can't start WebPier backend: ") + ex.what() + _(". Try to reinstall app."), wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
+                    dialog.ShowModal();
+                }
             }
 
             return s_context = context;

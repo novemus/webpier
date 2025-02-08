@@ -238,7 +238,7 @@ namespace slipway
                 {
                     m_io.post([this, conf, serv, bind, self, peer, mate]()
                     {
-                        boost::process::v2::process proc(m_io, webpier::get_exec_path(WORMHOLE_ID), 
+                        boost::process::v2::process proc(m_io, webpier::get_module_path(WORMHOLE_MODULE), 
                         {
                             "--purpose=export", 
                             "--service=" + serv.address,
@@ -300,7 +300,7 @@ namespace slipway
                 {
                     m_io.post([this, conf, serv, bind, self, mate]()
                     {
-                        boost::process::v2::process proc(m_io, webpier::get_exec_path(WORMHOLE_ID), 
+                        boost::process::v2::process proc(m_io, webpier::get_module_path(WORMHOLE_MODULE), 
                         {
                             "--purpose=import", 
                             "--service=" + serv.address,
@@ -996,17 +996,23 @@ int main(int argc, char* argv[])
 {
     try
     {
+        if(webpier::get_module_path(SLIPWAY_MODULE) != argv[0])
+        {
+            std::cerr << "wrong module path" << std::endl;
+            return 1;
+        }
+
         if (argc < 2)
         {
             std::cerr << "no home argument" << std::endl;
-            return 1;
+            return 2;
         }
 
         std::filesystem::path home = std::filesystem::path(argv[1]);
         if (!std::filesystem::exists(home) || !std::filesystem::exists(home / slipway::webpier_conf_file_name))
         {
             std::cerr << "wrong home argument" << std::endl;
-            return 2;
+            return 3;
         }
 
         std::filesystem::path socket = home / slipway::slipway_jack_file_name;
@@ -1021,7 +1027,7 @@ int main(int argc, char* argv[])
         if (!lock.owns())
         {
             std::cerr << "can't acquire lock" << std::endl;
-            return 3;
+            return 4;
         }
 
 #ifdef WIN32
@@ -1037,7 +1043,7 @@ int main(int argc, char* argv[])
     catch (const std::exception& ex)
     {
         std::cerr << ex.what() << std::endl;
-        return 4;
+        return 5;
     }
 
     return 0;

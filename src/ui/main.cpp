@@ -676,7 +676,7 @@ public:
 
     bool OnInit() override
     {
-        if (!wxApp::OnInit())
+        if (!wxApp::OnInit() || !WebPier::CheckModule())
             return false;
 
         wxImage::AddHandler(new wxPNGHandler);

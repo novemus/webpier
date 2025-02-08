@@ -200,10 +200,10 @@ namespace webpier
         return out.str();
     }
 
-    boost::filesystem::path get_exec_path(const std::string& app)
+    boost::filesystem::path get_module_path(const std::string& module) noexcept(false)
     {
-        boost::filesystem::path file(app);
-        if (file.is_absolute())
+        boost::filesystem::path file(module);
+        if (file.has_parent_path())
             return file;
 
         static std::once_flag s_flag;
@@ -213,20 +213,20 @@ namespace webpier
         { 
             auto path = get_config_file();
             if (!boost::filesystem::exists(path))
-                throw std::runtime_error("can't find webpier configuration file");
+                throw std::runtime_error("no configuration file");
 
             boost::program_options::options_description options;
             options.add_options()
-                (WEBPIER_ID, boost::program_options::value<std::string>())
-                (SLIPWAY_ID, boost::program_options::value<std::string>())
-                (WORMHOLE_ID, boost::program_options::value<std::string>());
+                (WEBPIER_MODULE, boost::program_options::value<std::string>())
+                (SLIPWAY_MODULE, boost::program_options::value<std::string>())
+                (WORMHOLE_MODULE, boost::program_options::value<std::string>());
 
             boost::program_options::store(boost::program_options::parse_config_file<char>(path.filename().c_str(), options, true), s_config);
         });
 
-        if (!s_config.count(app))
-            throw std::runtime_error("the app '" + app + "' is not registered");
+        if (!s_config.count(module))
+            throw std::runtime_error("unknown module name");
 
-        return boost::filesystem::path(s_config[app].as<std::string>());
+        return boost::filesystem::path(s_config[module].as<std::string>());
     }
 }

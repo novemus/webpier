@@ -9,6 +9,8 @@
 
 namespace WebPier
 {
+    bool CheckModule();
+
     namespace Context
     {
         struct Service
