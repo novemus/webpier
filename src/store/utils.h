@@ -15,5 +15,5 @@ namespace webpier
     std::string load_x509_cert(const std::filesystem::path& cert_path) noexcept(false);
     std::string get_x509_public_sha1(const std::filesystem::path& cert_path) noexcept(false);
     std::string to_hexadecimal(const void* data, size_t len) noexcept(true);
-    boost::filesystem::path find_exec(const std::string& env, const std::string& def);
+    boost::filesystem::path get_exec_path(const std::string& app);
 }

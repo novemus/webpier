@@ -64,9 +64,9 @@ namespace WebPier
             if (!config.autostart)
             {
 #ifdef WIN32
-                static boost::process::child s_daemon(webpier::find_exec("SLIPWAY_EXEC", SLIPWAY_EXEC), home, boost::process::windows::hide);
+                static boost::process::child s_daemon(webpier::get_exec_path(SLIPWAY_ID), home, boost::process::windows::hide);
 #else
-                static boost::process::child s_daemon(webpier::find_exec("SLIPWAY_EXEC", SLIPWAY_EXEC), home);
+                static boost::process::child s_daemon(webpier::get_exec_path(SLIPWAY_ID), home);
 #endif
                 static wxTimer s_timer;
 
@@ -476,7 +476,7 @@ namespace WebPier
     {
         Health Convert(const slipway::health& val)
         {
-            return Health { Handle {val.pier, val.service}, static_cast<Health::Status>(val.state) };
+            return Health { Handle {val.pier, val.service}, static_cast<Health::Status>(val.state), val.message };
         }
 
         Report Convert(const slipway::report& val)
@@ -485,6 +485,7 @@ namespace WebPier
             ret.Pier = val.pier;
             ret.Service = val.service;
             ret.State = static_cast<Health::Status>(val.state);
+            ret.Message = val.message;
 
             for (const auto& item : val.tunnels)
                 ret.Tunnels.push_back(Report::Tunnel { item.pier, item.pid });

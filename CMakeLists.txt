@@ -8,21 +8,21 @@ project(webpier VERSION 1.0.0 DESCRIPTION "The program for forwarding TCP applic
 
 option(WEBPIER_SKIP_TEST_RULES "Don't generate test rules" ON)
 option(WEBPIER_SKIP_INSTALL_RULES "Don't generate install rules" OFF)
-option(WEBPIER_SKIP_PACKAGE_RULES "Don't generate package rules" ON)
+option(WEBPIER_SKIP_PACKAGE_RULES "Don't generate package rules" OFF)
 
 ########## dependencies ##########
 
 if(MSVC)
     if(NOT WEBPIER_SKIP_TEST_RULES)
-        find_package(Boost REQUIRED COMPONENTS filesystem process property_tree coroutine unit_test_framework)
+        find_package(Boost REQUIRED COMPONENTS filesystem process property_tree coroutine program_options unit_test_framework)
     else()
-        find_package(Boost REQUIRED COMPONENTS filesystem process property_tree coroutine)
+        find_package(Boost REQUIRED COMPONENTS filesystem process property_tree coroutine program_options)
     endif()
 else()
     if(NOT WEBPIER_SKIP_TEST_RULES)
-        find_package(Boost REQUIRED COMPONENTS filesystem coroutine unit_test_framework)
+        find_package(Boost REQUIRED COMPONENTS filesystem coroutine program_options unit_test_framework)
     else()
-        find_package(Boost filesystem coroutine)
+        find_package(Boost filesystem coroutine program_options)
     endif()
 endif()
 
@@ -143,17 +143,26 @@ else()
     target_link_libraries(${SLIPWAY} PRIVATE ${Boost_LIBRARIES} plexus::libplexus wormhole::libwormhole tubus::libtubus PkgConfig::opendht PkgConfig::fmt PkgConfig::libargon2 PkgConfig::nettle OpenSSL::SSL OpenSSL::Crypto)
 endif()
 
-target_include_directories(${WEBPIER} PRIVATE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>" ${Boost_INCLUDE_DIRS})
-target_include_directories(${SLIPWAY} PRIVATE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>")
+target_include_directories(${WEBPIER} PRIVATE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>" ${Boost_INCLUDE_DIRS} ${wxWidgets_INCLUDE_DIRS})
+target_include_directories(${SLIPWAY} PRIVATE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>" ${Boost_INCLUDE_DIRS})
 
 set_target_properties(${WEBPIER} PROPERTIES DEBUG_POSTFIX "d")
 set_target_properties(${SLIPWAY} PROPERTIES DEBUG_POSTFIX "d")
 
-get_filename_component(SLIPWAY_EXEC "$<TARGET_FILE:webpier::slipway>" NAME)
-get_filename_component(WORMHOLE_EXEC "$<TARGET_FILE:wormhole::wormhole>" NAME)
+if(NOT WEBPIER_ID)
+    set(WEBPIER_ID "$<TARGET_FILE_NAME:webpier::webpier>")
+endif()
 
-target_compile_definitions(${WEBPIER} PRIVATE SLIPWAY_EXEC="${SLIPWAY_EXEC}")
-target_compile_definitions(${SLIPWAY} PRIVATE WORMHOLE_EXEC="${WORMHOLE_EXEC}")
+if(NOT SLIPWAY_ID)
+    set(SLIPWAY_ID "$<TARGET_FILE_NAME:webpier::slipway>")
+endif()
+
+if(NOT WORMHOLE_ID)
+    set(WORMHOLE_ID "$<TARGET_FILE_NAME:wormhole::wormhole>")
+endif()
+
+target_compile_definitions(${WEBPIER} PRIVATE WEBPIER_ID="${WEBPIER_ID}" SLIPWAY_ID="${SLIPWAY_ID}" WORMHOLE_ID="${WORMHOLE_ID}")
+target_compile_definitions(${SLIPWAY} PRIVATE WEBPIER_ID="${WEBPIER_ID}" SLIPWAY_ID="${SLIPWAY_ID}" WORMHOLE_ID="${WORMHOLE_ID}")
 
 if(MSVC)
     add_definitions(-D_WIN32_WINNT=0x0601)
@@ -195,12 +204,12 @@ endif()
 if(NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMAKE_SKIP_INSTALL_RULES)
     set(WEBPIER_TEST webpier_ut)
     add_executable(${WEBPIER_TEST} tests/utils.cpp tests/context.cpp tests/message.cpp tests/slipway.cpp src/store/context.cpp src/slipway/message.cpp src/slipway/client.cpp src/store/utils.cpp)
-    target_compile_definitions(${WEBPIER_TEST} PRIVATE SLIPWAY_EXEC="${SLIPWAY_EXEC}")
+    target_compile_definitions(${WEBPIER_TEST} PRIVATE WEBPIER_ID="${WEBPIER_ID}" SLIPWAY_ID="${SLIPWAY_ID}" WORMHOLE_ID="${WORMHOLE_ID}")
     target_include_directories(${WEBPIER_TEST} PRIVATE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>" ${Boost_INCLUDE_DIRS})
     if(WIN32)
-        target_link_libraries(${WEBPIER_TEST} PRIVATE Boost::filesystem Boost::property_tree Boost::unit_test_framework Boost::coroutine OpenSSL::SSL OpenSSL::Crypto Crypt32 ws2_32)
+        target_link_libraries(${WEBPIER_TEST} PRIVATE ${Boost_LIBRARIES} OpenSSL::SSL OpenSSL::Crypto Crypt32 ws2_32)
     else()
-        target_link_libraries(${WEBPIER_TEST} PRIVATE Boost::filesystem Boost::unit_test_framework Boost::coroutine OpenSSL::SSL OpenSSL::Crypto)
+        target_link_libraries(${WEBPIER_TEST} PRIVATE ${Boost_LIBRARIES} OpenSSL::SSL OpenSSL::Crypto)
     endif()
     set_target_properties(${WEBPIER_TEST} PROPERTIES DEBUG_POSTFIX "d")
     enable_testing()
@@ -210,6 +219,7 @@ endif()
 ########## package ##########
 
 if(NOT WEBPIER_SKIP_PACKAGE_RULES AND NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMAKE_SKIP_INSTALL_RULES)
+
     if(CMAKE_HOST_SYSTEM_NAME MATCHES "Linux")
         cmake_host_system_information(RESULT _DISTRIB QUERY DISTRIB_ID)
         if(_DISTRIB MATCHES "(debian)|(ubuntu)|(kali)|(astra)")

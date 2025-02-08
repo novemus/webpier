@@ -1,4 +1,4 @@
-#include "utils.h"
+#include <store/utils.h>
 #include <memory>
 #include <vector>
 #include <fstream>
@@ -9,9 +9,31 @@
 #include <openssl/rand.h>
 #include <openssl/err.h>
 #include <boost/process.hpp>
+#include <boost/program_options.hpp>
+
+#ifdef WINDOWS
+    #include <shlwapi.h>
+    #pragma comment(lib,"shlwapi.lib")
+#elif __APPLE__
+    #include <sysdir.h>
+#endif
 
 namespace webpier
 {
+    boost::filesystem::path get_config_file()
+    {
+#ifdef WINDOWS
+        LPSTR path[MAX_PATH];
+        if (E_FAIL == ::SHGetFolderPathA(nullptr, CSIDL_COMMON_APPDATA, nullptr, SHGFP_TYPE_DEFAULT, path))
+            throw std::runtime_error("can't get common app directory");
+        return boost::filesystem::path(path) / "webpier/webpier.conf";
+#elif __APPLE__
+        return boost::filesystem::path("/Library/Preferences/webpier/webpier.conf");
+#else
+        return boost::filesystem::path("/etc/webpier/webpier.conf");
+#endif
+    }
+
     std::string get_openssl_error()
     {
         std::string ssl = ERR_error_string(ERR_get_error(), NULL);
@@ -178,23 +200,33 @@ namespace webpier
         return out.str();
     }
 
-    boost::filesystem::path find_exec(const std::string& env, const std::string& def)
+    boost::filesystem::path get_exec_path(const std::string& app)
     {
-        boost::filesystem::path file(def);
+        boost::filesystem::path file(app);
+        if (file.is_absolute())
+            return file;
 
-        const char* val = std::getenv(env.c_str());
-        if (val && boost::filesystem::exists(val))
-            return boost::filesystem::path(val);
+        static std::once_flag s_flag;
+        static boost::program_options::variables_map s_config;
 
-        auto name = file.filename();
-        auto path = boost::process::search_path(name);
+        std::call_once(s_flag, [&]()
+        { 
+            auto path = get_config_file();
+            if (!boost::filesystem::exists(path))
+                throw std::runtime_error("can't find webpier configuration file");
 
-        if (boost::filesystem::exists(path))
-            return path;
+            boost::program_options::options_description options;
+            options.add_options()
+                (WEBPIER_ID, boost::program_options::value<std::string>())
+                (SLIPWAY_ID, boost::program_options::value<std::string>())
+                (WORMHOLE_ID, boost::program_options::value<std::string>());
 
-        if (boost::filesystem::exists(name))
-            return name;
+            boost::program_options::store(boost::program_options::parse_config_file<char>(path.filename().c_str(), options, true), s_config);
+        });
 
-        return file;
+        if (!s_config.count(app))
+            throw std::runtime_error("the app '" + app + "' is not registered");
+
+        return boost::filesystem::path(s_config[app].as<std::string>());
     }
 }

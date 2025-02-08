@@ -30,9 +30,10 @@ namespace slipway
         };
 
         status state;
+        std::string message;
 
-        bool operator<(const health& other) const { return handle::operator<(other) || state < other.state; }
-        bool operator==(const health& other) const { return handle::operator==(other) && state == other.state; }
+        bool operator<(const health& other) const { return handle::operator<(other) || state < other.state || message < other.message; }
+        bool operator==(const health& other) const { return handle::operator==(other) && state == other.state && message == other.message; }
     };
 
     struct report : public health

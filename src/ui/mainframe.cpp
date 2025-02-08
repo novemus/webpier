@@ -135,6 +135,7 @@ CMainFrame::CMainFrame(const wxIcon& icon) : wxFrame(nullptr, wxID_ANY, wxT("Web
     this->SetSizer( mainSizer );
     this->Layout();
     m_statusBar = this->CreateStatusBar( 1, wxSTB_SIZEGRIP, wxID_ANY );
+    m_statusBar->SetFieldsCount(2);
 
     this->Centre( wxBOTH );
 
@@ -171,16 +172,14 @@ CMainFrame::~CMainFrame()
 
 void CMainFrame::RefreshStatus(const WebPier::Daemon::Handle& handle)
 {
-    WebPier::Daemon::Health::Status state = WebPier::Daemon::Health::Broken;
-
+    WebPier::Daemon::Health health { handle, WebPier::Daemon::Health::Broken };
     try
     {
-        auto status = WebPier::Daemon::Status(handle);
-        state = status.State;
+        health = WebPier::Daemon::Status(handle);
     }
-    catch(const std::exception& e)
+    catch(const std::exception& ex)
     {
-        wxNotificationMessage msg(wxEmptyString, _("Can't get status of the ") + handle.Pier + wxT(":") + handle.Service + _(" service!"), nullptr, wxICON_ERROR);
+        wxNotificationMessage msg(wxEmptyString, _("Can't get pier status: ") + ex.what(), nullptr, wxICON_ERROR);
         msg.Show();
     }
 
@@ -188,7 +187,7 @@ void CMainFrame::RefreshStatus(const WebPier::Daemon::Handle& handle)
     {
         if (handle.Pier == status.Pier && handle.Service == status.Service)
         {
-            status.State = state;
+            status = health;
             break;
         }
     }
@@ -204,9 +203,12 @@ void CMainFrame::RefreshStatus(const WebPier::Daemon::Handle& handle)
 
         if (handle.Service == service && handle.Pier == pier)
         {
-            m_serviceList->SetValue(wxVariant(wxDataViewIconText(service, GetStatusBitmap(state))), i, 0);
+            m_serviceList->SetValue(wxVariant(wxDataViewIconText(service, GetStatusBitmap(health.State))), i, 0);
             if (current == i)
-                m_statusBar->SetStatusText(Stringify(state));
+            {
+                m_statusBar->SetStatusText(Stringify(health.State), 0);
+                m_statusBar->SetStatusText(health.Message, 1);
+            }
             break;
         }
     }
@@ -218,9 +220,9 @@ void CMainFrame::RefreshStatus()
     {
         m_status = WebPier::Daemon::Status();
     }
-    catch(const std::exception& e)
+    catch(const std::exception& ex)
     {
-        wxNotificationMessage msg(wxEmptyString, _("Can't get status of the pier!"), nullptr, wxICON_ERROR);
+        wxNotificationMessage msg(wxEmptyString, _("Can't refresh status: ") + ex.what(), nullptr, wxICON_ERROR);
         msg.Show();
         m_status.clear();
     }
@@ -234,19 +236,22 @@ void CMainFrame::RefreshStatus()
         wxString service = value.GetAny().As<wxDataViewIconText>().GetText();
         wxString pier = m_exportBtn->GetValue() ? WebPier::Context::Pier() : m_serviceList->GetTextValue(i, 1);
 
-        WebPier::Daemon::Health::Status state = WebPier::Daemon::Health::Broken;
+        WebPier::Daemon::Health health = { {pier, service }, WebPier::Daemon::Health::Broken };
         for (const auto& item : m_status)
         {
             if (item.Pier == pier && item.Service == service)
             {
-                state = item.State;
+                health = item;
                 break;
             }
         }
 
-        m_serviceList->SetValue(wxVariant(wxDataViewIconText(service, GetStatusBitmap(state))), i, 0);
+        m_serviceList->SetValue(wxVariant(wxDataViewIconText(service, GetStatusBitmap(health.State))), i, 0);
         if (current == i)
-            m_statusBar->SetStatusText(Stringify(state));
+        {
+            m_statusBar->SetStatusText(Stringify(health.State), 0);
+            m_statusBar->SetStatusText(health.Message, 1);
+        }
     }
 }
 
@@ -302,7 +307,7 @@ void CMainFrame::onServiceItemContextMenu(wxDataViewEvent& event)
                 }
                 catch(const std::exception& ex)
                 {
-                    wxNotificationMessage msg(wxEmptyString, _("Can't start the ") + info.Pier + wxT(":") + info.Service + _(" service!"), nullptr, wxICON_ERROR);
+                    wxNotificationMessage msg(wxEmptyString, _("Can't start the pier: ") + ex.what(), nullptr, wxICON_ERROR);
                     msg.Show();
                 }
                 RefreshStatus(info);
@@ -319,7 +324,7 @@ void CMainFrame::onServiceItemContextMenu(wxDataViewEvent& event)
                 }
                 catch(const std::exception& ex)
                 {
-                    wxNotificationMessage msg(wxEmptyString, _("Can't stop the ") + info.Pier + wxT(":") + info.Service + _(" service!"), nullptr, wxICON_ERROR);
+                    wxNotificationMessage msg(wxEmptyString, _("Can't stop the pier: ") + ex.what(), nullptr, wxICON_ERROR);
                     msg.Show();
                 }
                 RefreshStatus(info);
@@ -338,9 +343,9 @@ void CMainFrame::onServiceItemContextMenu(wxDataViewEvent& event)
 
         PopupMenu(menu);
     }
-    catch(const std::exception& e)
+    catch(const std::exception& ex)
     {
-        wxNotificationMessage msg(wxEmptyString, _("Can't review the ") + pier + wxT(":") + service + _(" service!"), nullptr, wxICON_ERROR);
+        wxNotificationMessage msg(wxEmptyString, _("Can't popup menu: ") + ex.what(), nullptr, wxICON_ERROR);
         msg.Show();
     }
 }

@@ -119,6 +119,7 @@ namespace WebPier
             };
 
             Status State;
+            wxString Message;
         };
 
         struct Report : public Health

@@ -12,7 +12,6 @@
 #include <boost/process/v2/environment.hpp>
 #include <boost/algorithm/string.hpp>
 #include <filesystem>
-#include <fstream>
 #include <iostream>
 #include <future>
 #include <regex>
@@ -55,29 +54,37 @@ namespace slipway
         template<class protocol>
         typename protocol::endpoint resolve(const std::string& url, const std::string& service)
         {
-            if (url.empty() && service.empty())
-                return typename protocol::endpoint();
+            try 
+            {
+                if (url.empty() && service.empty())
+                    return typename protocol::endpoint();
 
-            boost::asio::io_context io;
-            typename protocol::resolver resolver(io);
+                boost::asio::io_context io;
+                typename protocol::resolver resolver(io);
 
-            std::smatch match;
-            if (std::regex_search(url, match, std::regex("^(\\w+://)?\\[([a-zA-Z0-9:]+)\\]:(\\d+).*")))
-                return *resolver.resolve(match[2].str(), match[3].str());
+                std::smatch match;
+                if (std::regex_search(url, match, std::regex("^(\\w+://)?\\[([a-zA-Z0-9:]+)\\]:(\\d+).*")))
+                    return *resolver.resolve(match[2].str(), match[3].str());
 
-            if (std::regex_search(url, match, std::regex("^(\\w+)://\\[([a-zA-Z0-9:]+)\\].*")))
-                return *resolver.resolve(match[2].str(), match[1].str());
+                if (std::regex_search(url, match, std::regex("^(\\w+)://\\[([a-zA-Z0-9:]+)\\].*")))
+                    return *resolver.resolve(match[2].str(), match[1].str());
 
-            if (std::regex_search(url, match, std::regex("^\\[([a-zA-Z0-9:]+)\\].*")))
-                return *resolver.resolve(match[1].str(), service);
+                if (std::regex_search(url, match, std::regex("^\\[([a-zA-Z0-9:]+)\\].*")))
+                    return *resolver.resolve(match[1].str(), service);
 
-            if (std::regex_search(url, match, std::regex("^(\\w+://)?([\\w\\.]+):(\\d+).*")))
-                return *resolver.resolve(match[2].str(), match[3].str());
+                if (std::regex_search(url, match, std::regex("^(\\w+://)?([\\w\\.]+):(\\d+).*")))
+                    return *resolver.resolve(match[2].str(), match[3].str());
 
-            if (std::regex_search(url, match, std::regex("^(\\w+)://([\\w\\.]+).*")))
-                return *resolver.resolve(match[2].str(), match[1].str());
+                if (std::regex_search(url, match, std::regex("^(\\w+)://([\\w\\.]+).*")))
+                    return *resolver.resolve(match[2].str(), match[1].str());
 
-            return *resolver.resolve(url, service);
+                return *resolver.resolve(url, service);
+            } 
+            catch (const std::exception& ex)
+            {
+                _err_ << ex.what();
+                throw std::runtime_error("can't resolve " + url);
+            }
         }
 
         plexus::options make_options(const webpier::config& config, const webpier::service& service)
@@ -141,32 +148,35 @@ namespace slipway
             class session
             {
                 boost::asio::io_context m_io;
-                std::future<void> m_job;
+                std::shared_future<std::string> m_task;
 
                 void start()
                 {
-                    if (!m_job.valid())
+                    if (!m_task.valid())
                     {
-                        m_job = std::async(std::launch::async, [=]()
+                        m_task = std::async(std::launch::async, [this]
                         {
+                            std::string error;
                             try
                             {
                                 m_io.run();
                             }
                             catch(const std::exception& ex)
                             {
-                                _err_ << "session failed: " << ex.what();
+                                _err_ << ex.what();
+                                error = ex.what();
                             }
+                            return error;
                         });
                     }
                 }
 
                 void stop()
                 {
-                    if (m_job.valid())
+                    if (m_task.valid())
                     {
                         m_io.stop();
-                        m_job.wait();
+                        m_task.wait();
                     }
                 }
 
@@ -193,9 +203,16 @@ namespace slipway
                     start();
                 }
 
-                bool broken()
+                bool broken() const
                 {
-                    return !m_job.valid() || m_job.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready;
+                    return !m_task.valid() || m_task.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready;
+                }
+
+                std::string error() const
+                {
+                    if (m_task.valid() && m_task.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
+                        return m_task.get();
+                    return "";
                 }
             };
 
@@ -221,7 +238,7 @@ namespace slipway
                 {
                     m_io.post([this, conf, serv, bind, self, peer, mate]()
                     {
-                        boost::process::v2::process proc(m_io, webpier::find_exec("WORMHOLE_EXEC", WORMHOLE_EXEC), 
+                        boost::process::v2::process proc(m_io, webpier::get_exec_path(WORMHOLE_ID), 
                         {
                             "--purpose=export", 
                             "--service=" + serv.address,
@@ -283,7 +300,7 @@ namespace slipway
                 {
                     m_io.post([this, conf, serv, bind, self, mate]()
                     {
-                        boost::process::v2::process proc(m_io, webpier::find_exec("WORMHOLE_EXEC", WORMHOLE_EXEC), 
+                        boost::process::v2::process proc(m_io, webpier::get_exec_path(WORMHOLE_ID), 
                         {
                             "--purpose=import", 
                             "--service=" + serv.address,
@@ -335,6 +352,8 @@ namespace slipway
                             start_import(conf, serv);
                         });
                     });
+
+                    throw std::runtime_error(error);
                 };
 
                 _dbg_ << "start import " << serv.name << " from " << serv.pier;
@@ -375,7 +394,7 @@ namespace slipway
                     : start_import(conf, serv);
             }
 
-            health::status state()
+            health::status state() const
             {
                 if (!m_work)
                     return health::asleep;
@@ -384,6 +403,11 @@ namespace slipway
                     return health::broken;
 
                 return m_pool.empty() ? health::lonely : health::burden;
+            }
+
+            std::string message() const
+            {
+                return m_work ? m_work->error() : "";
             }
 
             std::vector<report::tunnel> tunnels()
@@ -786,7 +810,7 @@ namespace slipway
             {
                 std::vector<slipway::health> res;
                 for (auto& item : m_pool)
-                    res.emplace_back(report::health{ item.first, item.second.state() });
+                    res.emplace_back(report::health{ item.first, item.second.state(), item.second.message() });
                 return res;
             }
 
@@ -794,7 +818,7 @@ namespace slipway
             {
                 auto iter = m_pool.find(id);
                 if (iter != m_pool.end())
-                    return slipway::health{ id, iter->second.state() };
+                    return slipway::health{ id, iter->second.state(), iter->second.message() };
 
                 throw std::runtime_error("unknown service");
             }
@@ -882,7 +906,7 @@ namespace slipway
                 }
                 catch (const std::exception& ex)
                 {
-                    _err_ << "can't handle request: error=" << ex.what();
+                    _err_ << ex.what();
                     res = slipway::message::make(req.action, ex.what());
                 }
 

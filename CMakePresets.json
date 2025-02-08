@@ -33,7 +33,7 @@
         {
             "name": "linux-static-debug",
             "displayName": "Static Debug Config",
-            "description": "Configure static build context",
+            "description": "Configure static Debug context",
             "binaryDir": "${sourceDir}/build/static-debug",
             "inherits": "config-base",
             "cacheVariables": {
@@ -49,7 +49,7 @@
         {
             "name": "linux-static-release",
             "displayName": "Static Release Config",
-            "description": "Configure static build context",
+            "description": "Configure static Release context",
             "binaryDir": "${sourceDir}/build/static-release",
             "inherits": "config-base",
             "cacheVariables": {
