@@ -1,4 +1,4 @@
-#include <slipway/message.h>
+#include <backend/message.h>
 #include <store/context.h>
 #include <store/utils.h>
 #include <plexus/plexus.h>
@@ -238,15 +238,15 @@ namespace slipway
                 {
                     m_io.post([this, conf, serv, bind, self, peer, mate]()
                     {
-                        boost::process::v2::process proc(m_io, webpier::get_module_path(WORMHOLE_MODULE), 
+                        boost::process::v2::process proc(m_io, webpier::get_module_path(CARRIER_MODULE), 
                         {
                             "--purpose=export", 
                             "--service=" + serv.address,
                             "--gateway=" + stringify(bind),
                             "--faraway=" + stringify(mate.endpoint),
                             "--obscure=" + std::to_string(serv.obscure ? self.puzzle ^ mate.puzzle : 0),
-                            "--log-file=" + (conf.log.folder.empty() ? "" : conf.log.folder + "/export.%p.log"),
-                            "--log-level=" + std::to_string(conf.log.level)
+                            "--journal=" + (conf.log.folder.empty() ? "" : conf.log.folder + "/export.%p.log"),
+                            "--logging=" + std::to_string(conf.log.level)
                         });
 
                         _inf_ << "spawned process " << proc.id() << " to export " << serv.name << " to " << peer.owner << "/" << peer.pin;
@@ -300,15 +300,15 @@ namespace slipway
                 {
                     m_io.post([this, conf, serv, bind, self, mate]()
                     {
-                        boost::process::v2::process proc(m_io, webpier::get_module_path(WORMHOLE_MODULE), 
+                        boost::process::v2::process proc(m_io, webpier::get_module_path(CARRIER_MODULE), 
                         {
                             "--purpose=import", 
                             "--service=" + serv.address,
                             "--gateway=" + stringify(bind),
                             "--faraway=" + stringify(mate.endpoint),
                             "--obscure=" + std::to_string(serv.obscure ? self.puzzle ^ mate.puzzle : 0),
-                            "--log-file=" + (conf.log.folder.empty() ? "" : conf.log.folder + "/import.%p.log"),
-                            "--log-level=" + std::to_string(conf.log.level)
+                            "--journal=" + (conf.log.folder.empty() ? "" : conf.log.folder + "/import.%p.log"),
+                            "--logging=" + std::to_string(conf.log.level)
                         });
 
                         _inf_ << "spawned process " << proc.id() << " to import " << serv.pier << " from " << serv.name;

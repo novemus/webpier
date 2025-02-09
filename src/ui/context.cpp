@@ -3,7 +3,7 @@
 #include <ui/startupdialog.h>
 #include <store/context.h>
 #include <store/utils.h>
-#include <slipway/slipway.h>
+#include <backend/client.h>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/process.hpp>
 #ifdef WIN32

@@ -1,6 +1,6 @@
-#include <slipway/message.h>
 #include <boost/asio.hpp>
 #include <boost/test/unit_test.hpp>
+#include <backend/message.h>
 
 BOOST_AUTO_TEST_CASE(message)
 {
