@@ -1,4 +1,4 @@
-message("***** plexus ***** ")
+message("***** webpier ***** ")
 
 ########## setup ##########
 
@@ -101,7 +101,15 @@ add_executable(${PROJECT_NAME}::${SLIPWAY} ALIAS ${SLIPWAY})
 add_executable(${CARRIER})
 add_executable(${PROJECT_NAME}::${CARRIER} ALIAS ${CARRIER})
 
-target_sources(${WEBPIER} PRIVATE     
+include(cmake/utils.cmake)
+
+convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/webpier.png ${CMAKE_CURRENT_BINARY_DIR}/assets/logo.h webpier_logo_png)
+convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/blue.png ${CMAKE_CURRENT_BINARY_DIR}/assets/blue.h blue_circle_png)
+convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/red.png ${CMAKE_CURRENT_BINARY_DIR}/assets/red.h red_circle_png)
+convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/green.png ${CMAKE_CURRENT_BINARY_DIR}/assets/green.h green_circle_png)
+convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/grey.png ${CMAKE_CURRENT_BINARY_DIR}/assets/grey.h grey_circle_png)
+
+target_sources(${WEBPIER} PRIVATE
     src/ui/main.cpp
     src/ui/mainframe.h
     src/ui/mainframe.cpp
@@ -143,7 +151,6 @@ target_sources(${CARRIER} PRIVATE
     src/backend/tunnel.cpp
     )
 
-
 target_link_libraries(${WEBPIER} PRIVATE ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES} OpenSSL::SSL OpenSSL::Crypto)
 target_link_libraries(${CARRIER} PRIVATE ${Boost_LIBRARIES} wormhole::libwormhole tubus::libtubus OpenSSL::SSL OpenSSL::Crypto)
 target_link_libraries(${SLIPWAY} PRIVATE ${Boost_LIBRARIES} plexus::libplexus wormhole::libwormhole tubus::libtubus PkgConfig::opendht PkgConfig::fmt PkgConfig::libargon2 PkgConfig::nettle OpenSSL::SSL OpenSSL::Crypto)
@@ -154,7 +161,7 @@ if(WIN32)
     target_link_libraries(${SLIPWAY} PRIVATE Crypt32)
 endif()
 
-target_include_directories(${WEBPIER} PRIVATE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>" ${Boost_INCLUDE_DIRS} ${wxWidgets_INCLUDE_DIRS})
+target_include_directories(${WEBPIER} PRIVATE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>" ${CMAKE_CURRENT_BINARY_DIR} ${Boost_INCLUDE_DIRS} ${wxWidgets_INCLUDE_DIRS})
 target_include_directories(${SLIPWAY} PRIVATE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>" ${Boost_INCLUDE_DIRS})
 target_include_directories(${CARRIER} PRIVATE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>" ${Boost_INCLUDE_DIRS})
 
@@ -229,14 +236,15 @@ endif()
 ########## package ##########
 
 if(NOT WEBPIER_SKIP_PACKAGE_RULES AND NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMAKE_SKIP_INSTALL_RULES)
-
-    if(CMAKE_HOST_SYSTEM_MODULE MATCHES "Linux")
+    if(CMAKE_HOST_SYSTEM_NAME MATCHES "Linux")
         cmake_host_system_information(RESULT _DISTRIB QUERY DISTRIB_ID)
         if(_DISTRIB MATCHES "(debian)|(ubuntu)|(kali)|(astra)")
             if(CMAKE_INSTALL_PREFIX MATCHES "^(/usr)|(/usr/local)$")
-                set(_DOCDIR_PREFIX ${CMAKE_INSTALL_DOCDIR})
+                set(WEBPIER_INSTALL_DOCDIR ${CMAKE_INSTALL_DOCDIR}/${PROJECT_NAME}-${${PROJECT_NAME}_VERSION})
+                set(WEBPIER_INSTALL_IMGDIR ${CMAKE_INSTALL_DATADIR}/pixmaps)
             else()
-                set(_DOCDIR_PREFIX ${PROJECT_NAME}-${${PROJECT_NAME}_VERSION}/${CMAKE_INSTALL_DOCDIR})
+                set(WEBPIER_INSTALL_DOCDIR ${PROJECT_NAME}-${${PROJECT_NAME}_VERSION}/${CMAKE_INSTALL_ROOTDIR}/doc/${PROJECT_NAME})
+                set(WEBPIER_INSTALL_IMGDIR ${PROJECT_NAME}-${${PROJECT_NAME}_VERSION}/${CMAKE_INSTALL_ROOTDIR}/pixmaps)
             endif()
 
             add_custom_command(DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/debian/changelog"
@@ -249,9 +257,12 @@ if(NOT WEBPIER_SKIP_PACKAGE_RULES AND NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMA
                 ${CMAKE_CURRENT_SOURCE_DIR}/debian/copyright
                 ${CMAKE_CURRENT_SOURCE_DIR}/debian/README.Debian
                 )
-            install(FILES ${_DEBIAN_DOC_FILES} DESTINATION ${_DOCDIR_PREFIX}/${WEBPIER}-${${PROJECT_NAME}_VERSION} COMPONENT bin_doc_files)
+            install(FILES ${_DEBIAN_DOC_FILES} DESTINATION ${WEBPIER_INSTALL_DOCDIR} COMPONENT bin_doc_files)
+            install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/assets/webpier.png DESTINATION ${WEBPIER_INSTALL_IMGDIR} COMPONENT bin_doc_files)
         endif()
     endif()
 
     include(CPack)
 endif()
+
+message("***** webpier done ***** ")
