@@ -352,8 +352,15 @@ void CMainFrame::onServiceItemContextMenu(wxDataViewEvent& event)
 
 void CMainFrame::onStatusTimeout(wxTimerEvent& event)
 {
-    RefreshStatus();
-    m_timer->Start(30000, true);
+    if (m_config)
+    {
+        RefreshStatus();
+        m_timer->Start(30000, true);
+    }
+    else 
+    {
+        m_timer->Start(5000, true);
+    }
 }
 
 void CMainFrame::Populate()

@@ -25,3 +25,8 @@ function(convert_to_cpp_array BINARY_FILE HEADER_FILE ARRAY_NAME)
         file(WRITE ${HEADER_FILE} ${CPP_ARRAY})
     endif()
 endfunction()
+
+function(configure_and_generate INPUT_FILE OUTPUT_FILE)
+    configure_file(${INPUT_FILE} ${OUTPUT_FILE} @ONLY)
+    file(GENERATE OUTPUT ${OUTPUT_FILE} INPUT ${OUTPUT_FILE})
+endfunction()

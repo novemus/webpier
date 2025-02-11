@@ -9,7 +9,7 @@
 
 namespace WebPier
 {
-    bool CheckModule();
+    bool Init();
 
     namespace Context
     {

@@ -238,10 +238,10 @@ public:
 
     bool OnInit() override
     {
-        if (!wxApp::OnInit() || !WebPier::CheckModule())
-            return false;
-
         wxImage::AddHandler(new wxPNGHandler);
+
+        if (!wxApp::OnInit() || !WebPier::Init())
+            return false;
 
         wxIcon icon;
         icon.CopyFromBitmap(::GetLogo());

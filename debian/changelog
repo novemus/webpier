@@ -1,4 +1,4 @@
-webpier (1.0.0-1) unstable; urgency=low
+webpier (1.0.0-beta) unstable; urgency=low
 
   * Initial debian package.
 

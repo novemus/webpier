@@ -14,17 +14,19 @@
 
 namespace WebPier
 {
-    bool CheckModule()
+    bool Init()
     {
         try 
         {
+            std::cout << "Welcome " + WebPier::Context::Pier().ToStdString() << std::endl;
+
             if (webpier::get_module_path(WEBPIER_MODULE) != wxStandardPaths::Get().GetExecutablePath().ToStdWstring())
                 throw std::runtime_error(_("wrong module path"));
             return true;
         }
         catch (const std::exception& ex)
         {
-            CMessageDialog dialog(nullptr, _("Can't start WebPier frontend: ") + ex.what() + _(". Try to reinstall app."), wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
+            CMessageDialog dialog(nullptr, _("Can't start client: ") + ex.what(), wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
             dialog.ShowModal();
         }
         return false;
@@ -39,11 +41,7 @@ namespace WebPier
                 home = wxStandardPaths::Get().GetUserLocalDataDir();
             
             if (!wxFileName::Exists(home) && !wxFileName::Mkdir(home))
-            {
-                CMessageDialog dialog(nullptr, _("can't create home directory ") + home, wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
-                dialog.ShowModal();
                 throw webpier::usage_error("no context");
-            }
 
             return home;
         }
@@ -72,38 +70,30 @@ namespace WebPier
                 }
 
                 if (config.pier.empty())
-                    throw webpier::usage_error("can't init context");
+                    throw webpier::usage_error("no context");
 
                 context->set_config(config);
             }
 
             if (!config.autostart)
             {
-                try 
-                {
 #ifdef WIN32
-                    static boost::process::child s_daemon(webpier::get_module_path(SLIPWAY_MODULE), home, boost::process::windows::hide);
+                static boost::process::child s_daemon(webpier::get_module_path(SLIPWAY_MODULE), home, boost::process::windows::hide);
 #else
-                    static boost::process::child s_daemon(webpier::get_module_path(SLIPWAY_MODULE), home);
+                static boost::process::child s_daemon(webpier::get_module_path(SLIPWAY_MODULE), home);
 #endif
-                    static wxTimer s_timer;
+                static wxTimer s_timer;
 
-                    s_timer.Bind(wxEVT_TIMER, [&](wxTimerEvent&)
-                    {
-                        if (s_daemon.running())
-                            s_daemon.detach();
-                        else
-                            s_daemon.join();
-                        s_timer.Unlink();
-                    }, s_timer.GetId());
-
-                    s_timer.Start(5000, true);
-                }
-                catch (const std::exception& ex)
+                s_timer.Bind(wxEVT_TIMER, [&](wxTimerEvent&)
                 {
-                    CMessageDialog dialog(nullptr, _("Can't start WebPier backend: ") + ex.what() + _(". Try to reinstall app."), wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
-                    dialog.ShowModal();
-                }
+                    if (s_daemon.running())
+                        s_daemon.detach();
+                    else
+                        s_daemon.join();
+                    s_timer.Unlink();
+                }, s_timer.GetId());
+
+                s_timer.Start(5000, true);
             }
 
             return s_context = context;
@@ -183,7 +173,7 @@ namespace WebPier
                 }
                 catch(const std::exception& ex)
                 {
-                    std::cout << "Can't adjust service " << handle.Pier << ":" << handle.Service;
+                    std::cerr << "Can't adjust service " << handle.Pier << ":" << handle.Service << std::endl;
                 }
             }
 
@@ -208,7 +198,7 @@ namespace WebPier
                 }
                 catch(const std::exception& ex)
                 {
-                    std::cout << "Can't adjust service " << handle.Pier << ":" << handle.Service;
+                    std::cerr << "Can't adjust service " << handle.Pier << ":" << handle.Service << std::endl;
                 }
 
                 m_origin = {};

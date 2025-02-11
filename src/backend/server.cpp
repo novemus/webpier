@@ -1031,7 +1031,7 @@ int main(int argc, char* argv[])
         }
 
 #ifdef WIN32
-        DeleteFile(socket.string().c_str());
+        DeleteFileA(socket.string().c_str());
 #else
         ::unlink(socket.string().c_str());
 #endif

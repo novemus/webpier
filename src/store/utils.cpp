@@ -221,7 +221,7 @@ namespace webpier
                 (SLIPWAY_MODULE, boost::program_options::value<std::string>())
                 (CARRIER_MODULE, boost::program_options::value<std::string>());
 
-            boost::program_options::store(boost::program_options::parse_config_file<char>(path.filename().c_str(), options, true), s_config);
+            boost::program_options::store(boost::program_options::parse_config_file<char>(path.string().c_str(), options, true), s_config);
         });
 
         if (!s_config.count(module))

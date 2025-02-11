@@ -19,6 +19,9 @@ if(MSVC)
         find_package(Boost REQUIRED COMPONENTS filesystem process property_tree coroutine program_options)
     endif()
 else()
+    if (NOT BUILD_SHARED_LIBS)
+        set(Boost_USE_STATIC_LIBS ON)
+    endif()
     if(NOT WEBPIER_SKIP_TEST_RULES)
         find_package(Boost REQUIRED COMPONENTS filesystem coroutine program_options unit_test_framework)
     else()
@@ -31,7 +34,11 @@ message("*** Boost Include Dirs: ${Boost_INCLUDE_DIRS}")
 message("*** Boost Librariy Dirs: ${Boost_LIBRARY_DIRS}")
 message("*** Boost Libraries: ${Boost_LIBRARIES}")
 
-find_package(wxWidgets REQUIRED core base propgrid)
+find_package(wxWidgets COMPONENTS core base propgrid QUIET)
+
+if (NOT wxWidgets_FOUND)
+    find_package(wxWidgets CONFIG REQUIRED core base propgrid)
+endif()
 
 if(wxWidgets_USE_FILE)
     include(${wxWidgets_USE_FILE})
@@ -64,27 +71,30 @@ message("*** tubus Version: ${tubus_VERSION}")
 message("*** tubus Include: ${tubus_INCLUDE_DIRS}")
 message("*** tubus Library: ${tubus_LIBRARY}")
 
+find_package(opendht 3.2 REQUIRED)
+find_package(fmt REQUIRED)
+find_package(msgpack-cxx REQUIRED)
 find_package(PkgConfig REQUIRED)
 
-pkg_search_module(opendht REQUIRED IMPORTED_TARGET opendht>=3.2)
+pkg_search_module(GnuTLS REQUIRED IMPORTED_TARGET gnutls)
 
-message("* opendht Include Dir: ${opendht_INCLUDEDIR}")
-message("* opendht Lib Dir: ${opendht_LIBDIR}")
+message("* GnuTLS Include Dir: ${GnuTLS_INCLUDEDIR}")
+message("* GnuTLS Lib Dir: ${GnuTLS_LIBDIR}")
 
-pkg_search_module(nettle REQUIRED IMPORTED_TARGET nettle)
+pkg_search_module(Nettle REQUIRED IMPORTED_TARGET nettle)
 
-message("* nettle Include Dir: ${nettle_INCLUDEDIR}")
-message("* nettle Lib Dir: ${nettle_LIBDIR}")
+message("* Nettle Include Dir: ${Nettle_INCLUDEDIR}")
+message("* Nettle Lib Dir: ${Nettle_LIBDIR}")
 
-pkg_search_module(fmt REQUIRED IMPORTED_TARGET fmt)
+pkg_search_module(argon2 REQUIRED IMPORTED_TARGET libargon2)
 
-message("* fmt Include Dir: ${fmt_INCLUDEDIR}")
-message("* fmt Lib Dir: ${fmt_LIBDIR}")
+message("* argon2 Include Dir: ${argon2_INCLUDEDIR}")
+message("* argon2 Lib Dir: ${argon2_LIBDIR}")
 
-pkg_search_module(libargon2 REQUIRED IMPORTED_TARGET libargon2)
+pkg_search_module(Jsoncpp REQUIRED IMPORTED_TARGET jsoncpp)
 
-message("* libargon2 Include Dir: ${libargon2_INCLUDEDIR}")
-message("* libargon2 Lib Dir: ${libargon2_LIBDIR}")
+message("* Jsoncpp Include Dir: ${Jsoncpp_INCLUDEDIR}")
+message("* Jsoncpp Lib Dir: ${Jsoncpp_LIBDIR}")
 
 ########## build ##########
 
@@ -151,15 +161,9 @@ target_sources(${CARRIER} PRIVATE
     src/backend/tunnel.cpp
     )
 
-target_link_libraries(${WEBPIER} PRIVATE ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES} OpenSSL::SSL OpenSSL::Crypto)
-target_link_libraries(${CARRIER} PRIVATE ${Boost_LIBRARIES} wormhole::libwormhole tubus::libtubus OpenSSL::SSL OpenSSL::Crypto)
-target_link_libraries(${SLIPWAY} PRIVATE ${Boost_LIBRARIES} plexus::libplexus wormhole::libwormhole tubus::libtubus PkgConfig::opendht PkgConfig::fmt PkgConfig::libargon2 PkgConfig::nettle OpenSSL::SSL OpenSSL::Crypto)
-
-if(WIN32)
-    target_link_libraries(${WEBPIER} PRIVATE Crypt32)
-    target_link_libraries(${CARRIER} PRIVATE Crypt32)
-    target_link_libraries(${SLIPWAY} PRIVATE Crypt32)
-endif()
+target_link_libraries(${WEBPIER} PRIVATE ${wxWidgets_LIBRARIES} Boost::coroutine Boost::filesystem Boost::program_options "$<$<BOOL:${MSVC}>:Boost::property_tree>" "$<$<BOOL:${MSVC}>:Crypt32>" OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(${CARRIER} PRIVATE Boost::filesystem Boost::program_options "$<$<BOOL:${MSVC}>:Crypt32>" wormhole::libwormhole tubus::libtubus OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(${SLIPWAY} PRIVATE Boost::coroutine Boost::filesystem Boost::program_options "$<$<BOOL:${MSVC}>:Boost::property_tree>" "$<$<BOOL:${MSVC}>:Crypt32>" plexus::libplexus wormhole::libwormhole tubus::libtubus opendht fmt::fmt msgpack-cxx PkgConfig::GnuTLS PkgConfig::argon2 PkgConfig::Nettle PkgConfig::Jsoncpp OpenSSL::SSL OpenSSL::Crypto)
 
 target_include_directories(${WEBPIER} PRIVATE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>" ${CMAKE_CURRENT_BINARY_DIR} ${Boost_INCLUDE_DIRS} ${wxWidgets_INCLUDE_DIRS})
 target_include_directories(${SLIPWAY} PRIVATE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>" ${Boost_INCLUDE_DIRS})
@@ -168,6 +172,10 @@ target_include_directories(${CARRIER} PRIVATE "$<BUILD_INTERFACE:${CMAKE_CURRENT
 set_target_properties(${WEBPIER} PROPERTIES DEBUG_POSTFIX "d")
 set_target_properties(${SLIPWAY} PROPERTIES DEBUG_POSTFIX "d")
 set_target_properties(${CARRIER} PROPERTIES DEBUG_POSTFIX "d")
+
+target_compile_features(${WEBPIER} PRIVATE cxx_std_17)
+target_compile_features(${SLIPWAY} PRIVATE cxx_std_17)
+target_compile_features(${CARRIER} PRIVATE cxx_std_17)
 
 set(WEBPIER_MODULE "$<IF:$<BOOL:${WEBPIER_MODULE}>,${WEBPIER_MODULE},${WEBPIER}>")
 set(SLIPWAY_MODULE "$<IF:$<BOOL:${SLIPWAY_MODULE}>,${SLIPWAY_MODULE},${SLIPWAY}>")
@@ -191,9 +199,11 @@ if(NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMAKE_SKIP_INSTALL_RULES)
         set(WEBPIER_INSTALL_BINDIR ${PROJECT_NAME}-${${PROJECT_NAME}_VERSION}/${CMAKE_INSTALL_BINDIR})
     else()
         if(CMAKE_INSTALL_PREFIX MATCHES "^(/usr)|(/usr/local)$")
-            set(WEBPIER_INSTALL_BINDIR ${CMAKE_INSTALL_BINDIR})
+            set(WEBPIER_INSTALL_BINDIR ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME})
+            set(WEBPIER_INSTALL_DOCDIR ${CMAKE_INSTALL_DOCDIR})
         else()
             set(WEBPIER_INSTALL_BINDIR ${PROJECT_NAME}-${${PROJECT_NAME}_VERSION}/${CMAKE_INSTALL_BINDIR})
+            set(WEBPIER_INSTALL_DOCDIR ${PROJECT_NAME}-${${PROJECT_NAME}_VERSION}/${CMAKE_INSTALL_DATADIR}/doc)
         endif()
     endif()
 
@@ -222,13 +232,13 @@ endif()
 if(NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMAKE_SKIP_INSTALL_RULES)
     set(WEBPIER_TEST webpier_ut)
     add_executable(${WEBPIER_TEST} tests/utils.cpp tests/context.cpp tests/message.cpp tests/slipway.cpp src/store/context.cpp src/backend/message.cpp src/backend/client.cpp src/store/utils.cpp)
-    target_link_libraries(${WEBPIER_TEST} PRIVATE ${Boost_LIBRARIES} OpenSSL::SSL OpenSSL::Crypto)
-    if(WIN32)
-        target_link_libraries(${WEBPIER_TEST} PRIVATE Crypt32 ws2_32)
-    endif()
+    target_link_libraries(${WEBPIER_TEST} PRIVATE Boost::unit_test_framework Boost::coroutine Boost::filesystem Boost::program_options "$<$<BOOL:${MSVC}>:Boost::property_tree>" "$<$<BOOL:${MSVC}>:Crypt32>" OpenSSL::SSL OpenSSL::Crypto)
+
+    target_compile_features(${WEBPIER_TEST} PRIVATE cxx_std_17)
     target_compile_definitions(${WEBPIER_TEST} PRIVATE WEBPIER_MODULE="${WEBPIER_MODULE}" SLIPWAY_MODULE="${SLIPWAY_MODULE}" CARRIER_MODULE="${CARRIER_MODULE}")
     target_include_directories(${WEBPIER_TEST} PRIVATE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>" ${Boost_INCLUDE_DIRS})
     set_target_properties(${WEBPIER_TEST} PROPERTIES DEBUG_POSTFIX "d")
+
     enable_testing()
     add_test(NAME ${WEBPIER_TEST} COMMAND ${WEBPIER_TEST} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
@@ -237,32 +247,28 @@ endif()
 
 if(NOT WEBPIER_SKIP_PACKAGE_RULES AND NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMAKE_SKIP_INSTALL_RULES)
     if(CMAKE_HOST_SYSTEM_NAME MATCHES "Linux")
-        cmake_host_system_information(RESULT _DISTRIB QUERY DISTRIB_ID)
-        if(_DISTRIB MATCHES "(debian)|(ubuntu)|(kali)|(astra)")
-            if(CMAKE_INSTALL_PREFIX MATCHES "^(/usr)|(/usr/local)$")
-                set(WEBPIER_INSTALL_DOCDIR ${CMAKE_INSTALL_DOCDIR}/${PROJECT_NAME}-${${PROJECT_NAME}_VERSION})
-                set(WEBPIER_INSTALL_IMGDIR ${CMAKE_INSTALL_DATADIR}/pixmaps)
-            else()
-                set(WEBPIER_INSTALL_DOCDIR ${PROJECT_NAME}-${${PROJECT_NAME}_VERSION}/${CMAKE_INSTALL_ROOTDIR}/doc/${PROJECT_NAME})
-                set(WEBPIER_INSTALL_IMGDIR ${PROJECT_NAME}-${${PROJECT_NAME}_VERSION}/${CMAKE_INSTALL_ROOTDIR}/pixmaps)
-            endif()
-
+        cmake_host_system_information(RESULT DISTR QUERY DISTRIB_ID)
+        if(DISTR MATCHES "(debian)|(ubuntu)|(kali)|(astra)")
             add_custom_command(DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/debian/changelog"
                 COMMAND gzip -cn9 "${CMAKE_CURRENT_SOURCE_DIR}/debian/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz"
                 OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
             add_custom_target(changelog ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
 
-            set(_DEBIAN_DOC_FILES
+            set(DOC_FILES
                 ${CMAKE_CURRENT_BINARY_DIR}/changelog.gz
                 ${CMAKE_CURRENT_SOURCE_DIR}/debian/copyright
                 ${CMAKE_CURRENT_SOURCE_DIR}/debian/README.Debian
                 )
-            install(FILES ${_DEBIAN_DOC_FILES} DESTINATION ${WEBPIER_INSTALL_DOCDIR} COMPONENT bin_doc_files)
-            install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/assets/webpier.png DESTINATION ${WEBPIER_INSTALL_IMGDIR} COMPONENT bin_doc_files)
+            install(FILES ${DOC_FILES} DESTINATION ${WEBPIER_INSTALL_DOCDIR} COMPONENT debian_files)
+            install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/assets/webpier.png DESTINATION /usr/share/pixmaps COMPONENT debian_files)
+
+            configure_and_generate(${CMAKE_CURRENT_SOURCE_DIR}/debian/webpier.conf.in ${CMAKE_CURRENT_BINARY_DIR}/webpier.conf)
+            configure_and_generate(${CMAKE_CURRENT_SOURCE_DIR}/debian/webpier.desktop.in ${CMAKE_CURRENT_BINARY_DIR}/webpier.desktop)
+
+            install(FILES ${CMAKE_CURRENT_BINARY_DIR}/webpier.conf DESTINATION /etc/webpier COMPONENT debian_files)
+            install(FILES ${CMAKE_CURRENT_BINARY_DIR}/webpier.desktop DESTINATION /usr/share/applications COMPONENT debian_files)
         endif()
     endif()
 
     include(CPack)
 endif()
-
-message("***** webpier done ***** ")
