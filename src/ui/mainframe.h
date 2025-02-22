@@ -63,7 +63,7 @@ protected:
 
 public:
 
-    CMainFrame(const wxIcon& icon);
+    CMainFrame();
     ~CMainFrame();
 
     void Populate();

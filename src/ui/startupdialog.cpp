@@ -16,9 +16,7 @@ CStartupDialog::CStartupDialog(wxWindow* parent, wxWindowID id, const wxString& 
     wxStaticBoxSizer* idSizer;
     idSizer = new wxStaticBoxSizer(new wxStaticBox(this, wxID_ANY, _("")), wxVERTICAL);
 
-    auto image = ::GetLogo();
-    wxBitmapHelpers::Rescale(image, wxSize(64, 64));
-    m_logo = new wxStaticBitmap(idSizer->GetStaticBox(), wxID_ANY, image, wxDefaultPosition, wxDefaultSize, 0);
+    m_logo = new wxStaticBitmap(idSizer->GetStaticBox(), wxID_ANY, ::GetAppIconBundle().GetIconOfExactSize(wxSize(128, 128)), wxDefaultPosition, wxDefaultSize, 0);
     idSizer->Add(m_logo, 0, wxALL | wxALIGN_CENTER_HORIZONTAL, 5);
 
     m_welcome = new wxStaticText(

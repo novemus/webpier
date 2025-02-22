@@ -33,7 +33,7 @@ CAboutDialog::CAboutDialog( wxWindow* parent, wxWindowID id, const wxString& tit
 
     topSizer->Add( titleSizer, 1, wxRIGHT|wxLEFT|wxALIGN_CENTER_VERTICAL, 10 );
 
-    wxStaticBitmap* logo = new wxStaticBitmap( m_panel, wxID_ANY, ::GetLogo(), wxDefaultPosition, wxDefaultSize, 0 );
+    wxStaticBitmap* logo = new wxStaticBitmap( m_panel, wxID_ANY, ::GetAppIconBundle().GetIconOfExactSize(wxSize(64, 64)), wxDefaultPosition, wxDefaultSize, 0 );
     topSizer->Add( logo, 0, wxTOP|wxRIGHT|wxLEFT, 10 );
 
     panelSizer->Add( topSizer, 1, wxEXPAND|wxALL, 10 );

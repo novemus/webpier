@@ -113,7 +113,7 @@ add_executable(${PROJECT_NAME}::${CARRIER} ALIAS ${CARRIER})
 
 include(cmake/utils.cmake)
 
-convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/webpier.png ${CMAKE_CURRENT_BINARY_DIR}/assets/logo.h webpier_logo_png)
+convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/webpier.ico ${CMAKE_CURRENT_BINARY_DIR}/assets/logo.h webpier_logo_ico)
 convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/blue.png ${CMAKE_CURRENT_BINARY_DIR}/assets/blue.h blue_circle_png)
 convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/red.png ${CMAKE_CURRENT_BINARY_DIR}/assets/red.h red_circle_png)
 convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/green.png ${CMAKE_CURRENT_BINARY_DIR}/assets/green.h green_circle_png)

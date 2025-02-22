@@ -4,16 +4,21 @@
 #include <wx/snglinst.h>
 #include <wx/stdpaths.h>
 #include <ui/mainframe.h>
+#include <wx/mstream.h>
 #include <assets/logo.h>
 #include <assets/blue.h>
 #include <assets/green.h>
 #include <assets/red.h>
 #include <assets/grey.h>
 
-const wxBitmap& GetLogo()
+const wxIconBundle& GetAppIconBundle()
 {
-    static const wxBitmap s_logo(wxBITMAP_PNG_FROM_DATA(webpier_logo));
-    return s_logo;
+    static const wxIconBundle s_icon([]()
+    {
+        wxMemoryInputStream stream(webpier_logo_ico, sizeof(webpier_logo_ico));
+        return wxIconBundle(stream);
+    }());
+    return s_icon;
 }
 
 const wxBitmap& GetBlueCircleImage()
@@ -40,9 +45,9 @@ const wxBitmap& GetGreyCircleImage()
     return s_image;
 }
 
-CMainFrame* CreateMainFrame(const wxIcon& icon)
+CMainFrame* CreateMainFrame()
 {
-    CMainFrame* frame = new CMainFrame(icon);
+    CMainFrame* frame = new CMainFrame();
 
     frame->Populate();
     frame->Show(true);
@@ -57,16 +62,16 @@ class CTaskBarIcon : public wxTaskBarIcon
 public:
 
 #if defined(__WXOSX__) && wxOSX_USE_COCOA
-    CTaskBarIcon(const wxIcon& icon, wxTaskBarIconType iconType = wxTBI_DEFAULT_TYPE)
+    CTaskBarIcon(wxTaskBarIconType iconType = wxTBI_DEFAULT_TYPE)
         : wxTaskBarIcon(iconType)
 #else
-    CTaskBarIcon(const wxIcon& icon)
+    CTaskBarIcon()
 #endif
     {
-        this->SetIcon(icon);
+        this->SetIcon(wxBitmapBundle::FromIconBundle(::GetAppIconBundle()));
 
-        m_frame = CreateMainFrame(icon);
-        m_frame->Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( CTaskBarIcon::OnFrameClose ), NULL, this);
+        m_frame = CreateMainFrame();
+        m_frame->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(CTaskBarIcon::OnFrameClose), NULL, this);
     }
 
     ~CTaskBarIcon() override
@@ -238,13 +243,10 @@ public:
 
     bool OnInit() override
     {
-        wxImage::AddHandler(new wxPNGHandler);
+        wxInitAllImageHandlers();
 
         if (!wxApp::OnInit() || !WebPier::Init())
             return false;
-
-        wxIcon icon;
-        icon.CopyFromBitmap(::GetLogo());
 
         m_checker = new wxSingleInstanceChecker(wxApp::GetAppName() + '-' + wxGetUserId(), wxStandardPaths::Get().GetTempDir());
         if (m_checker->IsAnotherRunning())
@@ -252,10 +254,10 @@ public:
             delete m_checker;
             m_checker = nullptr;
 
-            return (bool)CreateMainFrame(icon);
+            return (bool)CreateMainFrame();
         }
 
-        return (bool)new CTaskBarIcon(icon);
+        return (bool)new CTaskBarIcon();
     }
 
     int OnExit() override
