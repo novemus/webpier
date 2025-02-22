@@ -917,7 +917,6 @@ namespace slipway
         class server
         {
             boost::asio::io_context& m_io;
-            std::string m_socket;
             boost::asio::local::stream_protocol::acceptor m_acceptor;
             slipway::engine m_engine;
             size_t m_score;
@@ -976,27 +975,26 @@ namespace slipway
                 });
             }
 
-            void delete_socket()
+            void cleanup(const std::string& socket)
             {
 #ifdef WIN32
-                DeleteFileA(m_socket.c_str());
+                DeleteFileA(socket.c_str());
 #else
-                ::unlink(m_socket.c_str());
+                ::unlink(socket.c_str());
 #endif
             }
 
         public:
 
-            server(boost::asio::io_context& io, const std::string& socket, const std::filesystem::path& home, bool steady)
+            server(boost::asio::io_context& io, const std::filesystem::path& socket, bool steady)
                 : m_io(io)
-                , m_socket(socket)
                 , m_acceptor(io, boost::asio::local::stream_protocol())
-                , m_engine(io, home)
+                , m_engine(io, socket.parent_path())
                 , m_score(steady ? 1 : 0)
             {
-                delete_socket();
+                cleanup(socket.u8string());
 
-                m_acceptor.bind(boost::asio::local::stream_protocol::endpoint(socket));
+                m_acceptor.bind(boost::asio::local::stream_protocol::endpoint(socket.u8string()));
                 m_acceptor.listen();
 
                 accept();
@@ -1004,7 +1002,7 @@ namespace slipway
 
             ~server()
             {
-                delete_socket();
+                cleanup(m_acceptor.local_endpoint().path());
             }
         };
     }
@@ -1049,7 +1047,7 @@ int main(int argc, char* argv[])
         }
 
         boost::asio::io_context io;
-        slipway::server server(io, socket.u8string(), home, argc == 3 && std::strcmp(argv[2], "daemon") == 0);
+        slipway::server server(io, socket, argc == 3 && std::strcmp(argv[2], "daemon") == 0);
         io.run();
     }
     catch (const std::exception& ex)

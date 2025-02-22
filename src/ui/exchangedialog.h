@@ -89,6 +89,7 @@ class CExchangeDialog : public wxDialog
     CExportPage* m_exportPage;
     wxCheckBox* m_purge;
     wxCheckBox* m_reply;
+    wxStaticText* m_spacer;
     wxButton* m_back;
     wxButton* m_next;
     wxButton* m_cancel;

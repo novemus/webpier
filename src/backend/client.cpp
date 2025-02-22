@@ -68,18 +68,18 @@ namespace slipway
                     boost::asio::async_write(m_socket, buffer, yield[ec]);
 
                     if (ec)
-                        throw pipe_error(ec.message());
+                        throw pipe_error("Can't write to " + m_socket.remote_endpoint().path() + " due the error \'" + ec.message() + "\'");
 
                     boost::asio::async_read_until(m_socket, buffer, '\n', yield[ec]);
 
                     if (ec)
-                        throw pipe_error(ec.message());
+                        throw pipe_error("Can't read from " + m_socket.remote_endpoint().path() + " due the error \'" + ec.message() + "\'");
 
                     pull_message(buffer, response);
                 });
 
                 if (!response.ok())
-                    throw task_error(std::get<std::string>(response.payload));
+                    throw task_error("The daemon reported the error \'" + std::get<std::string>(response.payload) + "\'");
 
                 return std::get<result>(response.payload);
             }
@@ -92,6 +92,8 @@ namespace slipway
                 execute([&](boost::asio::yield_context yield)
                 {
                     static constexpr const size_t MAX_ATTEMPTS = 5;
+
+                    auto socket = home + "/" + jack_file_name;
 
                     boost::system::error_code ec;
                     for(size_t i = 0; i < MAX_ATTEMPTS; ++i)
@@ -110,7 +112,7 @@ namespace slipway
                                 break;
                         }
  
-                        m_socket.async_connect(home + "/" + jack_file_name, yield[ec]);
+                        m_socket.async_connect(socket, yield[ec]);
 
 #ifdef WIN32
                         if (ec.value() != WSAECONNREFUSED)
@@ -123,7 +125,7 @@ namespace slipway
                     }
 
                     if (ec)
-                        throw pipe_error(ec.message());
+                        throw pipe_error("Can't connect to " + socket + " due the error \'" + ec.message() + "\'");
                 });
             }
 

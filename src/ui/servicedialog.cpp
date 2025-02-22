@@ -1,5 +1,6 @@
 #include <ui/servicedialog.h>
 #include <ui/messagedialog.h>
+#include <ui/logo.h>
 #include <wx/valnum.h>
 
 CServiceDialog::CServiceDialog(WebPier::Context::ConfigPtr config, WebPier::Context::ServicePtr service, wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style)
@@ -7,6 +8,7 @@ CServiceDialog::CServiceDialog(WebPier::Context::ConfigPtr config, WebPier::Cont
     , m_config(config)
     , m_service(service)
 {
+    this->SetIcon(::GetAppIconBundle().GetIcon());
     this->SetSizeHints( wxDefaultSize, wxDefaultSize );
 
     wxBoxSizer* mainSizer;

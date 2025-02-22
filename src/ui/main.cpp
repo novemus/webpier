@@ -146,7 +146,7 @@ protected:
                         }
                         catch(const std::exception& ex)
                         {
-                            wxNotificationMessage msg(wxEmptyString, _("Can't start the pier: ") + ex.what(), nullptr, wxICON_ERROR);
+                            wxNotificationMessage msg(wxEmptyString, _("Can't start the pier. ") + ex.what(), nullptr, wxICON_ERROR);
                             msg.Show();
                         }
                         m_frame->RefreshStatus(item);
@@ -164,7 +164,7 @@ protected:
                         }
                         catch(const std::exception& ex)
                         {
-                            wxNotificationMessage msg(wxEmptyString, _("Can't stop the pier: ") + ex.what(), nullptr, wxICON_ERROR);
+                            wxNotificationMessage msg(wxEmptyString, _("Can't stop the pier. ") + ex.what(), nullptr, wxICON_ERROR);
                             msg.Show();
                         }
                         m_frame->RefreshStatus(item);
@@ -174,7 +174,7 @@ protected:
         }
         catch(const std::exception& ex)
         {
-            wxNotificationMessage msg(wxEmptyString, _("Can't popup menu: ") + ex.what(), nullptr, wxICON_ERROR);
+            wxNotificationMessage msg(wxEmptyString, _("Can't popup menu. ") + ex.what(), nullptr, wxICON_ERROR);
             msg.Show();
         }
 
@@ -192,7 +192,7 @@ protected:
             }
             catch(const std::exception& ex)
             {
-                wxNotificationMessage msg(wxEmptyString, _("Can't unplug the pier: ") + ex.what(), nullptr, wxICON_ERROR);
+                wxNotificationMessage msg(wxEmptyString, _("Can't unplug the pier. ") + ex.what(), nullptr, wxICON_ERROR);
                 msg.Show();
             }
             m_frame->RefreshStatus();
@@ -206,7 +206,7 @@ protected:
             }
             catch(const std::exception& ex)
             {
-                wxNotificationMessage msg(wxEmptyString, _("Can't reboot the pier: ") + ex.what(), nullptr, wxICON_ERROR);
+                wxNotificationMessage msg(wxEmptyString, _("Can't reboot the pier. ") + ex.what(), nullptr, wxICON_ERROR);
                 msg.Show();
             }
             m_frame->RefreshStatus();

@@ -53,7 +53,7 @@ namespace webpier
                 : m_lock(guard.m_lock)
             {
                 if (guard.m_time != std::filesystem::file_time_type() && guard.m_time != std::filesystem::last_write_time(guard.m_file))
-                    throw stale_error("file is outdated");
+                    throw stale_error("The context is outdated");
             }
 
             virtual ~soft_lock() { }
@@ -261,7 +261,7 @@ namespace webpier
 
             std::string home() const noexcept(true) override
             {
-                return m_guard.home().u8string();
+                return m_guard.home().generic_u8string();
             }
 
             void get_config(config& info) const noexcept(true) override
@@ -281,7 +281,7 @@ namespace webpier
                             || (std::filesystem::exists(cert) && !std::filesystem::exists(key));
 
                     if (wrong)
-                        throw usage_error("wrong local pier");
+                        throw usage_error("Wrong local pier");
 
                     m_config = info;
                     m_bundle.clear();
@@ -335,10 +335,10 @@ namespace webpier
             {
                 auto iter = m_bundle.find(m_config.pier);
                 if (iter == m_bundle.end())
-                    throw usage_error("local pier does not exist");
+                    throw usage_error("The local pier does not exist");
 
                 if (iter->second.find(info.name) != iter->second.end())
-                    throw usage_error("service already exists");
+                    throw usage_error("Such service already exists");
 
                 iter->second.emplace(info.name, info);
 
@@ -350,7 +350,7 @@ namespace webpier
             {
                 auto iter = m_bundle.find(m_config.pier);
                 if (iter == m_bundle.end())
-                    throw usage_error("local pier does not exist");
+                    throw usage_error("The local pier does not exist");
 
                 if (iter->second.erase(name))
                 {
@@ -363,10 +363,10 @@ namespace webpier
             {
                 auto iter = m_bundle.find(info.pier);
                 if (iter == m_bundle.end())
-                    throw usage_error("remote pier does not exist");
+                    throw usage_error("The remote pier does not exist");
 
                 if (iter->second.find(info.name) != iter->second.end())
-                    throw usage_error("service already exists");
+                    throw usage_error("Such service already exists");
 
                 iter->second.emplace(info.name, info);
 
@@ -378,7 +378,7 @@ namespace webpier
             {
                 auto iter = m_bundle.find(pier);
                 if (iter == m_bundle.end())
-                    throw usage_error("remote pier does not exist");
+                    throw usage_error("The remote pier does not exist");
 
                 if (iter->second.erase(name))
                 {
@@ -403,7 +403,7 @@ namespace webpier
                 auto path = std::filesystem::path(m_config.repo) / pier;
 
                 if (std::filesystem::exists(path))
-                    throw usage_error("pier already exists");
+                    throw usage_error("The pier already exists");
 
                 std::filesystem::create_directories(path);
                 save_x509_cert(path / cert_file_name, cert);
@@ -414,7 +414,7 @@ namespace webpier
             void del_pier(const std::string& pier) noexcept(false) override
             {
                 if (m_config.pier == pier)
-                    throw usage_error("can't delete local pier");
+                    throw usage_error("Can't delete local pier");
 
                 hard_lock lock(m_guard);
                 m_bundle.erase(pier);

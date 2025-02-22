@@ -1,5 +1,6 @@
 #include <ui/exchangedialog.h>
 #include <ui/messagedialog.h>
+#include <ui/logo.h>
 
 CImportPage::CImportPage(const wxString& pier, const WebPier::Context::ServiceList& forImport, wxWindow* parent) 
     : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxEmptyString)
@@ -9,7 +10,6 @@ CImportPage::CImportPage(const wxString& pier, const WebPier::Context::ServiceLi
     wxBoxSizer* mainSizer;
     mainSizer = new wxBoxSizer( wxVERTICAL );
 
-    mainSizer->SetMinSize( wxSize( 400,-1 ) );
     wxStaticBoxSizer* pierSizer;
     pierSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, pier ), wxVERTICAL );
 
@@ -186,7 +186,7 @@ bool CImportPage::ValidateData()
     {
         if (m_import[index]->Address.IsEmpty())
         {
-            CMessageDialog dialog(this, _("Define the 'service' properties for all checked services"), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
+            CMessageDialog dialog(this, _("Define the 'address' properties for all checked services"), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
             dialog.ShowModal();
             return false;
         }
@@ -217,7 +217,6 @@ CExportPage::CExportPage(const wxString& pier, const WebPier::Context::ServiceLi
     wxBoxSizer* mainSizer;
     mainSizer = new wxBoxSizer( wxVERTICAL );
 
-    mainSizer->SetMinSize( wxSize( 400,-1 ) );
     wxStaticBoxSizer* pierSizer;
     pierSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, pier ), wxVERTICAL );
 
@@ -377,12 +376,12 @@ WebPier::Context::ServiceList CExportPage::GetExport() const
 CExchangeDialog::CExchangeDialog(const wxString& pier, const WebPier::Context::ServiceList& forImport, const WebPier::Context::ServiceList& forExport, wxWindow* parent) 
     : wxDialog( parent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE )
 {
-    this->SetSizeHints( wxDefaultSize, wxDefaultSize );
+    this->SetIcon(::GetAppIconBundle().GetIcon());
+    this->SetSizeHints( wxSize( 300,-1 ), wxDefaultSize );
 
     wxBoxSizer* mainSizer;
     mainSizer = new wxBoxSizer( wxVERTICAL );
 
-    mainSizer->SetMinSize( wxSize( 500,-1 ) );
     m_importPage = new CImportPage( pier, forImport, this);
     mainSizer->Add( m_importPage, 1, wxEXPAND, 0 );
     this->SetTitle(m_importPage->GetLabel());
@@ -396,14 +395,16 @@ CExchangeDialog::CExchangeDialog(const wxString& pier, const WebPier::Context::S
 
     m_purge = new wxCheckBox( this, wxID_ANY, _("Purge existing services"), wxDefaultPosition, wxDefaultSize, 0 );
     m_purge->SetValue(false);
-    footSizer->Add( m_purge, 1, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+    footSizer->Add( m_purge, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 
     m_reply = new wxCheckBox( this, wxID_ANY, _("Make a counter offer"), wxDefaultPosition, wxDefaultSize, 0 );
     m_reply->SetValue(true);
-    footSizer->Add( m_reply, 1, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
     m_reply->Hide();
+    footSizer->Add( m_reply, 0, wxFIXED_MINSIZE|wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 
-    footSizer->Add( 0, 0, 1, wxEXPAND, 5 );
+    m_spacer = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+    m_spacer->Wrap( -1 );
+    footSizer->Add( m_spacer, 1, wxALIGN_CENTER_VERTICAL|wxALL, 0 );
 
     m_back = new wxButton( this, wxID_BACKWARD, _("Back"), wxDefaultPosition, wxDefaultSize, 0 );
 #ifndef WIN32
@@ -425,7 +426,7 @@ CExchangeDialog::CExchangeDialog(const wxString& pier, const WebPier::Context::S
 #endif
     footSizer->Add( m_cancel, 0, wxALL, 5 );
 
-    mainSizer->Add( footSizer, 0, wxEXPAND, 0 );
+    mainSizer->Add( footSizer, 0, wxEXPAND|wxFIXED_MINSIZE, 0 );
 
     this->SetSizer( mainSizer );
     this->Layout();
@@ -459,6 +460,7 @@ CExchangeDialog::~CExchangeDialog()
     delete m_exportPage;
     delete m_purge;
     delete m_reply;
+    delete m_spacer;
     delete m_cancel;
     delete m_back;
     delete m_next;

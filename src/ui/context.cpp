@@ -27,7 +27,7 @@ namespace WebPier
                 home = wxStandardPaths::Get().GetUserLocalDataDir();
 
             if (!wxFileName::Exists(home) && !wxFileName::Mkdir(home))
-                throw webpier::usage_error("wrong home path");
+                throw webpier::usage_error("Wrong home path");
 
             return home.ToStdString(wxGet_wxConvUTF8());
         }
@@ -52,22 +52,22 @@ namespace WebPier
                 }
 
                 if (config.pier.empty())
-                    throw webpier::usage_error("no pier identity");
+                    throw webpier::usage_error("No pier identity");
 
                 g_context->set_config(config);
             }
 
-            if (!config.autostart)
+            auto RunDaemon = [&]()
             {
-#ifdef WIN32
+    #ifdef WIN32
                 static boost::process::child s_daemon(webpier::get_module_path(SLIPWAY_MODULE), home, boost::process::windows::hide);
-#else
+    #else
                 static boost::process::child s_daemon(webpier::get_module_path(SLIPWAY_MODULE), home);
-#endif
+    #endif
                 if (!s_daemon.running())
                 {
                     s_daemon.join();
-                    throw webpier::usage_error("can't start daemon");
+                    throw webpier::usage_error("Can't start session daemon");
                 }
 
                 static wxTimer s_timer;
@@ -82,10 +82,31 @@ namespace WebPier
                 }, s_timer.GetId());
 
                 s_timer.Start(5000, true);
-            }
+            };
 
-            g_daemon = slipway::create_client(home);
-            g_daemon->adjust();
+            try
+            {
+                if (!config.autostart)
+                    RunDaemon();
+
+                g_daemon = slipway::create_client(g_context->home());
+                g_daemon->adjust();
+            }
+            catch (const std::exception& ex)
+            {
+                if (config.autostart)
+                {
+                    CMessageDialog dialog(nullptr, _("Failed to initialize the client for the system session daemon. ") + ex.what() + _("\n\nDo you want to run a user session daemon?"), wxDEFAULT_DIALOG_STYLE | wxICON_QUESTION);
+                    if (dialog.ShowModal() == wxID_YES)
+                    {
+                        RunDaemon();
+                        g_daemon = slipway::create_client(g_context->home());
+                        g_daemon->adjust();
+                        return;
+                    }
+                }
+                throw;
+            }
         }
     }
 
@@ -94,7 +115,7 @@ namespace WebPier
         try
         {
             if (webpier::get_module_path(WEBPIER_MODULE) != wxStandardPaths::Get().GetExecutablePath().ToStdWstring())
-                throw std::runtime_error(_("wrong module path"));
+                throw std::runtime_error(_("Wrong module path"));
 
             InitContext();
 
@@ -104,7 +125,7 @@ namespace WebPier
         }
         catch (const std::exception& ex)
         {
-            CMessageDialog dialog(nullptr, _("Can't start the WebPier: ") + ex.what(), wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
+            CMessageDialog dialog(nullptr, _("Can't start the WebPier. ") + ex.what(), wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
             dialog.ShowModal();
         }
         return false;

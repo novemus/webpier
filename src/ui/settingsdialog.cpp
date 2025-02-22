@@ -1,5 +1,6 @@
 #include <ui/settingsdialog.h>
 #include <ui/messagedialog.h>
+#include <ui/logo.h>
 #include <wx/msgdlg.h> 
 #include <wx/valnum.h>
 
@@ -9,6 +10,7 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, wxWindow* p
 {
     static constexpr const char* FORBIDDEN_PATH_CHARS = "*/\\<>:|? ";
 
+    this->SetIcon(::GetAppIconBundle().GetIcon());
     this->SetSizeHints( wxDefaultSize, wxDefaultSize );
 
     wxBoxSizer* mainSizer;
@@ -38,7 +40,7 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, wxWindow* p
     idGridSizer->Add( ownerLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
     m_ownerCtrl = new wxTextCtrl( idSizer->GetStaticBox(), wxID_ANY, m_config->Pier.Before('/'), wxDefaultPosition, wxDefaultSize, 0);
-    m_ownerCtrl->SetToolTip( _("Email address to represent you to owners of remote piers") );
+    m_ownerCtrl->SetToolTip( _("The email address that represents you to owners of remote piers") );
     m_ownerCtrl->SetValidator(wxTextValidator(wxFILTER_EXCLUDE_CHAR_LIST));
     ((wxTextValidator*)m_ownerCtrl->GetValidator())->SetCharExcludes(FORBIDDEN_PATH_CHARS);
 
@@ -50,7 +52,7 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, wxWindow* p
     idGridSizer->Add( pierLabel, 0, wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
 
     m_pierCtrl = new wxTextCtrl( idSizer->GetStaticBox(), wxID_ANY, m_config->Pier.After('/'), wxDefaultPosition, wxDefaultSize, 0 );
-    m_pierCtrl->SetToolTip( _("Identifier of this pier") );
+    m_pierCtrl->SetToolTip( _("The identifier of this pier") );
     m_pierCtrl->SetValidator(wxTextValidator(wxFILTER_EXCLUDE_CHAR_LIST));
     ((wxTextValidator*)m_pierCtrl->GetValidator())->SetCharExcludes(FORBIDDEN_PATH_CHARS);
 
@@ -58,7 +60,7 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, wxWindow* p
     idSizer->Add( idGridSizer, 1, wxALL|wxEXPAND, 5 );
     basicSizer->Add( idSizer, 0, wxEXPAND|wxALL, 10 );
 
-    m_daemonCtrl = new wxCheckBox( basicPanel, wxID_ANY, _("Start daemon with system"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_daemonCtrl = new wxCheckBox( basicPanel, wxID_ANY, _("Run the daemon at system startup"), wxDefaultPosition, wxDefaultSize, 0 );
     m_daemonCtrl->SetValue(config->Autostart);
     basicSizer->Add( m_daemonCtrl, 0, wxALL, 5 );
 
@@ -259,7 +261,7 @@ void CSettingsDialog::onOkButtonClick(wxCommandEvent& event)
         || (m_dhtBootCtrl->GetValue().IsEmpty() && (m_smtpCtrl->GetValue().IsEmpty() || m_imapCtrl->GetValue().IsEmpty() 
             || m_loginCtrl->GetValue().IsEmpty() || m_passCtrl->GetValue().IsEmpty())))
     {
-        CMessageDialog dialog(this, _("To use WebPier you must define identity, STUN and either DHT or Email rendezvous"), wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
+        CMessageDialog dialog(this, _("To use the WebPier you must define the identity, STUN and either DHT or Email rendezvous"), wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
         dialog.ShowModal();
         return;
     }
@@ -267,7 +269,7 @@ void CSettingsDialog::onOkButtonClick(wxCommandEvent& event)
     auto pier = m_ownerCtrl->GetValue() + '/' + m_pierCtrl->GetValue();
     if (!m_config->Pier.IsEmpty() && pier != m_config->Pier)
     {
-        CMessageDialog dialog(this, _("You have changed your WebPier identity. This will cause the service\ncontext to switch. The current services will become unavailable. To\nswitch context back you must restore WebPier identity."), wxDEFAULT_DIALOG_STYLE|wxICON_WARNING);
+        CMessageDialog dialog(this, _("You have changed your WebPier identity. This will cause the context to switch. The current services will become unavailable. To switch the context back you must restore the old identity."), wxDEFAULT_DIALOG_STYLE|wxICON_WARNING);
         dialog.ShowModal();
     }
 

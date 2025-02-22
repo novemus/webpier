@@ -1,8 +1,10 @@
 #include <ui/messagedialog.h>
+#include <ui/logo.h>
 
 CMessageDialog::CMessageDialog( wxWindow* parent, const wxString& message, long style, wxWindowID id, const wxPoint& pos, const wxSize& size ) 
     : wxDialog( parent, id, _("WebPier"), pos, size, style )
 {
+	this->SetIcon(::GetAppIconBundle().GetIcon());
 	this->SetSizeHints( wxDefaultSize, wxDefaultSize );
 
 	wxBoxSizer* mainSizer;
@@ -12,9 +14,9 @@ CMessageDialog::CMessageDialog( wxWindow* parent, const wxString& message, long 
 	m_bitmap = new wxStaticBitmap( this, wxID_ANY, wxArtProvider::GetBitmap( wxASCII_STR(kind), wxASCII_STR(wxART_MESSAGE_BOX) ), wxDefaultPosition, wxDefaultSize, 0 );
 	mainSizer->Add( m_bitmap, 0, wxALL|wxALIGN_CENTER_HORIZONTAL, 5 );
 
-	m_text = new wxStaticText( this, wxID_ANY, message, wxDefaultPosition, wxDefaultSize, 0 );
-	m_text->Wrap( -1 );
-	mainSizer->Add( m_text, 0, wxALL|wxALIGN_CENTER_HORIZONTAL, 5 );
+	m_text = new wxStaticText( this, wxID_ANY, message, wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER_HORIZONTAL );
+	m_text->Wrap( 500 );
+	mainSizer->Add( m_text, 0, wxALL|wxALIGN_CENTER_HORIZONTAL, 10 );
 
 	wxStdDialogButtonSizer* sdbSizer;
 	sdbSizer = new wxStdDialogButtonSizer();
