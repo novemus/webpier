@@ -84,6 +84,7 @@ namespace webpier
         virtual ~context() {}
 
         virtual std::string pier() const noexcept(true) = 0;
+        virtual std::string home() const noexcept(true) = 0;
 
         virtual void get_config(config& info) const noexcept(true) = 0;
         virtual void set_config(const config& info) noexcept(false) = 0;

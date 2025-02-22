@@ -34,9 +34,9 @@ CStartupDialog::CStartupDialog(wxWindow* parent, wxWindowID id, const wxString& 
         _("The WebPier program is designed to forward TCP services running on machines located behind the NAT. This is a\n"
           "completely P2P application and no third-party services are used to relay connection between sides. The well-known\n"
           "UDP-hole-punching technique is used to pass through the NAT, and email or DHT network is used as a rendezvous\n"
-          "service. Public key authentication is used for rendezvous security. To get started, you at least need to define the\n"
-          "identifier of this pier, then set up your preferred rendezvous service and define a STUN server. Note that the email\n"
-          "address is a first part of pier's identifier and the pier name must be unique for the address."),
+          "service. Rendezvous security is ensured by the public key authentication. To get started, you at least need to define\n"
+          "the identifier of this pier, then set up your preferred rendezvous service and define a STUN server. Note that the\n"
+          "email address is a first part of pier's identifier and the pier name must be unique for the address."),
         wxDefaultPosition,
         wxDefaultSize,
         0);

@@ -917,6 +917,7 @@ namespace slipway
         class server
         {
             boost::asio::io_context& m_io;
+            std::string m_socket;
             boost::asio::local::stream_protocol::acceptor m_acceptor;
             slipway::engine m_engine;
             size_t m_score;
@@ -975,18 +976,35 @@ namespace slipway
                 });
             }
 
+            void delete_socket()
+            {
+#ifdef WIN32
+                DeleteFileA(m_socket.c_str());
+#else
+                ::unlink(m_socket.c_str());
+#endif
+            }
+
         public:
 
-            server(boost::asio::io_context& io, const boost::asio::local::stream_protocol::endpoint& ep, const std::filesystem::path& home, bool steady)
+            server(boost::asio::io_context& io, const std::string& socket, const std::filesystem::path& home, bool steady)
                 : m_io(io)
-                , m_acceptor(io, ep.protocol())
+                , m_socket(socket)
+                , m_acceptor(io, boost::asio::local::stream_protocol())
                 , m_engine(io, home)
                 , m_score(steady ? 1 : 0)
             {
-                m_acceptor.bind(ep);
+                delete_socket();
+
+                m_acceptor.bind(boost::asio::local::stream_protocol::endpoint(socket));
                 m_acceptor.listen();
 
                 accept();
+            }
+
+            ~server()
+            {
+                delete_socket();
             }
         };
     }
@@ -1021,7 +1039,7 @@ int main(int argc, char* argv[])
         if (!std::filesystem::exists(locker))
             std::ofstream(locker).close();
 
-        boost::interprocess::file_lock guard(locker.string().c_str());
+        boost::interprocess::file_lock guard(locker.u8string().c_str());
         boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(guard, boost::interprocess::try_to_lock_type());
 
         if (!lock.owns())
@@ -1030,14 +1048,8 @@ int main(int argc, char* argv[])
             return 4;
         }
 
-#ifdef WIN32
-        DeleteFileA(socket.string().c_str());
-#else
-        ::unlink(socket.string().c_str());
-#endif
-
         boost::asio::io_context io;
-        slipway::server server(io, socket.string(), home, argc == 3 && std::strcmp(argv[2], "daemon") == 0);
+        slipway::server server(io, socket.u8string(), home, argc == 3 && std::strcmp(argv[2], "daemon") == 0);
         io.run();
     }
     catch (const std::exception& ex)

@@ -272,6 +272,7 @@ void CSettingsDialog::onOkButtonClick(wxCommandEvent& event)
     }
 
     m_config->Pier = pier;
+    m_config->Autostart = m_daemonCtrl->GetValue();
 
     m_config->StunServer = m_stunCtrl->GetValue();
     uint32_t hops = m_config->PunchHops;

@@ -20,7 +20,7 @@ namespace slipway
 
                 boost::asio::spawn(m_io, [&](boost::asio::yield_context yield)
                 {
-                    static constexpr const int REQUEST_TIMEOUT = 30;
+                    static constexpr const int REQUEST_TIMEOUT = 10;
 
                     boost::asio::deadline_timer timer(m_io);
 
@@ -37,7 +37,7 @@ namespace slipway
 
                         try
                         {
-                            m_socket.cancel();
+                            m_socket.close();
                         }
                         catch (const std::exception &ex)
                         {

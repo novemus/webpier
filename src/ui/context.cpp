@@ -6,6 +6,7 @@
 #include <backend/client.h>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/process.hpp>
+#include <boost/scope_exit.hpp>
 #ifdef WIN32
 #include <boost/process/windows.hpp>
 #endif
@@ -14,50 +15,31 @@
 
 namespace WebPier
 {
-    bool Init()
-    {
-        try 
-        {
-            std::cout << "Welcome " + WebPier::Context::Pier().ToStdString() << std::endl;
-
-            if (webpier::get_module_path(WEBPIER_MODULE) != wxStandardPaths::Get().GetExecutablePath().ToStdWstring())
-                throw std::runtime_error(_("wrong module path"));
-            return true;
-        }
-        catch (const std::exception& ex)
-        {
-            CMessageDialog dialog(nullptr, _("Can't start client: ") + ex.what(), wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
-            dialog.ShowModal();
-        }
-        return false;
-    }
-
     namespace
     {
-        wxString GetHome()
+        std::shared_ptr<webpier::context> g_context;
+        std::shared_ptr<slipway::daemon> g_daemon;
+
+        std::string GetHome()
         {
             wxString home;
             if (!wxGetEnv("WEBPIER_HOME", &home))
                 home = wxStandardPaths::Get().GetUserLocalDataDir();
-            
-            if (!wxFileName::Exists(home) && !wxFileName::Mkdir(home))
-                throw webpier::usage_error("no context");
 
-            return home;
+            if (!wxFileName::Exists(home) && !wxFileName::Mkdir(home))
+                throw webpier::usage_error("wrong home path");
+
+            return home.ToStdString(wxGet_wxConvUTF8());
         }
 
-        std::shared_ptr<webpier::context> GetContext()
+        void InitContext()
         {
-            static std::shared_ptr<webpier::context> s_context;
+            auto home = GetHome();
 
-            if (s_context)
-                return s_context;
-
-            auto home = GetHome().ToStdString(wxGet_wxConvUTF8());
-            auto context = webpier::open_context(home);
+            g_context = webpier::open_context(home);
 
             webpier::config config;
-            context->get_config(config);
+            g_context->get_config(config);
 
             if (config.pier.empty())
             {
@@ -70,9 +52,9 @@ namespace WebPier
                 }
 
                 if (config.pier.empty())
-                    throw webpier::usage_error("no context");
+                    throw webpier::usage_error("no pier identity");
 
-                context->set_config(config);
+                g_context->set_config(config);
             }
 
             if (!config.autostart)
@@ -82,6 +64,12 @@ namespace WebPier
 #else
                 static boost::process::child s_daemon(webpier::get_module_path(SLIPWAY_MODULE), home);
 #endif
+                if (!s_daemon.running())
+                {
+                    s_daemon.join();
+                    throw webpier::usage_error("can't start daemon");
+                }
+
                 static wxTimer s_timer;
 
                 s_timer.Bind(wxEVT_TIMER, [&](wxTimerEvent&)
@@ -96,18 +84,30 @@ namespace WebPier
                 s_timer.Start(5000, true);
             }
 
-            return s_context = context;
+            g_daemon = slipway::create_client(home);
+            g_daemon->adjust();
         }
+    }
 
-        std::shared_ptr<slipway::daemon> GetDaemon()
+    bool Init()
+    {
+        try
         {
-            static std::shared_ptr<slipway::daemon> s_client;
-            if (s_client)
-                return s_client;
+            if (webpier::get_module_path(WEBPIER_MODULE) != wxStandardPaths::Get().GetExecutablePath().ToStdWstring())
+                throw std::runtime_error(_("wrong module path"));
 
-            auto home = GetHome().ToStdString(wxGet_wxConvUTF8());
-            return s_client = slipway::create_client(home);
+            InitContext();
+
+            std::cout << "The WebPier is launched for " + g_context->pier() << " at " << g_context->home() << std::endl;
+
+            return true;
         }
+        catch (const std::exception& ex)
+        {
+            CMessageDialog dialog(nullptr, _("Can't start the WebPier: ") + ex.what(), wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
+            dialog.ShowModal();
+        }
+        return false;
     }
 
     namespace Context
@@ -151,18 +151,17 @@ namespace WebPier
                     Obscure
                 };
 
-                auto context = GetContext();
                 if (IsExport())
                 {
                     if (!m_origin.name.empty())
-                        context->del_export_service(m_origin.name);
-                    context->add_export_service(actual);
+                        g_context->del_export_service(m_origin.name);
+                    g_context->add_export_service(actual);
                 }
                 else
                 {
                     if (!m_origin.name.empty() && !m_origin.pier.empty())
-                        context->del_import_service(m_origin.pier, m_origin.name);
-                    context->add_import_service(actual);
+                        g_context->del_import_service(m_origin.pier, m_origin.name);
+                    g_context->add_import_service(actual);
                 }
                 m_origin = actual;
 
@@ -179,16 +178,15 @@ namespace WebPier
 
             void Purge() noexcept(false) override
             {
-                auto context = GetContext();
                 if (IsExport())
                 {
                     if (!m_origin.name.empty())
-                        context->del_export_service(m_origin.name);
+                        g_context->del_export_service(m_origin.name);
                 }
                 else
                 {
                     if (!m_origin.name.empty() && !m_origin.pier.empty())
-                        context->del_import_service(m_origin.pier, m_origin.name);
+                        g_context->del_import_service(m_origin.pier, m_origin.name);
                 }
 
                 WebPier::Daemon::Handle handle{IsExport() ? Context::Pier() : Pier, Name};
@@ -318,7 +316,7 @@ namespace WebPier
                     Autostart
                 };
 
-                GetContext()->set_config(actual);
+                g_context->set_config(actual);
 
                 m_origin = actual;
             }
@@ -346,13 +344,13 @@ namespace WebPier
 
         wxString Pier() noexcept(false)
         {
-            return wxString::FromUTF8(GetContext()->pier());
+            return wxString::FromUTF8(g_context->pier());
         }
 
         ConfigPtr GetConfig() noexcept(false)
         {
             webpier::config config;
-            GetContext()->get_config(config);
+            g_context->get_config(config);
             return ConfigPtr(new ConfigImpl(config));
         }
 
@@ -360,7 +358,7 @@ namespace WebPier
         {
             ServiceList collection;
             std::vector<webpier::service> list;
-            GetContext()->get_export_services(list);
+            g_context->get_export_services(list);
             for (const auto& item : list)
             {
                 ServicePtr ptr(new ExportService(item));
@@ -373,7 +371,7 @@ namespace WebPier
         {
             ServiceList collection;
             std::vector<webpier::service> list;
-            GetContext()->get_import_services(list);
+            g_context->get_import_services(list);
             for (const auto& item : list)
             {
                 ServicePtr ptr(new ImportService(item));
@@ -387,7 +385,7 @@ namespace WebPier
         {
             wxArrayString array;
             std::vector<std::string> list;
-            GetContext()->get_piers(list);
+            g_context->get_piers(list);
             for (const auto& item : list)
                 array.Add(wxString::FromUTF8(item));
             return array;
@@ -398,7 +396,7 @@ namespace WebPier
             auto isUsedForRemote = [&]()
             {
                 std::vector<webpier::service> list;
-                GetContext()->get_import_services(list);
+                g_context->get_import_services(list);
                 auto iter = std::find_if(list.begin(), list.end(), [pier = id.ToStdString(wxGet_wxConvUTF8())](const auto& item)
                 {
                     return item.pier == pier;
@@ -409,7 +407,7 @@ namespace WebPier
             auto isUsedForLocal = [&]()
             {
                 std::vector<webpier::service> list;
-                GetContext()->get_export_services(list);
+                g_context->get_export_services(list);
                 auto iter = std::find_if(list.begin(), list.end(), [pier = id.ToStdString(wxGet_wxConvUTF8())](const auto& item)
                 {
                     return item.pier.find(pier) != std::string::npos;
@@ -427,22 +425,22 @@ namespace WebPier
 
         void AddPier(const wxString& id, const wxString& cert) noexcept(false)
         {
-            GetContext()->add_pier(id.ToStdString(wxGet_wxConvUTF8()), cert.ToStdString(wxGet_wxConvUTF8()));
+            g_context->add_pier(id.ToStdString(wxGet_wxConvUTF8()), cert.ToStdString(wxGet_wxConvUTF8()));
         }
 
         void DelPier(const wxString& id) noexcept(false)
         {
-            GetContext()->del_pier(id.ToStdString(wxGet_wxConvUTF8()));
+            g_context->del_pier(id.ToStdString(wxGet_wxConvUTF8()));
         }
 
         wxString GetCertificate(const wxString& id) noexcept(false)
         {
-            return GetContext()->get_certificate(id.ToStdString(wxGet_wxConvUTF8()));
+            return g_context->get_certificate(id.ToStdString(wxGet_wxConvUTF8()));
         }
 
         wxString GetFingerprint(const wxString& id) noexcept(false)
         {
-            return GetContext()->get_fingerprint(id.ToStdString(wxGet_wxConvUTF8()));
+            return g_context->get_fingerprint(id.ToStdString(wxGet_wxConvUTF8()));
         }
 
         void WriteOffer(const wxString& file, const Offer& offer) noexcept(false)
@@ -514,53 +512,45 @@ namespace WebPier
 
         void Unplug(const Handle& handle) noexcept(false)
         {
-            auto client = GetDaemon();
-            client->unplug(slipway::handle{ handle.Pier.ToStdString(wxGet_wxConvUTF8()), handle.Service.ToStdString(wxGet_wxConvUTF8()) });
+            g_daemon->unplug(slipway::handle{ handle.Pier.ToStdString(wxGet_wxConvUTF8()), handle.Service.ToStdString(wxGet_wxConvUTF8()) });
         }
 
         void Unplug() noexcept(false)
         {
-            auto client = GetDaemon();
-            client->unplug();
+            g_daemon->unplug();
         }
 
         void Engage(const Handle& handle) noexcept(false)
         {
-            auto client = GetDaemon();
-            client->engage(Convert(handle));
+            g_daemon->engage(Convert(handle));
         }
 
         void Adjust(const Handle& handle) noexcept(false)
         {
-            auto client = GetDaemon();
-            client->adjust(Convert(handle));
+            g_daemon->adjust(Convert(handle));
         }
 
         void Engage() noexcept(false)
         {
-            auto client = GetDaemon();
-            client->engage();
+            g_daemon->engage();
         }
 
         void Adjust() noexcept(false)
         {
-            auto client = GetDaemon();
-            client->adjust();
+            g_daemon->adjust();
         }
 
         Health Status(const Handle& handle) noexcept(false)
         {
-            auto client = GetDaemon();
             slipway::health result;
-            client->status(Convert(handle), result);
+            g_daemon->status(Convert(handle), result);
             return Convert(result);
         }
 
         wxVector<Health> Status() noexcept(false)
         {
-            auto client = GetDaemon();
             std::vector<slipway::health> result;
-            client->status(result);
+            g_daemon->status(result);
 
             wxVector<Health> ret;
             for (const auto& item : result)
@@ -571,17 +561,15 @@ namespace WebPier
 
         Report Review(const Handle& handle) noexcept(false)
         {
-            auto client = GetDaemon();
             slipway::report result;
-            client->review(slipway::handle{ handle.Pier.ToStdString(wxGet_wxConvUTF8()), handle.Service.ToStdString(wxGet_wxConvUTF8()) }, result);
+            g_daemon->review(slipway::handle{ handle.Pier.ToStdString(wxGet_wxConvUTF8()), handle.Service.ToStdString(wxGet_wxConvUTF8()) }, result);
             return Convert(result);
         }
 
         wxVector<Report> Review() noexcept(false)
         {
-            auto client = GetDaemon();
             std::vector<slipway::report> result;
-            client->review(result);
+            g_daemon->review(result);
 
             wxVector<Report> ret;
             for (const auto& item : result)

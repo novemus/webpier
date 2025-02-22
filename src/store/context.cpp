@@ -259,6 +259,11 @@ namespace webpier
                 return m_config.pier;
             }
 
+            std::string home() const noexcept(true) override
+            {
+                return m_guard.home().u8string();
+            }
+
             void get_config(config& info) const noexcept(true) override
             {
                 info = m_config; 
