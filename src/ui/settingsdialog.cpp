@@ -62,6 +62,7 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, wxWindow* p
 
     m_daemonCtrl = new wxCheckBox( basicPanel, wxID_ANY, _("Run the daemon at system startup"), wxDefaultPosition, wxDefaultSize, 0 );
     m_daemonCtrl->SetValue(config->Autostart);
+    m_daemonCtrl->Disable();
     basicSizer->Add( m_daemonCtrl, 0, wxALL, 5 );
 
     basicPanel->SetSizer( basicSizer );

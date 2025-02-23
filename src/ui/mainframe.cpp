@@ -9,15 +9,15 @@
 #include <wx/stdpaths.h>
 #include <wx/notifmsg.h>
 
-const wxBitmap& GetStatusBitmap(WebPier::Daemon::Health::Status state)
+const wxBitmap& GetStatusBitmap(WebPier::Backend::Health::Status state)
 {
     switch(state)
     {
-        case WebPier::Daemon::Health::Asleep:
+        case WebPier::Backend::Health::Asleep:
             return ::GetGreyCircleImage();
-        case WebPier::Daemon::Health::Broken:
+        case WebPier::Backend::Health::Broken:
             return ::GetRedCircleImage();
-        case WebPier::Daemon::Health::Lonely:
+        case WebPier::Backend::Health::Lonely:
             return ::GetBlueCircleImage();
         default:
             return ::GetGreenCircleImage();
@@ -26,15 +26,15 @@ const wxBitmap& GetStatusBitmap(WebPier::Daemon::Health::Status state)
     return ::GetGreyCircleImage();
 }
 
-wxString Stringify(WebPier::Daemon::Health::Status state)
+wxString Stringify(WebPier::Backend::Health::Status state)
 {
     switch(state)
     {
-        case WebPier::Daemon::Health::Asleep:
+        case WebPier::Backend::Health::Asleep:
             return _("asleep");
-        case WebPier::Daemon::Health::Broken:
+        case WebPier::Backend::Health::Broken:
             return _("broken");
-        case WebPier::Daemon::Health::Lonely:
+        case WebPier::Backend::Health::Lonely:
             return _("lonely");
         default:
             return _("burden");
@@ -45,7 +45,7 @@ wxString Stringify(WebPier::Daemon::Health::Status state)
 
 wxVector<wxVariant> CMainFrame::makeListItem(WebPier::Context::ServicePtr service)
 {
-    WebPier::Daemon::Health::Status state = service->Autostart ? WebPier::Daemon::Health::Lonely : WebPier::Daemon::Health::Asleep;
+    WebPier::Backend::Health::Status state = service->Autostart ? WebPier::Backend::Health::Lonely : WebPier::Backend::Health::Asleep;
 
     auto owner = service->IsExport() ? WebPier::Context::Pier() : service->Pier;
     for (const auto& item : m_status)
@@ -170,12 +170,12 @@ CMainFrame::~CMainFrame()
     delete m_timer;
 }
 
-void CMainFrame::RefreshStatus(const WebPier::Daemon::Handle& handle)
+void CMainFrame::RefreshStatus(const WebPier::Backend::Handle& handle)
 {
-    WebPier::Daemon::Health health { handle, WebPier::Daemon::Health::Broken };
+    WebPier::Backend::Health health { handle, WebPier::Backend::Health::Broken };
     try
     {
-        health = WebPier::Daemon::Status(handle);
+        health = WebPier::Backend::Status(handle);
     }
     catch(const std::exception& ex)
     {
@@ -218,7 +218,7 @@ void CMainFrame::RefreshStatus()
 {
     try
     {
-        m_status = WebPier::Daemon::Status();
+        m_status = WebPier::Backend::Status();
     }
     catch(const std::exception& ex)
     {
@@ -236,7 +236,7 @@ void CMainFrame::RefreshStatus()
         wxString service = value.GetAny().As<wxDataViewIconText>().GetText();
         wxString pier = m_exportBtn->GetValue() ? WebPier::Context::Pier() : m_serviceList->GetTextValue(i, 1);
 
-        WebPier::Daemon::Health health = { {pier, service }, WebPier::Daemon::Health::Broken };
+        WebPier::Backend::Health health = { {pier, service }, WebPier::Backend::Health::Broken };
         for (const auto& item : m_status)
         {
             if (item.Pier == pier && item.Service == service)
@@ -294,16 +294,16 @@ void CMainFrame::onServiceItemContextMenu(wxDataViewEvent& event)
 
     try
     {
-        auto info = WebPier::Daemon::Review(WebPier::Daemon::Handle{pier, service});
+        auto info = WebPier::Backend::Review(WebPier::Backend::Handle{pier, service});
 
         wxMenu* menu = new wxMenu();
-        if (info.State == WebPier::Daemon::Health::Asleep)
+        if (info.State == WebPier::Backend::Health::Asleep)
         {
             menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [this, info](wxCommandEvent&)
             {
                 try
                 {
-                    WebPier::Daemon::Engage(info);
+                    WebPier::Backend::Engage(info);
                 }
                 catch(const std::exception& ex)
                 {
@@ -320,7 +320,7 @@ void CMainFrame::onServiceItemContextMenu(wxDataViewEvent& event)
             {
                 try
                 {
-                    WebPier::Daemon::Unplug(info);
+                    WebPier::Backend::Unplug(info);
                 }
                 catch(const std::exception& ex)
                 {
@@ -330,7 +330,7 @@ void CMainFrame::onServiceItemContextMenu(wxDataViewEvent& event)
                 RefreshStatus(info);
             }, menu->Append(wxID_ANY, _("&Unplug"))->GetId());
 
-            if (info.State == WebPier::Daemon::Health::Burden || !info.Tunnels.empty())
+            if (info.State == WebPier::Backend::Health::Burden || !info.Tunnels.empty())
             {
                 wxMenu* tunnels = new wxMenu();
                 for (auto& tunnel : info.Tunnels)

@@ -102,7 +102,7 @@ namespace WebPier
         void ReadOffer(const wxString& file, Offer& offer) noexcept(false);
     }
 
-    namespace Daemon
+    namespace Backend
     {
         struct Handle
         {

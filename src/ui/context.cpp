@@ -18,7 +18,7 @@ namespace WebPier
     namespace
     {
         std::shared_ptr<webpier::context> g_context;
-        std::shared_ptr<slipway::daemon> g_daemon;
+        std::shared_ptr<slipway::backend> g_backend;
 
         std::string GetHome()
         {
@@ -57,56 +57,35 @@ namespace WebPier
                 g_context->set_config(config);
             }
 
-            auto RunDaemon = [&]()
+            if (!config.autostart)
             {
     #ifdef WIN32
-                static boost::process::child s_daemon(webpier::get_module_path(SLIPWAY_MODULE), home, boost::process::windows::hide);
+                static boost::process::child s_server(webpier::get_module_path(SLIPWAY_MODULE), home, boost::process::windows::hide);
     #else
-                static boost::process::child s_daemon(webpier::get_module_path(SLIPWAY_MODULE), home);
+                static boost::process::child s_server(webpier::get_module_path(SLIPWAY_MODULE), home);
     #endif
-                if (!s_daemon.running())
+                if (!s_server.running())
                 {
-                    s_daemon.join();
-                    throw webpier::usage_error("Can't start session daemon");
+                    s_server.join();
+                    throw webpier::usage_error("Can't start backend");
                 }
 
                 static wxTimer s_timer;
 
                 s_timer.Bind(wxEVT_TIMER, [&](wxTimerEvent&)
                 {
-                    if (s_daemon.running())
-                        s_daemon.detach();
+                    if (s_server.running())
+                        s_server.detach();
                     else
-                        s_daemon.join();
+                        s_server.join();
                     s_timer.Unlink();
                 }, s_timer.GetId());
 
                 s_timer.Start(5000, true);
-            };
-
-            try
-            {
-                if (!config.autostart)
-                    RunDaemon();
-
-                g_daemon = slipway::create_client(g_context->home());
-                g_daemon->adjust();
             }
-            catch (const std::exception& ex)
-            {
-                if (config.autostart)
-                {
-                    CMessageDialog dialog(nullptr, _("Failed to initialize the client for the system session daemon. ") + ex.what() + _("\n\nDo you want to run a user session daemon?"), wxDEFAULT_DIALOG_STYLE | wxICON_QUESTION);
-                    if (dialog.ShowModal() == wxID_YES)
-                    {
-                        RunDaemon();
-                        g_daemon = slipway::create_client(g_context->home());
-                        g_daemon->adjust();
-                        return;
-                    }
-                }
-                throw;
-            }
+
+            g_backend = slipway::connect_backend(g_context->home());
+            g_backend->adjust();
         }
     }
 
@@ -186,10 +165,10 @@ namespace WebPier
                 }
                 m_origin = actual;
 
-                WebPier::Daemon::Handle handle{IsExport() ? Context::Pier() : Pier, Name};
+                WebPier::Backend::Handle handle{IsExport() ? Context::Pier() : Pier, Name};
                 try
                 {
-                    WebPier::Daemon::Adjust(handle);
+                    WebPier::Backend::Adjust(handle);
                 }
                 catch(const std::exception& ex)
                 {
@@ -210,10 +189,10 @@ namespace WebPier
                         g_context->del_import_service(m_origin.pier, m_origin.name);
                 }
 
-                WebPier::Daemon::Handle handle{IsExport() ? Context::Pier() : Pier, Name};
+                WebPier::Backend::Handle handle{IsExport() ? Context::Pier() : Pier, Name};
                 try
                 {
-                    WebPier::Daemon::Adjust(handle);
+                    WebPier::Backend::Adjust(handle);
                 }
                 catch(const std::exception& ex)
                 {
@@ -505,7 +484,7 @@ namespace WebPier
         }
     }
 
-    namespace Daemon
+    namespace Backend
     {
         Health Convert(const slipway::health& val)
         {
@@ -533,45 +512,45 @@ namespace WebPier
 
         void Unplug(const Handle& handle) noexcept(false)
         {
-            g_daemon->unplug(slipway::handle{ handle.Pier.ToStdString(wxGet_wxConvUTF8()), handle.Service.ToStdString(wxGet_wxConvUTF8()) });
+            g_backend->unplug(slipway::handle{ handle.Pier.ToStdString(wxGet_wxConvUTF8()), handle.Service.ToStdString(wxGet_wxConvUTF8()) });
         }
 
         void Unplug() noexcept(false)
         {
-            g_daemon->unplug();
+            g_backend->unplug();
         }
 
         void Engage(const Handle& handle) noexcept(false)
         {
-            g_daemon->engage(Convert(handle));
+            g_backend->engage(Convert(handle));
         }
 
         void Adjust(const Handle& handle) noexcept(false)
         {
-            g_daemon->adjust(Convert(handle));
+            g_backend->adjust(Convert(handle));
         }
 
         void Engage() noexcept(false)
         {
-            g_daemon->engage();
+            g_backend->engage();
         }
 
         void Adjust() noexcept(false)
         {
-            g_daemon->adjust();
+            g_backend->adjust();
         }
 
         Health Status(const Handle& handle) noexcept(false)
         {
             slipway::health result;
-            g_daemon->status(Convert(handle), result);
+            g_backend->status(Convert(handle), result);
             return Convert(result);
         }
 
         wxVector<Health> Status() noexcept(false)
         {
             std::vector<slipway::health> result;
-            g_daemon->status(result);
+            g_backend->status(result);
 
             wxVector<Health> ret;
             for (const auto& item : result)
@@ -583,14 +562,14 @@ namespace WebPier
         Report Review(const Handle& handle) noexcept(false)
         {
             slipway::report result;
-            g_daemon->review(slipway::handle{ handle.Pier.ToStdString(wxGet_wxConvUTF8()), handle.Service.ToStdString(wxGet_wxConvUTF8()) }, result);
+            g_backend->review(slipway::handle{ handle.Pier.ToStdString(wxGet_wxConvUTF8()), handle.Service.ToStdString(wxGet_wxConvUTF8()) }, result);
             return Convert(result);
         }
 
         wxVector<Report> Review() noexcept(false)
         {
             std::vector<slipway::report> result;
-            g_daemon->review(result);
+            g_backend->review(result);
 
             wxVector<Report> ret;
             for (const auto& item : result)

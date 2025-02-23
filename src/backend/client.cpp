@@ -9,7 +9,7 @@ namespace slipway
     {
         constexpr const char* jack_file_name = "slipway.jack";
 
-        class client : public daemon
+        class client : public backend
         {
             boost::asio::io_context m_io;
             boost::asio::local::stream_protocol::socket m_socket;
@@ -79,7 +79,7 @@ namespace slipway
                 });
 
                 if (!response.ok())
-                    throw task_error("The daemon reported the error \'" + std::get<std::string>(response.payload) + "\'");
+                    throw task_error("The server reported the error \'" + std::get<std::string>(response.payload) + "\'");
 
                 return std::get<result>(response.payload);
             }
@@ -181,7 +181,7 @@ namespace slipway
         };
     }
 
-    std::shared_ptr<daemon> create_client(const std::string& home) noexcept(false)
+    std::shared_ptr<backend> connect_backend(const std::string& home) noexcept(false)
     {
         return std::make_shared<client>(home);
     }

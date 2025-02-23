@@ -296,6 +296,7 @@ namespace webpier
                     {
                         std::filesystem::create_directories(cert.parent_path());
                         generate_x509_pair(cert, key, info.pier);
+                        std::filesystem::permissions(key, std::filesystem::perms::owner_read|std::filesystem::perms::owner_write, std::filesystem::perm_options::replace);
                     }
 
                     save_config();

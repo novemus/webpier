@@ -128,21 +128,21 @@ protected:
         try
         {
             auto pier = WebPier::Context::Pier();
-            auto status = WebPier::Daemon::Status();
+            auto status = WebPier::Backend::Status();
 
             for (const auto& item : status)
             {
                 wxMenu* menu = item.Pier == pier ? exports : imports;
                 wxMenuItem* check = menu->AppendCheckItem(wxID_ANY, item.Pier + wxT(":") + item.Service);
 
-                if (item.State == WebPier::Daemon::Health::Asleep)
+                if (item.State == WebPier::Backend::Health::Asleep)
                 {
                     check->Check(false);
                     menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [this, item](wxCommandEvent&)
                     {
                         try
                         {
-                            WebPier::Daemon::Engage(item);
+                            WebPier::Backend::Engage(item);
                         }
                         catch(const std::exception& ex)
                         {
@@ -160,7 +160,7 @@ protected:
                     {
                         try
                         {
-                            WebPier::Daemon::Unplug(item);
+                            WebPier::Backend::Unplug(item);
                         }
                         catch(const std::exception& ex)
                         {
@@ -188,7 +188,7 @@ protected:
         {
             try
             {
-                WebPier::Daemon::Unplug();
+                WebPier::Backend::Unplug();
             }
             catch(const std::exception& ex)
             {
@@ -202,7 +202,7 @@ protected:
         {
             try
             {
-                WebPier::Daemon::Engage();
+                WebPier::Backend::Engage();
             }
             catch(const std::exception& ex)
             {

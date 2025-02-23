@@ -41,7 +41,7 @@ class CMainFrame : public wxFrame
     WebPier::Context::ConfigPtr m_config;
     WebPier::Context::ServiceList m_export;
     WebPier::Context::ServiceList m_import;
-    wxVector<WebPier::Daemon::Health> m_status;
+    wxVector<WebPier::Backend::Health> m_status;
 
 protected:
 
@@ -68,5 +68,5 @@ public:
 
     void Populate();
     void RefreshStatus();
-    void RefreshStatus(const WebPier::Daemon::Handle& handle);
+    void RefreshStatus(const WebPier::Backend::Handle& handle);
 };
