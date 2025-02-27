@@ -1,0 +1,5 @@
+IDI_ICON    ICON    "../assets/webpier.ico"
+IDB_RED     RCDATA  "../assets/red.png"
+IDB_GREEN   RCDATA  "../assets/green.png"
+IDB_BLUE    RCDATA  "../assets/blue.png"
+IDB_GREY    RCDATA  "../assets/grey.png"

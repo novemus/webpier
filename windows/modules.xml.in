@@ -1,0 +1,13 @@
+<CPackWiXPatch>
+	<CPackWiXFragment Id="CM_C_binary_files">
+		<Component Id="webpier_module_reg" Guid="*" Directory="INSTALL_ROOT">
+			<RegistryValue Root="HKLM" Key="Software\WebPier" Name="webpier" Type="string" Value="[INSTALL_ROOT]@WEBPIER_INSTALL_BINDIR@\$<TARGET_FILE_NAME:@WEBPIER@>" KeyPath="yes"/>
+		</Component>
+		<Component Id="slipway_module_reg" Guid="*" Directory="INSTALL_ROOT">
+			<RegistryValue Root="HKLM" Key="Software\WebPier" Name="slipway" Type="string" Value="[INSTALL_ROOT]@WEBPIER_INSTALL_BINDIR@\$<TARGET_FILE_NAME:@SLIPWAY@>" KeyPath="yes"/>
+		</Component>
+		<Component Id="carrier_module_reg" Guid="*" Directory="INSTALL_ROOT">
+			<RegistryValue Root="HKLM" Key="Software\WebPier" Name="carrier" Type="string" Value="[INSTALL_ROOT]@WEBPIER_INSTALL_BINDIR@\$<TARGET_FILE_NAME:@CARRIER@>" KeyPath="yes"/>
+		</Component>
+	</CPackWiXFragment>
+</CPackWiXPatch>

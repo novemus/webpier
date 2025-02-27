@@ -5,43 +5,66 @@
 #include <wx/stdpaths.h>
 #include <ui/mainframe.h>
 #include <wx/mstream.h>
+
+#ifndef WIN32
 #include <assets/logo.h>
 #include <assets/blue.h>
 #include <assets/green.h>
 #include <assets/red.h>
 #include <assets/grey.h>
+#endif
 
 const wxIconBundle& GetAppIconBundle()
 {
+#ifdef WIN32
+    static const wxIconBundle s_icon(wxT("IDI_ICON"), (WXHINSTANCE)0);
+#else
     static const wxIconBundle s_icon([]()
     {
         wxMemoryInputStream stream(webpier_logo_ico, sizeof(webpier_logo_ico));
         return wxIconBundle(stream);
     }());
+#endif
     return s_icon;
 }
 
 const wxBitmap& GetBlueCircleImage()
 {
+#ifdef WIN32
+    static const wxBitmap s_image(wxBITMAP_PNG(IDB_BLUE));
+#else
     static const wxBitmap s_image(wxBITMAP_PNG_FROM_DATA(blue_circle));
+#endif
     return s_image;
 }
 
 const wxBitmap& GetGreenCircleImage()
 {
+#ifdef WIN32
+    static const wxBitmap s_image(wxBITMAP_PNG(IDB_GREEN));
+#else
     static const wxBitmap s_image(wxBITMAP_PNG_FROM_DATA(green_circle));
+#endif
     return s_image;
 }
 
 const wxBitmap& GetRedCircleImage()
 {
+#ifdef WIN32
+    static const wxBitmap s_image(wxBITMAP_PNG(IDB_RED));
+#else
     static const wxBitmap s_image(wxBITMAP_PNG_FROM_DATA(red_circle));
+#endif
     return s_image;
 }
 
 const wxBitmap& GetGreyCircleImage()
 {
+#ifdef WIN32
+    static const wxBitmap s_image(wxBITMAP_PNG(IDB_GREY));
+#else
     static const wxBitmap s_image(wxBITMAP_PNG_FROM_DATA(grey_circle));
+#endif
     return s_image;
 }
 

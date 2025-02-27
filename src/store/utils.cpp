@@ -11,29 +11,14 @@
 #include <boost/process.hpp>
 #include <boost/program_options.hpp>
 
-#ifdef WINDOWS
-    #include <shlwapi.h>
-    #pragma comment(lib,"shlwapi.lib")
+#ifdef WIN32
+#include <windows.h>
 #elif __APPLE__
-    #include <sysdir.h>
+#include <sysdir.h>
 #endif
 
 namespace webpier
 {
-    boost::filesystem::path get_config_file()
-    {
-#ifdef WINDOWS
-        LPSTR path[MAX_PATH];
-        if (E_FAIL == ::SHGetFolderPathA(nullptr, CSIDL_COMMON_APPDATA, nullptr, SHGFP_TYPE_DEFAULT, path))
-            throw std::runtime_error("can't get common app directory");
-        return boost::filesystem::path(path) / "webpier/webpier.conf";
-#elif __APPLE__
-        return boost::filesystem::path("/Library/Preferences/webpier/webpier.conf");
-#else
-        return boost::filesystem::path("/etc/webpier/webpier.conf");
-#endif
-    }
-
     std::string get_openssl_error()
     {
         std::string ssl = ERR_error_string(ERR_get_error(), NULL);
@@ -206,12 +191,35 @@ namespace webpier
         if (file.has_parent_path())
             return file;
 
+#ifdef WIN32
+        std::string value;
+        value.resize(0xFFF);
+
+        DWORD size = 0;
+        auto rc = RegGetValueA(HKEY_LOCAL_MACHINE, "Software\\WebPier", module.c_str(), RRF_RT_REG_SZ, nullptr, static_cast<void*>(value.data()), &size);
+
+        if (rc == ERROR_MORE_DATA)
+        {
+            value.resize(size / sizeof(char));
+            rc = RegGetValueA(HKEY_LOCAL_MACHINE, "Software\\WebPier", module.c_str(), RRF_RT_REG_SZ, nullptr, static_cast<void*>(value.data()), &size);
+        }
+
+        if (rc != ERROR_SUCCESS)
+            throw std::runtime_error("can't find module path: " + std::to_string(rc));
+
+        value.resize(size / sizeof(char) - 1);
+        return boost::filesystem::path(value);
+#else
         static std::once_flag s_flag;
         static boost::program_options::variables_map s_config;
 
         std::call_once(s_flag, [&]()
-        { 
-            auto path = get_config_file();
+        {
+#if __APPLE__
+            boost::filesystem::path path("/Library/Preferences/webpier/webpier.conf");
+#else
+            boost::filesystem::path path("/etc/webpier/webpier.conf");
+#endif
             if (!boost::filesystem::exists(path))
                 throw std::runtime_error("no configuration file");
 
@@ -228,5 +236,6 @@ namespace webpier
             throw std::runtime_error("unknown module name");
 
         return boost::filesystem::path(s_config[module].as<std::string>());
+#endif
     }
 }

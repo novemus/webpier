@@ -221,6 +221,24 @@
             },
             "packageName": "webpier",
             "packageDirectory": ".."
+        },
+        {
+            "name": "windows-msi",
+            "displayName": "webpier (MSI)",
+            "configurePreset": "windows-static-release",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            },
+            "generators": [
+                "WIX"
+            ],
+            "configurations": [
+                "Release"
+            ],
+            "packageName": "WebPier",
+            "packageDirectory": ".."
         }
     ]
 }

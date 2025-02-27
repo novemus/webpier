@@ -113,11 +113,13 @@ add_executable(${PROJECT_NAME}::${CARRIER} ALIAS ${CARRIER})
 
 include(cmake/utils.cmake)
 
-convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/webpier.ico ${CMAKE_CURRENT_BINARY_DIR}/assets/logo.h webpier_logo_ico)
-convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/blue.png ${CMAKE_CURRENT_BINARY_DIR}/assets/blue.h blue_circle_png)
-convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/red.png ${CMAKE_CURRENT_BINARY_DIR}/assets/red.h red_circle_png)
-convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/green.png ${CMAKE_CURRENT_BINARY_DIR}/assets/green.h green_circle_png)
-convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/grey.png ${CMAKE_CURRENT_BINARY_DIR}/assets/grey.h grey_circle_png)
+if(NOT WIN32)
+    convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/webpier.ico ${CMAKE_CURRENT_BINARY_DIR}/assets/logo.h webpier_logo_ico)
+    convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/blue.png ${CMAKE_CURRENT_BINARY_DIR}/assets/blue.h blue_circle_png)
+    convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/red.png ${CMAKE_CURRENT_BINARY_DIR}/assets/red.h red_circle_png)
+    convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/green.png ${CMAKE_CURRENT_BINARY_DIR}/assets/green.h green_circle_png)
+    convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/grey.png ${CMAKE_CURRENT_BINARY_DIR}/assets/grey.h grey_circle_png)
+endif()
 
 target_sources(${WEBPIER} PRIVATE
     src/ui/main.cpp
@@ -145,6 +147,7 @@ target_sources(${WEBPIER} PRIVATE
     src/backend/message.cpp
     src/backend/client.h
     src/backend/client.cpp
+    "$<$<BOOL:${WIN32}>:windows/webpier.rc>"
     )
 
 target_sources(${SLIPWAY} PRIVATE
@@ -196,7 +199,7 @@ if(NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMAKE_SKIP_INSTALL_RULES)
     include(GNUInstallDirs)
 
     if(MSVC)
-        set(WEBPIER_INSTALL_BINDIR ${PROJECT_NAME}-${${PROJECT_NAME}_VERSION}/${CMAKE_INSTALL_BINDIR})
+        set(WEBPIER_INSTALL_BINDIR ${CMAKE_INSTALL_BINDIR})
     else()
         if(CMAKE_INSTALL_PREFIX MATCHES "^(/usr)|(/usr/local)$")
             set(WEBPIER_INSTALL_BINDIR ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME})
@@ -268,6 +271,20 @@ if(NOT WEBPIER_SKIP_PACKAGE_RULES AND NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMA
             install(FILES ${CMAKE_CURRENT_BINARY_DIR}/webpier.conf DESTINATION /etc/webpier COMPONENT debian_files)
             install(FILES ${CMAKE_CURRENT_BINARY_DIR}/webpier.desktop DESTINATION /usr/share/applications COMPONENT debian_files)
         endif()
+    elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Windows")
+
+        configure_and_generate(${CMAKE_CURRENT_SOURCE_DIR}/windows/modules.xml.in ${CMAKE_CURRENT_BINARY_DIR}/modules.xml)
+
+        set(CPACK_PACKAGE_DESCRIPTION "The program for forwarding TCP services through NAT")
+        set(CPACK_WIX_UPGRADE_GUID "FC2671A8-8282-4170-B58F-9FE385A18EAC")
+        set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
+        set(CPACK_WIX_PRODUCT_ICON "${CMAKE_CURRENT_SOURCE_DIR}/assets/webpier.ico")
+        set(CPACK_WIX_PATCH_FILE "${CMAKE_CURRENT_BINARY_DIR}/modules.xml")
+        set(CPACK_COMPONENTS_ALL binary_files)
+        set(CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE ON)
+        set(CPACK_COMPONENT_BINARY_FILES_HIDDEN ON)
+
+        set_property(INSTALL "${WEBPIER_INSTALL_BINDIR}/$<TARGET_FILE_NAME:${WEBPIER}>" PROPERTY CPACK_START_MENU_SHORTCUTS "WebPier")
     endif()
 
     include(CPack)
