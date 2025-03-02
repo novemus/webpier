@@ -205,7 +205,7 @@ namespace slipway
 
                 bool broken() const
                 {
-                    return !m_task.valid() || m_task.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready;
+                    return m_task.valid() && m_task.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready && !m_task.get().empty();
                 }
 
                 std::string error() const
@@ -253,7 +253,7 @@ namespace slipway
 
                         proc.async_wait([this, serv, id = proc.id()](const boost::system::error_code& ec, int code)
                         {
-                            _inf_ << "joined process " << id << " with status " << code << " " << ec.message();
+                            _inf_ << "joined process " << id << " with exit code " << code << " (" << ec.message() << ")";
 
                             auto range = m_pool.equal_range(serv.pier);
                             m_pool.erase(std::find_if(range.first, range.second, [id](const auto& item)
@@ -315,7 +315,7 @@ namespace slipway
 
                         proc.async_wait([this, conf, serv, id = proc.id()](const boost::system::error_code& ec, int code)
                         {
-                            _inf_ << "joined process " << id << " with status " << code << " " << ec.message();
+                            _inf_ << "joined process " << id << " with exit code " << code << " (" << ec.message() << ")";
 
                             auto range = m_pool.equal_range(serv.pier);
                             m_pool.erase(std::find_if(range.first, range.second, [id](const auto& item)
@@ -323,14 +323,17 @@ namespace slipway
                                 return item.second.id() == id;
                             }));
 
-                            m_timer.expires_from_now(get_retry_timeout());
-                            m_timer.async_wait([this, conf, serv](const boost::system::error_code& ec)
+                            if (m_work)
                             {
-                                if (ec)
-                                    return;
+                                m_timer.expires_from_now(get_retry_timeout());
+                                m_timer.async_wait([this, conf, serv](const boost::system::error_code& ec)
+                                {
+                                    if (ec)
+                                        return;
 
-                                start_import(conf, serv);
-                            });
+                                    start_import(conf, serv);
+                                });
+                            }
                         });
 
                         m_pool.emplace(serv.pier, std::move(proc));
@@ -341,17 +344,20 @@ namespace slipway
                 {
                     _err_ << "import " << serv.name << " from " << serv.pier << " failed: " << error;
 
-                    m_io.post([this, conf, serv]()
+                    if (m_work)
                     {
-                        m_timer.expires_from_now(get_retry_timeout());
-                        m_timer.async_wait([this, conf, serv](const boost::system::error_code& ec)
+                        m_io.post([this, conf, serv]()
                         {
-                            if (ec)
-                                return;
+                            m_timer.expires_from_now(get_retry_timeout());
+                            m_timer.async_wait([this, conf, serv](const boost::system::error_code& ec)
+                            {
+                                if (ec)
+                                    return;
 
-                            start_import(conf, serv);
+                                start_import(conf, serv);
+                            });
                         });
-                    });
+                    }
 
                     throw std::runtime_error(error);
                 };
