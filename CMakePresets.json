@@ -50,7 +50,8 @@
             "inherits": "config-base",
             "cacheVariables": {
                 "BUILD_SHARED_LIBS": "OFF",
-                "CMAKE_BUILD_TYPE": "Release"
+                "CMAKE_BUILD_TYPE": "Release",
+                "CPACK_PACKAGING_INSTALL_PREFIX": "/usr"
             },
             "condition": {
                 "type": "equals",
@@ -75,7 +76,8 @@
             "inherits": "config-base",
             "cacheVariables": {
                 "BUILD_SHARED_LIBS": "ON",
-                "CMAKE_BUILD_TYPE": "Release"
+                "CMAKE_BUILD_TYPE": "Release",
+                "CPACK_PACKAGING_INSTALL_PREFIX": "/usr"
             },
             "condition": {
                 "type": "equals",
@@ -209,8 +211,8 @@
             "variables": {
                 "CPACK_DEBIAN_PACKAGE_RELEASE": "beta",
                 "CPACK_DEBIAN_PACKAGE_MAINTAINER": "Community",
-                "CPACK_PACKAGE_DESCRIPTION_SUMMARY": "An app for forwarding TCP services through NAT",
-                "CPACK_PACKAGE_DESCRIPTION": "The 'webpier' app allows to export/import non-public TCP services\nvia an UDP tunnel without using third-party relay servers.",
+                "CPACK_PACKAGE_DESCRIPTION_SUMMARY": "An application for forwarding TCP services through NAT",
+                "CPACK_PACKAGE_DESCRIPTION": "The 'webpier' app allows to forward non-public TCP services\nvia an UDP tunnel without using third-party relay servers.",
                 "CPACK_COMPONENTS_ALL": "binary_files;debian_files",
                 "CPACK_DEBIAN_FILE_NAME": "DEB-DEFAULT",
                 "CPACK_DEBIAN_PACKAGE_SHLIBDEPS": "ON",
