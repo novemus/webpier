@@ -355,7 +355,7 @@ void CMainFrame::onStatusTimeout(wxTimerEvent& event)
     if (m_config)
     {
         RefreshStatus();
-        m_timer->Start(30000, true);
+        m_timer->Start(15000, true);
     }
     else 
     {
