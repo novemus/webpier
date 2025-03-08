@@ -57,32 +57,29 @@ namespace WebPier
                 g_context->set_config(config);
             }
 
-            if (!config.autostart)
+#ifdef WIN32
+            static boost::process::child s_server(webpier::get_module_path(SLIPWAY_MODULE), home, boost::process::windows::hide);
+#else
+            static boost::process::child s_server(webpier::get_module_path(SLIPWAY_MODULE), home);
+#endif
+            if (!s_server.running())
             {
-    #ifdef WIN32
-                static boost::process::child s_server(webpier::get_module_path(SLIPWAY_MODULE), home, boost::process::windows::hide);
-    #else
-                static boost::process::child s_server(webpier::get_module_path(SLIPWAY_MODULE), home);
-    #endif
-                if (!s_server.running())
-                {
-                    s_server.join();
-                    throw webpier::usage_error("Can't start backend");
-                }
-
-                static wxTimer s_timer;
-
-                s_timer.Bind(wxEVT_TIMER, [&](wxTimerEvent&)
-                {
-                    if (s_server.running())
-                        s_server.detach();
-                    else
-                        s_server.join();
-                    s_timer.Unlink();
-                }, s_timer.GetId());
-
-                s_timer.Start(5000, true);
+                s_server.join();
+                throw webpier::usage_error("Can't start backend");
             }
+
+            static wxTimer s_timer;
+
+            s_timer.Bind(wxEVT_TIMER, [&](wxTimerEvent&)
+            {
+                if (s_server.running())
+                    s_server.detach();
+                else
+                    s_server.join();
+                s_timer.Unlink();
+            }, s_timer.GetId());
+
+            s_timer.Start(5000, true);
 
             g_backend = slipway::connect_backend(g_context->home());
             g_backend->adjust();
