@@ -60,9 +60,9 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, wxWindow* p
     idSizer->Add( idGridSizer, 1, wxALL|wxEXPAND, 5 );
     basicSizer->Add( idSizer, 0, wxEXPAND|wxALL, 10 );
 
-    m_daemonCtrl = new wxCheckBox( basicPanel, wxID_ANY, _("Run the daemon at system startup"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_daemonCtrl = new wxCheckBox( basicPanel, wxID_ANY, _("Run the backend at system startup"), wxDefaultPosition, wxDefaultSize, 0 );
     m_daemonCtrl->SetValue(config->Autostart);
-    m_daemonCtrl->Disable();
+    m_daemonCtrl->SetToolTip( _("The change will take effect after the system is restarted") );
     basicSizer->Add( m_daemonCtrl, 0, wxALL, 5 );
 
     basicPanel->SetSizer( basicSizer );

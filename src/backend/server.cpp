@@ -230,7 +230,7 @@ namespace slipway
     
                     auto on_accept = [this, conf, serv](const identity&, const identity& peer, const udp::endpoint& bind, const reference& self, const reference& mate)
                     {
-                        boost::process::v2::process proc(m_io, webpier::get_module_path(CARRIER_MODULE), 
+                        boost::process::v2::process proc(m_io, webpier::get_module_path(CARRIER_MODULE).u8string(), 
                         {
                             "--purpose=export", 
                             "--service=" + serv.address,
@@ -289,7 +289,7 @@ namespace slipway
     
                     auto on_invite = [this, conf, serv](const identity&, const identity&, const udp::endpoint& bind, const reference& self, const reference& mate)
                     {
-                        boost::process::v2::process proc(m_io, webpier::get_module_path(CARRIER_MODULE), 
+                        boost::process::v2::process proc(m_io, webpier::get_module_path(CARRIER_MODULE).u8string(), 
                         {
                             "--purpose=import", 
                             "--service=" + serv.address,

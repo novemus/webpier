@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_CASE(client)
 
     BOOST_REQUIRE_NO_THROW(context->add_export_service(foo));
 
-    boost::process::child server(webpier::get_module_path(SLIPWAY_MODULE), home.string());
+    boost::process::child server(webpier::get_module_path(SLIPWAY_MODULE).u8string(), home.string());
     auto client = slipway::connect_backend(home.string());
 
     slipway::handle foo_handle { host , "foo" };

@@ -185,9 +185,9 @@ namespace webpier
         return out.str();
     }
 
-    boost::filesystem::path get_module_path(const std::string& module) noexcept(false)
+    std::filesystem::path get_module_path(const std::string& module) noexcept(false)
     {
-        boost::filesystem::path file(module);
+        std::filesystem::path file(module);
         if (file.has_parent_path())
             return file;
 
@@ -208,7 +208,7 @@ namespace webpier
             throw std::runtime_error("can't find module path: " + std::to_string(rc));
 
         value.resize(size / sizeof(char) - 1);
-        return boost::filesystem::path(value);
+        return std::filesystem::path(value);
 #else
         static std::once_flag s_flag;
         static boost::program_options::variables_map s_config;
@@ -216,9 +216,9 @@ namespace webpier
         std::call_once(s_flag, [&]()
         {
 #if __APPLE__
-            boost::filesystem::path path("/Library/Preferences/webpier/webpier.conf");
+            std::filesystem::path path("/Library/Preferences/webpier/webpier.conf");
 #else
-            boost::filesystem::path path("/etc/webpier/webpier.conf");
+            std::filesystem::path path("/etc/webpier/webpier.conf");
 #endif
             if (!boost::filesystem::exists(path))
                 throw std::runtime_error("no configuration file");
@@ -229,13 +229,102 @@ namespace webpier
                 (SLIPWAY_MODULE, boost::program_options::value<std::string>())
                 (CARRIER_MODULE, boost::program_options::value<std::string>());
 
-            boost::program_options::store(boost::program_options::parse_config_file<char>(path.string().c_str(), options, true), s_config);
+            boost::program_options::store(boost::program_options::parse_config_file<char>(path.u8string().c_str(), options, true), s_config);
         });
 
         if (!s_config.count(module))
             throw std::runtime_error("unknown module name");
 
-        return boost::filesystem::path(s_config[module].as<std::string>());
+        return std::filesystem::path(s_config[module].as<std::string>());
+#endif
+    }
+
+    bool verify_autostart(const std::string& command) noexcept(false)
+    {
+#ifndef WIN32
+        std::string record = "@reboot " + command;
+
+        boost::process::ipstream is;
+        boost::process::child read("crontab -l", boost::process::std_out > is);
+        std::string line;
+
+        bool seen = false;
+        while (read.running() && std::getline(is, line))
+        {
+            if (line == record)
+                seen = true;
+        }
+
+        read.wait();
+        return seen;
+#else
+        return false;
+#endif
+    }
+
+    void assign_autostart(const std::string& command) noexcept(false)
+    {
+#ifndef WIN32
+        std::string record = "@reboot " + command;
+
+        boost::process::ipstream is;
+        boost::process::opstream os;
+
+        boost::process::child read("crontab -l", boost::process::std_out > is);
+        std::string line;
+
+        bool seen = false;
+        while (read.running() && std::getline(is, line))
+        {
+            os << line << std::endl;
+
+            if (line == record)
+                seen = true;
+        }
+
+        read.wait();
+
+        if (!seen)
+        {
+            os << record << std::endl;
+
+            boost::process::child write("crontab", boost::process::std_in < os);
+            os.pipe().close();
+            write.wait();
+        }
+#else
+#endif
+    }
+
+    void revoke_autostart(const std::string& command) noexcept(false)
+    {
+#ifndef WIN32
+        std::string record = "@reboot " + command;
+
+        boost::process::ipstream is;
+        boost::process::opstream os;
+
+        boost::process::child read("crontab -l", boost::process::std_out > is);
+        std::string line;
+
+        bool seen = false;
+        while (read.running() && std::getline(is, line))
+        {
+            if (line != record)
+                os << line << std::endl;
+            else
+                seen = true;
+        }
+
+        read.wait();
+
+        if (seen)
+        {
+            boost::process::child write("crontab", boost::process::std_in < os);
+            os.pipe().close();
+            write.wait();
+        }
+#else
 #endif
     }
 }

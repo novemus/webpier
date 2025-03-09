@@ -4,7 +4,6 @@
 #include <string>
 #include <stdexcept>
 #include <filesystem>
-#include <boost/filesystem.hpp>
 
 namespace webpier
 {
@@ -15,5 +14,8 @@ namespace webpier
     std::string load_x509_cert(const std::filesystem::path& cert_path) noexcept(false);
     std::string get_x509_public_sha1(const std::filesystem::path& cert_path) noexcept(false);
     std::string to_hexadecimal(const void* data, size_t len) noexcept(true);
-    boost::filesystem::path get_module_path(const std::string& module) noexcept(false);
+    std::filesystem::path get_module_path(const std::string& module) noexcept(false);
+    bool verify_autostart(const std::string& command) noexcept(false);
+    void assign_autostart(const std::string& command) noexcept(false);
+    void revoke_autostart(const std::string& command) noexcept(false);
 }

@@ -115,7 +115,6 @@ namespace webpier
                         m_config.email.cert = doc.get<std::string>("email.cert", "");
                         m_config.email.key = doc.get<std::string>("email.key", "");
                         m_config.email.ca = doc.get<std::string>("email.ca", "");
-                        m_config.autostart = doc.get<bool>("autostart", false);
                     }
                 }
                 catch(const std::exception& e)
@@ -146,7 +145,6 @@ namespace webpier
                     doc.put("emailer.cert", m_config.email.cert);
                     doc.put("emailer.key", m_config.email.key);
                     doc.put("emailer.ca", m_config.email.ca);
-                    doc.put("autostart", m_config.autostart);
                     boost::property_tree::write_json(file.string(), doc);
                 }
                 catch(const std::exception& e)

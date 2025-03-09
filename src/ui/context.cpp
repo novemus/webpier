@@ -58,9 +58,9 @@ namespace WebPier
             }
 
 #ifdef WIN32
-            static boost::process::child s_server(webpier::get_module_path(SLIPWAY_MODULE), home, boost::process::windows::hide);
+            static boost::process::child s_server(webpier::get_module_path(SLIPWAY_MODULE).u8string(), home, boost::process::windows::hide);
 #else
-            static boost::process::child s_server(webpier::get_module_path(SLIPWAY_MODULE), home);
+            static boost::process::child s_server(webpier::get_module_path(SLIPWAY_MODULE).u8string(), home);
 #endif
             if (!s_server.running())
             {
@@ -290,6 +290,16 @@ namespace WebPier
             ConfigImpl(webpier::config origin = {})
                 : m_origin(origin)
             {
+                try
+                {
+                    std::string command = wxString::Format(wxT("\"%s\" \"%s\" daemon"), webpier::get_module_path(SLIPWAY_MODULE).u8string(), g_context->home()).ToStdString();
+                    m_origin.autostart = webpier::verify_autostart(command);
+                }
+                catch (const std::exception& ex) 
+                {
+                    std::cerr << "Can't verify the backend startup status" << std::endl;
+                }
+
                 Revert();
             }
 
@@ -312,6 +322,22 @@ namespace WebPier
                     },
                     Autostart
                 };
+
+                if (Autostart != m_origin.autostart)
+                {
+                    try 
+                    {
+                        std::string command = wxString::Format(wxT("\"%s\" \"%s\" daemon"), webpier::get_module_path(SLIPWAY_MODULE).u8string(), g_context->home()).ToStdString();
+                        actual.autostart ? webpier::assign_autostart(command) : webpier::cancel_autostart(command);
+                    }
+                    catch (const std::exception& ex)
+                    {
+                        CMessageDialog dialog(nullptr, _("Can't change the backend startup mode. ") + ex.what(), wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
+                        dialog.ShowModal();
+
+                        actual.autostart = m_origin.autostart;
+                    }
+                }
 
                 g_context->set_config(actual);
 
