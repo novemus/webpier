@@ -71,7 +71,6 @@ namespace WebPier
             wxString EmailX509Cert;
             wxString EmailX509Key;
             wxString EmailX509Ca;
-            bool Autostart;
 
             virtual ~Config() {}
             virtual void Store() noexcept(false) = 0;
@@ -145,5 +144,8 @@ namespace WebPier
         void Adjust(const Handle& handle) noexcept(false);
         Health Status(const Handle& handle) noexcept(false);
         Report Review(const Handle& handle) noexcept(false);
+        void AssignAutostart() noexcept(false);
+        void RevokeAutostart() noexcept(false);
+        bool VerifyAutostart() noexcept(false);
     }
 }

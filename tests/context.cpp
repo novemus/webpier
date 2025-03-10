@@ -61,7 +61,6 @@ BOOST_AUTO_TEST_CASE(context)
     BOOST_CHECK_EQUAL(out.email.cert, in.email.cert);
     BOOST_CHECK_EQUAL(out.email.key, in.email.key);
     BOOST_CHECK_EQUAL(out.email.ca, in.email.ca);
-    BOOST_CHECK_EQUAL(out.autostart, in.autostart);
 
     webpier::service service {
         "foo",

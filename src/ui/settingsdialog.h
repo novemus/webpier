@@ -45,8 +45,10 @@ class CSettingsDialog : public wxDialog
     wxButton* m_cancelBtn;
     wxButton* m_okBtn;
     WebPier::Context::ConfigPtr m_config;
+    bool m_daemon;
 
-    void onOkButtonClick( wxCommandEvent& event );
+    void onOkButtonClick(wxCommandEvent& event);
+    void onDaemonCheckBoxClick(wxCommandEvent& event);
 
 public:
 

@@ -4,9 +4,14 @@
 #include <wx/msgdlg.h> 
 #include <wx/valnum.h>
 
+#ifdef WIN32
+#include <Shlobj_core.h>
+#endif
+
 CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style)
     : wxDialog(parent, id, title, pos, size, style)
     , m_config(config)
+    , m_daemon(WebPier::Backend::VerifyAutostart())
 {
     static constexpr const char* FORBIDDEN_PATH_CHARS = "*/\\<>:|? ";
 
@@ -61,7 +66,7 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, wxWindow* p
     basicSizer->Add( idSizer, 0, wxEXPAND|wxALL, 10 );
 
     m_daemonCtrl = new wxCheckBox( basicPanel, wxID_ANY, _("Run the backend at system startup"), wxDefaultPosition, wxDefaultSize, 0 );
-    m_daemonCtrl->SetValue(config->Autostart);
+    m_daemonCtrl->SetValue(m_daemon);
     m_daemonCtrl->SetToolTip( _("The change will take effect after the system is restarted") );
     basicSizer->Add( m_daemonCtrl, 0, wxALL, 5 );
 
@@ -247,6 +252,10 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, wxWindow* p
     this->Centre( wxBOTH );
 
     m_okBtn->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CSettingsDialog::onOkButtonClick ), NULL, this );
+
+#ifdef WIN32
+    m_daemonCtrl->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( CSettingsDialog::onDaemonCheckBoxClick ), NULL, this );
+#endif
 }
 
 CSettingsDialog::~CSettingsDialog()
@@ -254,6 +263,20 @@ CSettingsDialog::~CSettingsDialog()
     delete m_notebook;
     delete m_cancelBtn;
     delete m_okBtn;
+}
+
+void CSettingsDialog::onDaemonCheckBoxClick(wxCommandEvent& event)
+{
+#ifdef WIN32
+    if (!IsUserAnAdmin())
+    {
+        CMessageDialog dialog(this, _("Run the WebPier with administrator privileges to change this option."), wxDEFAULT_DIALOG_STYLE|wxICON_WARNING);
+        dialog.ShowModal();
+        m_daemonCtrl->SetValue(m_daemon);
+        return;
+    }
+#endif
+    event.Skip();
 }
 
 void CSettingsDialog::onOkButtonClick(wxCommandEvent& event)
@@ -274,8 +297,22 @@ void CSettingsDialog::onOkButtonClick(wxCommandEvent& event)
         dialog.ShowModal();
     }
 
+    if (m_daemon != m_daemonCtrl->GetValue())
+    {
+        try
+        {
+            m_daemon 
+                ? WebPier::Backend::RevokeAutostart() 
+                : WebPier::Backend::AssignAutostart();
+        }
+        catch (const std::exception& ex) 
+        {
+            CMessageDialog dialog(nullptr, _("Can't change the backend startup mode. ") + ex.what(), wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
+            dialog.ShowModal();
+        }
+    }
+
     m_config->Pier = pier;
-    m_config->Autostart = m_daemonCtrl->GetValue();
 
     m_config->StunServer = m_stunCtrl->GetValue();
     uint32_t hops = m_config->PunchHops;

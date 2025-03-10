@@ -65,7 +65,6 @@ namespace webpier
         puncher nat;
         dhtnode dht;
         emailer email;
-        bool autostart = false;
     };
 
     struct service

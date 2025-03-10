@@ -10,9 +10,12 @@
 #include <openssl/err.h>
 #include <boost/process.hpp>
 #include <boost/program_options.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #ifdef WIN32
 #include <windows.h>
+#include <boost/process/windows.hpp>
 #elif __APPLE__
 #include <sysdir.h>
 #endif
@@ -205,7 +208,7 @@ namespace webpier
         }
 
         if (rc != ERROR_SUCCESS)
-            throw std::runtime_error("can't find module path: " + std::to_string(rc));
+            throw std::runtime_error("Can't find module path: error=" + webpier::hexify(rc));
 
         value.resize(size / sizeof(char) - 1);
         return std::filesystem::path(value);
@@ -239,10 +242,10 @@ namespace webpier
 #endif
     }
 
-    bool verify_autostart(const std::string& command) noexcept(false)
+    bool verify_autostart(const std::filesystem::path& exec, const std::string& args) noexcept(false)
     {
 #ifndef WIN32
-        std::string record = "@reboot " + command;
+        std::string record = "@reboot " + exec.string() + " " + args;
 
         boost::process::ipstream is;
         boost::process::child read("crontab -l", boost::process::std_out > is);
@@ -258,14 +261,18 @@ namespace webpier
         read.wait();
         return seen;
 #else
-        return false;
+        std::string id = std::to_string(std::hash<std::string>()(exec.u8string() + args));
+        boost::process::child proc("schtasks /Query /TN \"\\WebPier\\Task #" + id + "\" /HRESULT", boost::process::windows::hide);
+        proc.wait();
+
+        return proc.exit_code() == ERROR_SUCCESS;
 #endif
     }
 
-    void assign_autostart(const std::string& command) noexcept(false)
+    void assign_autostart(const std::filesystem::path& exec, const std::string& args) noexcept(false)
     {
 #ifndef WIN32
-        std::string record = "@reboot " + command;
+        std::string record = "@reboot " + exec.string() + " " + args;
 
         boost::process::ipstream is;
         boost::process::opstream os;
@@ -293,13 +300,30 @@ namespace webpier
             write.wait();
         }
 #else
+        std::string id = std::to_string(std::hash<std::string>()(exec.u8string() + args));
+        std::filesystem::path xml = std::filesystem::temp_directory_path() / (id + ".xml");
+
+        boost::property_tree::ptree doc;
+        boost::property_tree::read_xml(get_module_path(TASKXML_MODULE).u8string(), doc);
+        doc.put("Task.RegistrationInfo.Date", webpier::make_timestamp("%Y-%m-%dT%H:%M:%S"));
+        doc.put("Task.Actions.Exec.Command", exec.u8string());
+        doc.put("Task.Actions.Exec.Arguments", args);
+
+        boost::property_tree::xml_writer_settings<boost::property_tree::ptree::key_type> settings('\t', 1, "UTF-16");
+        boost::property_tree::write_xml(xml.u8string(), doc, std::locale(), settings);
+
+        boost::process::child proc("schtasks /Create /TN \"\\WebPier\\Task #" + id + "\" /XML \"" + xml.u8string() + "\" /F /HRESULT", boost::process::windows::hide);
+        proc.wait();
+
+        if (proc.exit_code() != ERROR_SUCCESS)
+            throw std::runtime_error("Can't create the task: error=" + webpier::hexify(proc.exit_code()));
 #endif
     }
 
-    void revoke_autostart(const std::string& command) noexcept(false)
+    void revoke_autostart(const std::filesystem::path& exec, const std::string& args) noexcept(false)
     {
 #ifndef WIN32
-        std::string record = "@reboot " + command;
+        std::string record = "@reboot " + exec.string() + " " + args;
 
         boost::process::ipstream is;
         boost::process::opstream os;
@@ -325,6 +349,12 @@ namespace webpier
             write.wait();
         }
 #else
+        std::string id = std::to_string(std::hash<std::string>()(exec.u8string() + args));
+        boost::process::child proc("schtasks /Delete /TN \"\\WebPier\\Task #" + id + "\" /F /HRESULT", boost::process::windows::hide);
+        proc.wait();
+
+        if (proc.exit_code() != ERROR_SUCCESS)
+            throw std::runtime_error("Can't revoke the task: error=" + webpier::hexify(proc.exit_code()));
 #endif
     }
 }

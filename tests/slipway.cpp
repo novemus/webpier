@@ -23,7 +23,7 @@ BOOST_AUTO_TEST_CASE(client)
     BOOST_SCOPE_EXIT_END
 
     auto context = webpier::open_context(home.string());
-    webpier::config conf { host, repo.string(), { home.string(), webpier::journal::trace }, {}, { webpier::default_dht_bootstrap, webpier::default_dht_port, 0 }, {}, false };
+    webpier::config conf { host, repo.string(), { home.string(), webpier::journal::trace }, {}, { webpier::default_dht_bootstrap, webpier::default_dht_port, 0 }, {} };
 
     BOOST_REQUIRE_NO_THROW(context->set_config(conf));
     BOOST_REQUIRE_NO_THROW(context->add_pier(peer, webpier::load_x509_cert(home / repo / host / "cert.crt")));

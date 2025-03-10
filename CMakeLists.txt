@@ -189,7 +189,11 @@ target_compile_definitions(${SLIPWAY} PRIVATE WEBPIER_MODULE="${WEBPIER_MODULE}"
 target_compile_definitions(${CARRIER} PRIVATE WEBPIER_MODULE="${WEBPIER_MODULE}" SLIPWAY_MODULE="${SLIPWAY_MODULE}" CARRIER_MODULE="${CARRIER_MODULE}")
 
 if(MSVC)
-    add_definitions(-D_WIN32_WINNT=0x0601)
+    set(TASKXML_MODULE "$<IF:$<BOOL:${TASKXML_MODULE}>,${TASKXML_MODULE},taskxml>")
+    target_compile_definitions(${WEBPIER} PRIVATE TASKXML_MODULE="${TASKXML_MODULE}")
+    target_compile_definitions(${SLIPWAY} PRIVATE TASKXML_MODULE="${TASKXML_MODULE}")
+    target_compile_definitions(${CARRIER} PRIVATE TASKXML_MODULE="${TASKXML_MODULE}")
+    add_definitions(-D_WIN32_WINNT=0x0601 -D_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING)
 endif()
 
 ########## install ##########
@@ -229,6 +233,10 @@ if(NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMAKE_SKIP_INSTALL_RULES)
     target_compile_definitions(${WEBPIER_TEST} PRIVATE WEBPIER_MODULE="${WEBPIER_MODULE}" SLIPWAY_MODULE="${SLIPWAY_MODULE}" CARRIER_MODULE="${CARRIER_MODULE}")
     target_include_directories(${WEBPIER_TEST} PRIVATE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>" ${Boost_INCLUDE_DIRS})
     set_target_properties(${WEBPIER_TEST} PROPERTIES DEBUG_POSTFIX "d")
+    
+    if(MSVC)
+        target_compile_definitions(${WEBPIER_TEST} PRIVATE TASKXML_MODULE="${TASKXML_MODULE}")
+    endif()
 
     enable_testing()
     add_test(NAME ${WEBPIER_TEST} COMMAND ${WEBPIER_TEST} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
@@ -261,6 +269,8 @@ if(NOT WEBPIER_SKIP_PACKAGE_RULES AND NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMA
         endif()
     elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Windows")
 
+        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/windows/task.xml DESTINATION ${CMAKE_INSTALL_DATADIR} COMPONENT windows_files)
+
         configure_and_generate(${CMAKE_CURRENT_SOURCE_DIR}/windows/modules.xml.in ${CMAKE_CURRENT_BINARY_DIR}/modules.xml)
 
         set(CPACK_PACKAGE_DESCRIPTION "The program for forwarding TCP services through NAT")
@@ -269,7 +279,7 @@ if(NOT WEBPIER_SKIP_PACKAGE_RULES AND NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMA
         set(CPACK_WIX_PRODUCT_ICON "${CMAKE_CURRENT_SOURCE_DIR}/assets/webpier.ico")
         set(CPACK_WIX_EXTENSIONS "WixFirewallExtension")
         set(CPACK_WIX_PATCH_FILE "${CMAKE_CURRENT_BINARY_DIR}/modules.xml")
-        set(CPACK_COMPONENTS_ALL binary_files)
+        set(CPACK_COMPONENTS_ALL "binary_files;windows_files")
         set(CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE ON)
         set(CPACK_COMPONENT_BINARY_FILES_HIDDEN ON)
 

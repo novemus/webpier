@@ -141,12 +141,7 @@ namespace slipway
             if (folder.empty())
                 return "";
 
-            std::time_t time = std::time(0);
-            std::tm tm = *std::localtime(&time);
-            std::stringstream ss;
-            ss << folder << std::put_time(&tm, "/slipway.%Y%m%d.log");
-
-            return ss.str();
+            return folder + webpier::make_timestamp("/slipway.%Y%m%d.log");
         }
 
         class controller : public std::enable_shared_from_this<controller>
@@ -459,8 +454,7 @@ namespace slipway
                         doc.get<std::string>("email.cert", ""),
                         doc.get<std::string>("email.key", ""),
                         doc.get<std::string>("email.ca", "")
-                    },
-                    doc.get<bool>("autostart")
+                    }
                 };
             }
 

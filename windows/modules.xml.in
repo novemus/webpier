@@ -9,6 +9,9 @@
 		<Component Id="carrier_module_reg" Guid="*" Directory="INSTALL_ROOT">
 			<RegistryValue Root="HKLM" Key="Software\WebPier" Name="carrier" Type="string" Value="[INSTALL_ROOT]@CMAKE_INSTALL_BINDIR@\$<TARGET_FILE_NAME:@CARRIER@>" KeyPath="yes"/>
 		</Component>
+		<Component Id="carrier_module_reg" Guid="*" Directory="INSTALL_ROOT">
+			<RegistryValue Root="HKLM" Key="Software\WebPier" Name="taskxml" Type="string" Value="[INSTALL_ROOT]@CMAKE_INSTALL_DATADIR@\task.xml>" KeyPath="yes"/>
+		</Component>
 	</CPackWiXFragment>
 	<CPackWiXFragment Id="CM_FP_binary_files.bin.carrier.exe">
 		<fire:FirewallException xmlns:fire="http://schemas.microsoft.com/wix/FirewallExtension" Id="FWX1" Name="carrier.exe (WebPier)" Scope="any" />

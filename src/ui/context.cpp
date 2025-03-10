@@ -290,16 +290,6 @@ namespace WebPier
             ConfigImpl(webpier::config origin = {})
                 : m_origin(origin)
             {
-                try
-                {
-                    std::string command = wxString::Format(wxT("\"%s\" \"%s\" daemon"), webpier::get_module_path(SLIPWAY_MODULE).u8string(), g_context->home()).ToStdString();
-                    m_origin.autostart = webpier::verify_autostart(command);
-                }
-                catch (const std::exception& ex) 
-                {
-                    std::cerr << "Can't verify the backend startup status" << std::endl;
-                }
-
                 Revert();
             }
 
@@ -319,25 +309,8 @@ namespace WebPier
                         EmailX509Cert.ToStdString(wxGet_wxConvUTF8()), 
                         EmailX509Key.ToStdString(wxGet_wxConvUTF8()), 
                         EmailX509Ca.ToStdString(wxGet_wxConvUTF8()) 
-                    },
-                    Autostart
+                    }
                 };
-
-                if (Autostart != m_origin.autostart)
-                {
-                    try 
-                    {
-                        std::string command = wxString::Format(wxT("\"%s\" \"%s\" daemon"), webpier::get_module_path(SLIPWAY_MODULE).u8string(), g_context->home()).ToStdString();
-                        actual.autostart ? webpier::assign_autostart(command) : webpier::cancel_autostart(command);
-                    }
-                    catch (const std::exception& ex)
-                    {
-                        CMessageDialog dialog(nullptr, _("Can't change the backend startup mode. ") + ex.what(), wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
-                        dialog.ShowModal();
-
-                        actual.autostart = m_origin.autostart;
-                    }
-                }
 
                 g_context->set_config(actual);
 
@@ -361,7 +334,6 @@ namespace WebPier
                 EmailX509Cert = wxString::FromUTF8(m_origin.email.cert);
                 EmailX509Key = wxString::FromUTF8(m_origin.email.key);
                 EmailX509Ca = wxString::FromUTF8(m_origin.email.ca);
-                Autostart = m_origin.autostart;
             }
         };
 
@@ -531,6 +503,29 @@ namespace WebPier
         slipway::handle Convert(const Handle& val)
         {
             return slipway::handle{ val.Pier.ToStdString(wxGet_wxConvUTF8()), val.Service.ToStdString(wxGet_wxConvUTF8()) };
+        }
+
+        void AssignAutostart()
+        {
+            webpier::assign_autostart(webpier::get_module_path(SLIPWAY_MODULE), "\"" + g_context->home() + "\" daemon");
+        }
+
+        void RevokeAutostart()
+        {
+            webpier::revoke_autostart(webpier::get_module_path(SLIPWAY_MODULE), "\"" + g_context->home() + "\" daemon");
+        }
+
+        bool VerifyAutostart()
+        {
+            try
+            {
+                return webpier::verify_autostart(webpier::get_module_path(SLIPWAY_MODULE), "\"" + g_context->home() + "\" daemon");
+            }
+            catch (const std::exception& ex) 
+            {
+                std::cerr << "Can't verify the backend startup status" << std::endl;
+            }
+            return false;
         }
 
         void Unplug(const Handle& handle) noexcept(false)
