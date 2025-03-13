@@ -225,7 +225,7 @@ namespace slipway
     
                     auto on_accept = [this, conf, serv](const identity&, const identity& peer, const udp::endpoint& bind, const reference& self, const reference& mate)
                     {
-                        boost::process::v2::process proc(m_io, webpier::get_module_path(CARRIER_MODULE).u8string(), 
+                        boost::process::v2::process proc(m_io, webpier::get_module_path(CARRIER_MODULE).string(), 
                         {
                             "--purpose=export", 
                             "--service=" + serv.address,
@@ -284,7 +284,7 @@ namespace slipway
     
                     auto on_invite = [this, conf, serv](const identity&, const identity&, const udp::endpoint& bind, const reference& self, const reference& mate)
                     {
-                        boost::process::v2::process proc(m_io, webpier::get_module_path(CARRIER_MODULE).u8string(), 
+                        boost::process::v2::process proc(m_io, webpier::get_module_path(CARRIER_MODULE).string(), 
                         {
                             "--purpose=import", 
                             "--service=" + serv.address,
@@ -428,32 +428,32 @@ namespace slipway
                 boost::property_tree::ptree doc;
                 boost::property_tree::read_json(file.string(), doc);
 
-                auto folder = doc.get<std::string>("log.folder", "");
+                auto folder = webpier::utf8_to_locale(doc.get<std::string>("log.folder", ""));
                 auto level = webpier::journal::severity(doc.get<int>("log.level", webpier::journal::info));
 
                 wormhole::log::set(wormhole::log::severity(level), make_log_path(folder));
 
                 return webpier::config {
-                    doc.get<std::string>("pier"),
-                    doc.get<std::string>("repo"),
+                    webpier::utf8_to_locale(doc.get<std::string>("pier")),
+                    webpier::utf8_to_locale(doc.get<std::string>("repo")),
                     webpier::journal { folder, level },
                     webpier::puncher {
-                        doc.get<std::string>("nat.stun"),
+                        webpier::utf8_to_locale(doc.get<std::string>("nat.stun")),
                         doc.get<uint8_t>("nat.hops", 7)
                     },
                     webpier::dhtnode {
-                        doc.get<std::string>("dht.bootstrap", ""),
+                        webpier::utf8_to_locale(doc.get<std::string>("dht.bootstrap", "")),
                         doc.get<uint16_t>("dht.port", 0),
                         0
                     },
                     webpier::emailer {
-                        doc.get<std::string>("email.smtp", ""),
-                        doc.get<std::string>("email.imap", ""),
-                        doc.get<std::string>("email.login", ""),
-                        doc.get<std::string>("email.password", ""),
-                        doc.get<std::string>("email.cert", ""),
-                        doc.get<std::string>("email.key", ""),
-                        doc.get<std::string>("email.ca", "")
+                        webpier::utf8_to_locale(doc.get<std::string>("email.smtp", "")),
+                        webpier::utf8_to_locale(doc.get<std::string>("email.imap", "")),
+                        webpier::utf8_to_locale(doc.get<std::string>("email.login", "")),
+                        webpier::utf8_to_locale(doc.get<std::string>("email.password", "")),
+                        webpier::utf8_to_locale(doc.get<std::string>("email.cert", "")),
+                        webpier::utf8_to_locale(doc.get<std::string>("email.key", "")),
+                        webpier::utf8_to_locale(doc.get<std::string>("email.ca", ""))
                     }
                 };
             }
@@ -469,14 +469,14 @@ namespace slipway
                     boost::property_tree::ptree array;
                     for (auto& item : doc.get_child("services", array))
                     {
-                        if (item.second.get<std::string>("name") == id.service)
+                        if (webpier::utf8_to_locale(item.second.get<std::string>("name")) == id.service)
                         {
                             return webpier::service {
-                                item.second.get<std::string>("name"),
-                                item.second.get<std::string>("pier"),
-                                item.second.get<std::string>("address"),
-                                item.second.get<std::string>("gateway", webpier::default_gateway),
-                                item.second.get<std::string>("rendezvous", ""),
+                                webpier::utf8_to_locale(item.second.get<std::string>("name")),
+                                webpier::utf8_to_locale(item.second.get<std::string>("pier")),
+                                webpier::utf8_to_locale(item.second.get<std::string>("address")),
+                                webpier::utf8_to_locale(item.second.get<std::string>("gateway", webpier::default_gateway)),
+                                webpier::utf8_to_locale(item.second.get<std::string>("rendezvous", "")),
                                 item.second.get<bool>("autostart", false),
                                 item.second.get<bool>("obscure", true),
                             };
@@ -513,11 +513,11 @@ namespace slipway
                         for (auto& item : doc.get_child("services", array))
                         {
                             res[pier].emplace_back(webpier::service {
-                                item.second.get<std::string>("name"),
-                                item.second.get<std::string>("pier"),
-                                item.second.get<std::string>("address"),
-                                item.second.get<std::string>("gateway", webpier::default_gateway),
-                                item.second.get<std::string>("rendezvous", ""),
+                                webpier::utf8_to_locale(item.second.get<std::string>("name")),
+                                webpier::utf8_to_locale(item.second.get<std::string>("pier")),
+                                webpier::utf8_to_locale(item.second.get<std::string>("address")),
+                                webpier::utf8_to_locale(item.second.get<std::string>("gateway", webpier::default_gateway)),
+                                webpier::utf8_to_locale(item.second.get<std::string>("rendezvous", "")),
                                 item.second.get<bool>("autostart", false),
                                 item.second.get<bool>("obscure", true)
                             });
@@ -956,7 +956,7 @@ namespace slipway
                 , m_engine(io, socket.parent_path())
                 , m_score(steady ? 1 : 0)
             {
-                cleanup(socket.u8string());
+                cleanup(socket.string());
 
                 m_acceptor.bind(boost::asio::local::stream_protocol::endpoint(socket.u8string()));
                 m_acceptor.listen();
@@ -966,7 +966,7 @@ namespace slipway
 
             ~server()
             {
-                cleanup(m_acceptor.local_endpoint().path());
+                cleanup(webpier::utf8_to_locale(m_acceptor.local_endpoint().path()));
             }
         };
     }
@@ -1001,7 +1001,7 @@ int main(int argc, char* argv[])
         if (!std::filesystem::exists(locker))
             std::ofstream(locker).close();
 
-        boost::interprocess::file_lock guard(locker.u8string().c_str());
+        boost::interprocess::file_lock guard(locker.string().c_str());
         boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(guard, boost::interprocess::try_to_lock_type());
 
         if (!lock.owns())

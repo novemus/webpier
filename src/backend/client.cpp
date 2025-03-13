@@ -1,4 +1,5 @@
 #include <iostream>
+#include <filesystem>
 #include <boost/asio.hpp>
 #include <boost/asio/spawn.hpp>
 #include <backend/client.h>
@@ -86,14 +87,14 @@ namespace slipway
 
         public:
 
-            client(const std::string& home)
+            client(const std::filesystem::path& home)
                 : m_socket(m_io)
             {
                 execute([&](boost::asio::yield_context yield)
                 {
                     static constexpr const size_t MAX_ATTEMPTS = 5;
 
-                    auto socket = home + "/" + jack_file_name;
+                    auto socket = home / jack_file_name;
 
                     boost::system::error_code ec;
                     for(size_t i = 0; i < MAX_ATTEMPTS; ++i)
@@ -112,8 +113,7 @@ namespace slipway
                                 break;
                         }
  
-                        m_socket.async_connect(socket, yield[ec]);
-
+                        m_socket.async_connect(socket.u8string(), yield[ec]);
 #ifdef WIN32
                         if (ec.value() != WSAECONNREFUSED)
 #else
@@ -125,7 +125,7 @@ namespace slipway
                     }
 
                     if (ec)
-                        throw pipe_error("Can't connect to " + socket + " due the error \'" + ec.message() + "\'");
+                        throw pipe_error("Can't connect to " + socket.string() + " due the error \'" + ec.message() + "\'");
                 });
             }
 

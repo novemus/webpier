@@ -29,7 +29,7 @@ namespace WebPier
             if (!wxFileName::Exists(home) && !wxFileName::Mkdir(home))
                 throw webpier::usage_error("Wrong home path");
 
-            return home.ToStdString(wxGet_wxConvUTF8());
+            return home.ToStdString();
         }
 
         void InitContext()
@@ -46,7 +46,7 @@ namespace WebPier
                 CStartupDialog dialog(nullptr);
                 if (dialog.ShowModal() == wxID_OK)
                 {
-                    config.pier = dialog.GetIdentity().ToStdString(wxGet_wxConvUTF8());
+                    config.pier = dialog.GetIdentity().ToStdString();
                     config.repo = home + "/" + webpier::to_hexadecimal(config.pier.data(), config.pier.size());
                     config.log.folder = home + "/journal";
                 }
@@ -58,9 +58,9 @@ namespace WebPier
             }
 
 #ifdef WIN32
-            static boost::process::child s_server(webpier::get_module_path(SLIPWAY_MODULE).u8string(), home, boost::process::windows::hide);
+            static boost::process::child s_server(webpier::get_module_path(SLIPWAY_MODULE).string(), home, boost::process::windows::hide);
 #else
-            static boost::process::child s_server(webpier::get_module_path(SLIPWAY_MODULE).u8string(), home);
+            static boost::process::child s_server(webpier::get_module_path(SLIPWAY_MODULE).string(), home);
 #endif
             if (!s_server.running())
             {
@@ -139,11 +139,11 @@ namespace WebPier
                     return;
 
                 webpier::service actual {
-                    Name.ToStdString(wxGet_wxConvUTF8()),
-                    Pier.ToStdString(wxGet_wxConvUTF8()),
-                    Address.ToStdString(wxGet_wxConvUTF8()),
-                    Gateway.ToStdString(wxGet_wxConvUTF8()),
-                    Rendezvous.ToStdString(wxGet_wxConvUTF8()),
+                    Name.ToStdString(),
+                    Pier.ToStdString(),
+                    Address.ToStdString(),
+                    Gateway.ToStdString(),
+                    Rendezvous.ToStdString(),
                     Autostart,
                     Obscure
                 };
@@ -201,11 +201,11 @@ namespace WebPier
 
             void Revert() noexcept(true) override
             {
-                Name = wxString::FromUTF8(m_origin.name);
-                Pier = wxString::FromUTF8(m_origin.pier);
-                Address = wxString::FromUTF8(m_origin.address);
-                Gateway = wxString::FromUTF8(m_origin.gateway);
-                Rendezvous = wxString::FromUTF8(m_origin.rendezvous);
+                Name = m_origin.name;
+                Pier = m_origin.pier;
+                Address = m_origin.address;
+                Gateway = m_origin.gateway;
+                Rendezvous = m_origin.rendezvous;
                 Autostart = m_origin.autostart;
                 Obscure = m_origin.obscure;
             }
@@ -248,11 +248,11 @@ namespace WebPier
 
             bool IsDirty() const noexcept(true) override
             {
-                return Name.ToStdString(wxGet_wxConvUTF8()) != m_origin.name
-                    || Pier.ToStdString(wxGet_wxConvUTF8()) != m_origin.pier
-                    || Address.ToStdString(wxGet_wxConvUTF8()) != m_origin.address
-                    || Gateway.ToStdString(wxGet_wxConvUTF8()) != m_origin.gateway
-                    || Rendezvous.ToStdString(wxGet_wxConvUTF8()) != m_origin.rendezvous
+                return Name.ToStdString() != m_origin.name
+                    || Pier.ToStdString() != m_origin.pier
+                    || Address.ToStdString() != m_origin.address
+                    || Gateway.ToStdString() != m_origin.gateway
+                    || Rendezvous.ToStdString() != m_origin.rendezvous
                     || Autostart != m_origin.autostart
                     || Obscure != m_origin.obscure;
             }
@@ -296,19 +296,19 @@ namespace WebPier
             void Store() noexcept(false) override
             {
                 webpier::config actual {
-                    Pier.ToStdString(wxGet_wxConvUTF8()),
-                    Repo.ToStdString(wxGet_wxConvUTF8()),
-                    { LogFolder.ToStdString(wxGet_wxConvUTF8()), webpier::journal::severity(LogLevel) },
-                    { StunServer.ToStdString(wxGet_wxConvUTF8()), PunchHops },
-                    { DhtBootstrap.ToStdString(wxGet_wxConvUTF8()), DhtPort },
+                    Pier.ToStdString(),
+                    Repo.ToStdString(),
+                    { LogFolder.ToStdString(), webpier::journal::severity(LogLevel) },
+                    { StunServer.ToStdString(), PunchHops },
+                    { DhtBootstrap.ToStdString(), DhtPort },
                     { 
-                        SmtpServer.ToStdString(wxGet_wxConvUTF8()),
-                        ImapServer.ToStdString(wxGet_wxConvUTF8()),
-                        EmailLogin.ToStdString(wxGet_wxConvUTF8()),
-                        EmailPassword.ToStdString(wxGet_wxConvUTF8()), 
-                        EmailX509Cert.ToStdString(wxGet_wxConvUTF8()), 
-                        EmailX509Key.ToStdString(wxGet_wxConvUTF8()), 
-                        EmailX509Ca.ToStdString(wxGet_wxConvUTF8()) 
+                        SmtpServer.ToStdString(),
+                        ImapServer.ToStdString(),
+                        EmailLogin.ToStdString(),
+                        EmailPassword.ToStdString(), 
+                        EmailX509Cert.ToStdString(), 
+                        EmailX509Key.ToStdString(), 
+                        EmailX509Ca.ToStdString() 
                     }
                 };
 
@@ -319,27 +319,27 @@ namespace WebPier
 
             void Revert() noexcept(true) override
             {
-                Pier = wxString::FromUTF8(m_origin.pier);
-                Repo = wxString::FromUTF8(m_origin.repo);
-                LogFolder = wxString::FromUTF8(m_origin.log.folder);
+                Pier = m_origin.pier;
+                Repo = m_origin.repo;
+                LogFolder = m_origin.log.folder;
                 LogLevel = Logging(m_origin.log.level);
-                StunServer = wxString::FromUTF8(m_origin.nat.stun);
+                StunServer = m_origin.nat.stun;
                 PunchHops = m_origin.nat.hops;
-                DhtBootstrap = wxString::FromUTF8(m_origin.dht.bootstrap);
+                DhtBootstrap = m_origin.dht.bootstrap;
                 DhtPort = m_origin.dht.port;
-                SmtpServer = wxString::FromUTF8(m_origin.email.smtp);
-                ImapServer = wxString::FromUTF8(m_origin.email.imap);
-                EmailLogin = wxString::FromUTF8(m_origin.email.login);
-                EmailPassword = wxString::FromUTF8(m_origin.email.password);
-                EmailX509Cert = wxString::FromUTF8(m_origin.email.cert);
-                EmailX509Key = wxString::FromUTF8(m_origin.email.key);
-                EmailX509Ca = wxString::FromUTF8(m_origin.email.ca);
+                SmtpServer = m_origin.email.smtp;
+                ImapServer = m_origin.email.imap;
+                EmailLogin = m_origin.email.login;
+                EmailPassword = m_origin.email.password;
+                EmailX509Cert = m_origin.email.cert;
+                EmailX509Key = m_origin.email.key;
+                EmailX509Ca = m_origin.email.ca;
             }
         };
 
         wxString Pier() noexcept(false)
         {
-            return wxString::FromUTF8(g_context->pier());
+            return g_context->pier();
         }
 
         ConfigPtr GetConfig() noexcept(false)
@@ -382,7 +382,7 @@ namespace WebPier
             std::vector<std::string> list;
             g_context->get_piers(list);
             for (const auto& item : list)
-                array.Add(wxString::FromUTF8(item));
+                array.Add(item);
             return array;
         }
 
@@ -392,7 +392,7 @@ namespace WebPier
             {
                 std::vector<webpier::service> list;
                 g_context->get_import_services(list);
-                auto iter = std::find_if(list.begin(), list.end(), [pier = id.ToStdString(wxGet_wxConvUTF8())](const auto& item)
+                auto iter = std::find_if(list.begin(), list.end(), [pier = id.ToStdString()](const auto& item)
                 {
                     return item.pier == pier;
                 });
@@ -403,7 +403,7 @@ namespace WebPier
             {
                 std::vector<webpier::service> list;
                 g_context->get_export_services(list);
-                auto iter = std::find_if(list.begin(), list.end(), [pier = id.ToStdString(wxGet_wxConvUTF8())](const auto& item)
+                auto iter = std::find_if(list.begin(), list.end(), [pier = id.ToStdString()](const auto& item)
                 {
                     return item.pier.find(pier) != std::string::npos;
                 });
@@ -420,60 +420,60 @@ namespace WebPier
 
         void AddPier(const wxString& id, const wxString& cert) noexcept(false)
         {
-            g_context->add_pier(id.ToStdString(wxGet_wxConvUTF8()), cert.ToStdString(wxGet_wxConvUTF8()));
+            g_context->add_pier(id.ToStdString(), cert.ToStdString());
         }
 
         void DelPier(const wxString& id) noexcept(false)
         {
-            g_context->del_pier(id.ToStdString(wxGet_wxConvUTF8()));
+            g_context->del_pier(id.ToStdString());
         }
 
         wxString GetCertificate(const wxString& id) noexcept(false)
         {
-            return g_context->get_certificate(id.ToStdString(wxGet_wxConvUTF8()));
+            return g_context->get_certificate(id.ToStdString());
         }
 
         wxString GetFingerprint(const wxString& id) noexcept(false)
         {
-            return g_context->get_fingerprint(id.ToStdString(wxGet_wxConvUTF8()));
+            return g_context->get_fingerprint(id.ToStdString());
         }
 
         void WriteOffer(const wxString& file, const Offer& offer) noexcept(false)
         {
             boost::property_tree::ptree doc;
-            doc.put("pier", offer.Pier.ToStdString(wxGet_wxConvUTF8()));
-            doc.put("certificate", offer.Certificate.ToStdString(wxGet_wxConvUTF8()));
+            doc.put("pier", webpier::locale_to_utf8(offer.Pier.ToStdString()));
+            doc.put("certificate", webpier::locale_to_utf8(offer.Certificate.ToStdString()));
 
             boost::property_tree::ptree array;
             for (const auto& pair : offer.Services)
             {
                 boost::property_tree::ptree item;
-                item.put("name", pair.second->Name.ToStdString(wxGet_wxConvUTF8()));
+                item.put("name", webpier::locale_to_utf8(pair.second->Name.ToStdString()));
                 item.put("obscure", pair.second->Obscure);
-                item.put("rendezvous", pair.second->Rendezvous.ToStdString(wxGet_wxConvUTF8()));
+                item.put("rendezvous", webpier::locale_to_utf8(pair.second->Rendezvous.ToStdString()));
                 array.push_back(std::make_pair("", item));
             }
             doc.put_child("services", array);
 
-            boost::property_tree::write_json(file.ToStdString(wxGet_wxConvUTF8()), doc);
+            boost::property_tree::write_json(file.ToStdString(), doc);
         }
 
         void ReadOffer(const wxString& file, Offer& offer) noexcept(false)
         {
             boost::property_tree::ptree doc;
-            boost::property_tree::read_json(file.ToStdString(wxGet_wxConvUTF8()), doc);
+            boost::property_tree::read_json(file.ToStdString(), doc);
 
-            offer.Pier = wxString::FromUTF8(doc.get<std::string>("pier", ""));
-            offer.Certificate = wxString::FromUTF8(doc.get<std::string>("certificate", ""));
+            offer.Pier = webpier::utf8_to_locale(doc.get<std::string>("pier", ""));
+            offer.Certificate = webpier::utf8_to_locale(doc.get<std::string>("certificate", ""));
 
             boost::property_tree::ptree array;
             for (auto& item : doc.get_child("services", array))
             {
                 ServicePtr service(new ImportService());
-                service->Name = wxString::FromUTF8(item.second.get<std::string>("name"));
+                service->Name = webpier::utf8_to_locale(item.second.get<std::string>("name"));
                 service->Pier = offer.Pier;
                 service->Obscure = item.second.get<bool>("obscure");
-                service->Rendezvous = wxString::FromUTF8(item.second.get<std::string>("rendezvous", ""));
+                service->Rendezvous = webpier::utf8_to_locale(item.second.get<std::string>("rendezvous", ""));
                 offer.Services[wxUIntPtr(service.get())] = service;
             }
         }
@@ -502,7 +502,7 @@ namespace WebPier
 
         slipway::handle Convert(const Handle& val)
         {
-            return slipway::handle{ val.Pier.ToStdString(wxGet_wxConvUTF8()), val.Service.ToStdString(wxGet_wxConvUTF8()) };
+            return slipway::handle{ val.Pier.ToStdString(), val.Service.ToStdString() };
         }
 
         void AssignAutostart()
@@ -530,7 +530,7 @@ namespace WebPier
 
         void Unplug(const Handle& handle) noexcept(false)
         {
-            g_backend->unplug(slipway::handle{ handle.Pier.ToStdString(wxGet_wxConvUTF8()), handle.Service.ToStdString(wxGet_wxConvUTF8()) });
+            g_backend->unplug(slipway::handle{ handle.Pier.ToStdString(), handle.Service.ToStdString() });
         }
 
         void Unplug() noexcept(false)
@@ -580,7 +580,7 @@ namespace WebPier
         Report Review(const Handle& handle) noexcept(false)
         {
             slipway::report result;
-            g_backend->review(slipway::handle{ handle.Pier.ToStdString(wxGet_wxConvUTF8()), handle.Service.ToStdString(wxGet_wxConvUTF8()) }, result);
+            g_backend->review(slipway::handle{ handle.Pier.ToStdString(), handle.Service.ToStdString() }, result);
             return Convert(result);
         }
 

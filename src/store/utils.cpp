@@ -3,6 +3,8 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <cwchar>
+#include <codecvt>
 #include <openssl/x509v3.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
@@ -188,6 +190,60 @@ namespace webpier
         return out.str();
     }
 
+    std::string locale_to_utf8(const std::string& str) noexcept(false)
+    {
+        if (str.empty())
+            return str;
+#ifdef WIN32
+        int len = ::MultiByteToWideChar(CP_ACP, 0, str.c_str(), (int)str.length(), 0, 0);
+        std::wstring temp(len, L'\0');
+        ::MultiByteToWideChar(CP_ACP, 0, str.c_str(), (int)str.length(), temp.data(), (int)temp.length());
+        
+        len = ::WideCharToMultiByte(CP_UTF8, 0, temp.c_str(), (int)temp.length(), NULL, 0, NULL, NULL);
+        std::string res(len, 0);
+        ::WideCharToMultiByte(CP_UTF8, 0, temp.c_str(), (int)temp.length(), res.data(), (int)res.length(), NULL, NULL);
+
+        return res;
+#else
+        return str;
+#endif
+    }
+
+    std::string utf8_to_locale(const std::string& str) noexcept(false)
+    {
+        if (str.empty())
+            return str;
+#ifdef WIN32
+        int len = ::MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.length(), 0, 0);
+        std::wstring temp(len, L'\0');
+        ::MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.length(), temp.data(), (int)temp.length());
+
+        len = ::WideCharToMultiByte(CP_ACP, 0, temp.c_str(), (int)temp.length(), NULL, 0, NULL, NULL);
+        std::string res(len, 0);
+        ::WideCharToMultiByte(CP_ACP, 0, temp.c_str(), (int)temp.length(), res.data(), (int)res.length(), NULL, NULL);
+
+        return res;
+#else
+        return str;
+#endif
+    }
+
+    std::string hexify(uint64_t value) noexcept(true)
+    {
+        std::stringstream ss;
+        ss << "0x" << std::setfill('0') << std::setw(sizeof(uint64_t) * 2) << std::hex << value;
+        return ss.str();
+    }
+
+    std::string make_timestamp(const char* format) noexcept(true)
+    {
+        std::time_t time = std::time(0);
+        std::tm tm = *std::localtime(&time);
+        std::stringstream ss;
+        ss << std::put_time(&tm, format);
+        return ss.str();
+    }
+
     std::filesystem::path get_module_path(const std::string& module) noexcept(false)
     {
         std::filesystem::path file(module);
@@ -232,7 +288,7 @@ namespace webpier
                 (SLIPWAY_MODULE, boost::program_options::value<std::string>())
                 (CARRIER_MODULE, boost::program_options::value<std::string>());
 
-            boost::program_options::store(boost::program_options::parse_config_file<char>(path.u8string().c_str(), options, true), s_config);
+            boost::program_options::store(boost::program_options::parse_config_file<char>(path.string().c_str(), options, true), s_config);
         });
 
         if (!s_config.count(module))
@@ -261,7 +317,7 @@ namespace webpier
         read.wait();
         return seen;
 #else
-        std::string id = std::to_string(std::hash<std::string>()(exec.u8string() + args));
+        std::string id = std::to_string(std::hash<std::string>()(exec.string() + args));
         boost::process::child proc("schtasks /Query /TN \"\\WebPier\\Task #" + id + "\" /HRESULT", boost::process::windows::hide);
         proc.wait();
 
@@ -300,19 +356,20 @@ namespace webpier
             write.wait();
         }
 #else
-        std::string id = std::to_string(std::hash<std::string>()(exec.u8string() + args));
-        std::filesystem::path xml = std::filesystem::temp_directory_path() / (id + ".xml");
+        boost::property_tree::ptree taskxml;
+        boost::property_tree::read_xml(get_module_path(TASKXML_MODULE).string(), taskxml);
+        taskxml.put("Task.RegistrationInfo.Date", webpier::make_timestamp("%Y-%m-%dT%H:%M:%S"));
+        taskxml.put("Task.Actions.Exec.Command", exec.string());
+        taskxml.put("Task.Actions.Exec.Arguments", args);
 
-        boost::property_tree::ptree doc;
-        boost::property_tree::read_xml(get_module_path(TASKXML_MODULE).u8string(), doc);
-        doc.put("Task.RegistrationInfo.Date", webpier::make_timestamp("%Y-%m-%dT%H:%M:%S"));
-        doc.put("Task.Actions.Exec.Command", exec.u8string());
-        doc.put("Task.Actions.Exec.Arguments", args);
+        std::string id = std::to_string(std::hash<std::string>()(exec.string() + args));
+        std::filesystem::path xmlpath = std::filesystem::temp_directory_path() / (id + ".xml");
 
-        boost::property_tree::xml_writer_settings<boost::property_tree::ptree::key_type> settings('\t', 1, "UTF-16");
-        boost::property_tree::write_xml(xml.u8string(), doc, std::locale(), settings);
+        std::locale locale(std::locale::classic(), new std::codecvt_utf16<wchar_t, 0x10ffff, (std::codecvt_mode)(std::generate_header | std::little_endian)>);
+        boost::property_tree::xml_writer_settings<std::string> settings('\t', 1, "UTF-16");
+        boost::property_tree::write_xml(xmlpath.string(), taskxml, locale, settings);
 
-        boost::process::child proc("schtasks /Create /TN \"\\WebPier\\Task #" + id + "\" /XML \"" + xml.u8string() + "\" /F /HRESULT", boost::process::windows::hide);
+        boost::process::child proc("schtasks /Create /TN \"\\WebPier\\Task #" + id + "\" /XML \"" + xmlpath.string() + "\" /F /HRESULT", boost::process::windows::hide);
         proc.wait();
 
         if (proc.exit_code() != ERROR_SUCCESS)
@@ -349,7 +406,7 @@ namespace webpier
             write.wait();
         }
 #else
-        std::string id = std::to_string(std::hash<std::string>()(exec.u8string() + args));
+        std::string id = std::to_string(std::hash<std::string>()(exec.string() + args));
         boost::process::child proc("schtasks /Delete /TN \"\\WebPier\\Task #" + id + "\" /F /HRESULT", boost::process::windows::hide);
         proc.wait();
 

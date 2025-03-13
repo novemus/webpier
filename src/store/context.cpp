@@ -99,22 +99,22 @@ namespace webpier
                     {
                         boost::property_tree::ptree doc;
                         boost::property_tree::read_json(file.string(), doc);
-                        m_config.pier = doc.get<std::string>("pier");
-                        m_config.repo = doc.get<std::string>("repo");
-                        m_config.log.folder = doc.get<std::string>("log.folder", "");
+                        m_config.pier = utf8_to_locale(doc.get<std::string>("pier"));
+                        m_config.repo = utf8_to_locale(doc.get<std::string>("repo"));
+                        m_config.log.folder = utf8_to_locale(doc.get<std::string>("log.folder", ""));
                         m_config.log.level = journal::severity(doc.get<int>("log.level", journal::info));
                         m_config.nat.hops = doc.get<uint8_t>("nat.hops", 7);
-                        m_config.nat.stun = doc.get<std::string>("nat.stun", default_stun_server);
+                        m_config.nat.stun = utf8_to_locale(doc.get<std::string>("nat.stun", default_stun_server));
                         m_config.nat.hops = doc.get<uint8_t>("nat.hops", 7);
-                        m_config.dht.bootstrap = doc.get<std::string>("dht.bootstrap", default_dht_bootstrap);
+                        m_config.dht.bootstrap = utf8_to_locale(doc.get<std::string>("dht.bootstrap", default_dht_bootstrap));
                         m_config.dht.port = doc.get<uint16_t>("dht.port", default_dht_port);
-                        m_config.email.smtp = doc.get<std::string>("email.smtp", "");
-                        m_config.email.imap = doc.get<std::string>("email.imap", "");
-                        m_config.email.login = doc.get<std::string>("email.login", "");
-                        m_config.email.password = doc.get<std::string>("email.password", "");
-                        m_config.email.cert = doc.get<std::string>("email.cert", "");
-                        m_config.email.key = doc.get<std::string>("email.key", "");
-                        m_config.email.ca = doc.get<std::string>("email.ca", "");
+                        m_config.email.smtp = utf8_to_locale(doc.get<std::string>("email.smtp", ""));
+                        m_config.email.imap = utf8_to_locale(doc.get<std::string>("email.imap", ""));
+                        m_config.email.login = utf8_to_locale(doc.get<std::string>("email.login", ""));
+                        m_config.email.password = utf8_to_locale(doc.get<std::string>("email.password", ""));
+                        m_config.email.cert = utf8_to_locale(doc.get<std::string>("email.cert", ""));
+                        m_config.email.key = utf8_to_locale(doc.get<std::string>("email.key", ""));
+                        m_config.email.ca = utf8_to_locale(doc.get<std::string>("email.ca", ""));
                     }
                 }
                 catch(const std::exception& e)
@@ -130,21 +130,21 @@ namespace webpier
                     auto file = m_guard.home() / conf_file_name;
 
                     boost::property_tree::ptree doc;
-                    doc.put("pier", m_config.pier);
-                    doc.put("repo", m_config.repo);
-                    doc.put("log.folder", m_config.log.folder);
+                    doc.put("pier", locale_to_utf8(m_config.pier));
+                    doc.put("repo", locale_to_utf8(m_config.repo));
+                    doc.put("log.folder", locale_to_utf8(m_config.log.folder));
                     doc.put("log.level", m_config.log.level);
-                    doc.put("nat.stun", m_config.nat.stun);
+                    doc.put("nat.stun", locale_to_utf8(m_config.nat.stun));
                     doc.put("nat.hops", m_config.nat.hops);
-                    doc.put("dht.bootstrap", m_config.dht.bootstrap);
+                    doc.put("dht.bootstrap", locale_to_utf8(m_config.dht.bootstrap));
                     doc.put("dht.port", m_config.dht.port);
-                    doc.put("emailer.smtp", m_config.email.smtp);
-                    doc.put("emailer.imap", m_config.email.imap);
-                    doc.put("emailer.login", m_config.email.login);
-                    doc.put("emailer.password", m_config.email.password);
-                    doc.put("emailer.cert", m_config.email.cert);
-                    doc.put("emailer.key", m_config.email.key);
-                    doc.put("emailer.ca", m_config.email.ca);
+                    doc.put("emailer.smtp", locale_to_utf8(m_config.email.smtp));
+                    doc.put("emailer.imap", locale_to_utf8(m_config.email.imap));
+                    doc.put("emailer.login", locale_to_utf8(m_config.email.login));
+                    doc.put("emailer.password", locale_to_utf8(m_config.email.password));
+                    doc.put("emailer.cert", locale_to_utf8(m_config.email.cert));
+                    doc.put("emailer.key", locale_to_utf8(m_config.email.key));
+                    doc.put("emailer.ca", locale_to_utf8(m_config.email.ca));
                     boost::property_tree::write_json(file.string(), doc);
                 }
                 catch(const std::exception& e)
@@ -169,11 +169,11 @@ namespace webpier
                         for (auto& item : doc.get_child("services", array))
                         {
                             service unit;
-                            unit.name = item.second.get<std::string>("name", "");
-                            unit.pier = item.second.get<std::string>("pier", "");
-                            unit.address = item.second.get<std::string>("address", "");
-                            unit.gateway = item.second.get<std::string>("gateway", default_gateway);
-                            unit.rendezvous = item.second.get<std::string>("rendezvous", "");
+                            unit.name = utf8_to_locale(item.second.get<std::string>("name", ""));
+                            unit.pier = utf8_to_locale(item.second.get<std::string>("pier", ""));
+                            unit.address = utf8_to_locale(item.second.get<std::string>("address", ""));
+                            unit.gateway = utf8_to_locale(item.second.get<std::string>("gateway", default_gateway));
+                            unit.rendezvous = utf8_to_locale(item.second.get<std::string>("rendezvous", ""));
                             unit.autostart = item.second.get<bool>("autostart", false);
                             unit.obscure = item.second.get<bool>("obscure", true);
                             services.emplace(unit.name, unit);
@@ -197,13 +197,13 @@ namespace webpier
                     for (auto& unit : services)
                     {
                         boost::property_tree::ptree item;
-                        item.put("name", unit.second.name);
-                        item.put("pier", unit.second.pier);
-                        item.put("address", unit.second.address);
-                        item.put("gateway", unit.second.gateway);
+                        item.put("name", locale_to_utf8(unit.second.name));
+                        item.put("pier", locale_to_utf8(unit.second.pier));
+                        item.put("address", locale_to_utf8(unit.second.address));
+                        item.put("gateway", locale_to_utf8(unit.second.gateway));
                         item.put("autostart", unit.second.autostart);
                         item.put("obscure", unit.second.obscure);
-                        item.put("rendezvous", unit.second.rendezvous);
+                        item.put("rendezvous", locale_to_utf8(unit.second.rendezvous));
                         array.push_back(std::make_pair("", item));
                     }
 
@@ -259,7 +259,7 @@ namespace webpier
 
             std::string home() const noexcept(true) override
             {
-                return m_guard.home().generic_u8string();
+                return m_guard.home().string();
             }
 
             void get_config(config& info) const noexcept(true) override
