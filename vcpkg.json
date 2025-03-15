@@ -1,0 +1,24 @@
+{
+    "dependencies": [
+        "boost-system",
+        "boost-asio",
+        "boost-test",
+        "boost-program-options",
+        "boost-date-time",
+        "boost-coroutine",
+        "boost-process",
+        "boost-property-tree",
+        "boost-interprocess",
+        "boost-scope-exit",
+        "fmt",
+        "pkgconf",
+        "shiftmedia-libgnutls",
+        "openssl",
+        "msgpack",
+        "nettle",
+        "argon2",
+        "jsoncpp",
+        "wxwidgets"
+    ],
+    "builtin-baseline": "1de2026f28ead93ff1773e6e680387643e914ea1"
+}
