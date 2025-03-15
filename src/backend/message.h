@@ -15,7 +15,7 @@ namespace slipway
         std::string pier;
         std::string service;
 
-        bool operator<(const handle& other) const { return pier < other.pier || service < other.service; }
+        bool operator<(const handle& other) const { return pier + service < other.pier + other.service; }
         bool operator==(const handle& other) const { return pier == other.pier && service == other.service; }
     };
 
