@@ -179,7 +179,8 @@ namespace slipway
                             if (ec)
                                 return;
 
-                            if(auto ptr = weak.lock())
+                            auto ptr = weak.lock();
+                            if(ptr && ptr->state() != health::asleep)
                                 ptr->start(task);
                         });
 
@@ -310,15 +311,19 @@ namespace slipway
                                     return item.second.id() == id;
                                 }));
 
-                                m_timer.expires_from_now(get_retry_timeout());
-                                m_timer.async_wait([weak, conf, serv](const boost::system::error_code& ec)
+                                if (ptr->state() != health::asleep)
                                 {
-                                    if (ec)
-                                        return;
-        
-                                    if(auto ptr = weak.lock())
-                                        ptr->start_import(conf, serv);
-                                });
+                                    m_timer.expires_from_now(get_retry_timeout());
+                                    m_timer.async_wait([weak, conf, serv](const boost::system::error_code& ec)
+                                    {
+                                        if (ec)
+                                            return;
+            
+                                        auto ptr = weak.lock();
+                                        if(ptr && ptr->state() != health::asleep)
+                                            ptr->start_import(conf, serv);
+                                    });
+                                }
                             }
                         });
 
