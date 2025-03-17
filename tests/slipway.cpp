@@ -28,8 +28,8 @@ BOOST_AUTO_TEST_CASE(client)
     BOOST_REQUIRE_NO_THROW(context->set_config(conf));
     BOOST_REQUIRE_NO_THROW(context->add_pier(peer, webpier::load_x509_cert(home / repo / host / "cert.crt")));
 
-    webpier::service foo { "foo", peer, "127.0.0.1:1234", webpier::default_gateway, webpier::default_dht_bootstrap, true, false };
-    webpier::service bar { "bar", peer, "127.0.0.1:5678", webpier::default_gateway, webpier::default_dht_bootstrap, true, false };
+    webpier::service foo { true, "foo", peer, "127.0.0.1:1234", webpier::default_gateway, webpier::default_dht_bootstrap, true, false };
+    webpier::service bar { true, "bar", peer, "127.0.0.1:5678", webpier::default_gateway, webpier::default_dht_bootstrap, true, false };
 
     BOOST_REQUIRE_NO_THROW(context->add_export_service(foo));
 

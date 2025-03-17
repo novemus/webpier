@@ -69,6 +69,7 @@ namespace webpier
 
     struct service
     {
+        bool local;
         std::string name;
         std::string pier;
         std::string address;

@@ -11,10 +11,10 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/process/v2/process.hpp>
 #include <boost/process/v2/environment.hpp>
+#include <boost/process/v2/execute.hpp>
 #include <boost/algorithm/string.hpp>
 #include <filesystem>
 #include <iostream>
-#include <future>
 #include <regex>
 #include <map>
 #include <set>
@@ -32,370 +32,445 @@ namespace slipway
         constexpr const char* stun_client_default_port = "0";
         constexpr const char* smtp_server_default_port = "smtps";
         constexpr const char* imap_server_default_port = "imaps";
+        constexpr const char* cert_file_name = "cert.crt";
+        constexpr const char* key_file_name = "private.key";
         constexpr const char* webpier_conf_file_name = "webpier.json";
         constexpr const char* webpier_lock_file_name = "webpier.lock";
         constexpr const char* slipway_lock_file_name = "slipway.lock";
         constexpr const char* slipway_jack_file_name = "slipway.jack";
 
-        boost::posix_time::seconds get_retry_timeout()
+        namespace utils
         {
-            const char* timeout = std::getenv("WEBPIER_RETRY_TIMEOUT");
-            try
+            boost::posix_time::seconds get_retry_timeout() noexcept(true)
             {
-                return boost::posix_time::seconds(timeout ? std::stoi(timeout) : default_retry_timeout);
+                const char* timeout = std::getenv("WEBPIER_RETRY_TIMEOUT");
+                try
+                {
+                    return boost::posix_time::seconds(timeout ? std::stoi(timeout) : default_retry_timeout);
+                }
+                catch (const std::exception& ex)
+                {
+                    _err_ << "can't parse retry timeout: " << ex.what();
+                }
+
+                return boost::posix_time::seconds(default_retry_timeout);
             }
-            catch (const std::exception& ex)
+
+            template<class protocol>
+            typename protocol::endpoint resolve(const std::string& url, const std::string& service) noexcept(false)
             {
-                _err_ << "can't parse retry timeout: " << ex.what();
+                try 
+                {
+                    if (url.empty() && service.empty())
+                        return typename protocol::endpoint();
+
+                    boost::asio::io_context io;
+                    typename protocol::resolver resolver(io);
+
+                    std::smatch match;
+                    if (std::regex_search(url, match, std::regex("^(\\w+://)?\\[([a-zA-Z0-9:]+)\\]:(\\d+).*")))
+                        return *resolver.resolve(match[2].str(), match[3].str());
+
+                    if (std::regex_search(url, match, std::regex("^(\\w+)://\\[([a-zA-Z0-9:]+)\\].*")))
+                        return *resolver.resolve(match[2].str(), match[1].str());
+
+                    if (std::regex_search(url, match, std::regex("^\\[([a-zA-Z0-9:]+)\\].*")))
+                        return *resolver.resolve(match[1].str(), service);
+
+                    if (std::regex_search(url, match, std::regex("^(\\w+://)?([\\w\\.]+):(\\d+).*")))
+                        return *resolver.resolve(match[2].str(), match[3].str());
+
+                    if (std::regex_search(url, match, std::regex("^(\\w+)://([\\w\\.]+).*")))
+                        return *resolver.resolve(match[2].str(), match[1].str());
+
+                    return *resolver.resolve(url, service);
+                } 
+                catch (const std::exception& ex)
+                {
+                    _err_ << ex.what();
+                    throw std::runtime_error("can't resolve " + url);
+                }
             }
 
-            return boost::posix_time::seconds(default_retry_timeout);
-        }
-
-        template<class protocol>
-        typename protocol::endpoint resolve(const std::string& url, const std::string& service)
-        {
-            try 
+            plexus::options make_options(const webpier::config& config, const webpier::service& service) noexcept(false)
             {
-                if (url.empty() && service.empty())
-                    return typename protocol::endpoint();
-
-                boost::asio::io_context io;
-                typename protocol::resolver resolver(io);
-
-                std::smatch match;
-                if (std::regex_search(url, match, std::regex("^(\\w+://)?\\[([a-zA-Z0-9:]+)\\]:(\\d+).*")))
-                    return *resolver.resolve(match[2].str(), match[3].str());
-
-                if (std::regex_search(url, match, std::regex("^(\\w+)://\\[([a-zA-Z0-9:]+)\\].*")))
-                    return *resolver.resolve(match[2].str(), match[1].str());
-
-                if (std::regex_search(url, match, std::regex("^\\[([a-zA-Z0-9:]+)\\].*")))
-                    return *resolver.resolve(match[1].str(), service);
-
-                if (std::regex_search(url, match, std::regex("^(\\w+://)?([\\w\\.]+):(\\d+).*")))
-                    return *resolver.resolve(match[2].str(), match[3].str());
-
-                if (std::regex_search(url, match, std::regex("^(\\w+)://([\\w\\.]+).*")))
-                    return *resolver.resolve(match[2].str(), match[1].str());
-
-                return *resolver.resolve(url, service);
-            } 
-            catch (const std::exception& ex)
-            {
-                _err_ << ex.what();
-                throw std::runtime_error("can't resolve " + url);
+                return plexus::options {
+                    service.name,
+                    config.repo,
+                    utils::resolve<boost::asio::ip::udp>(config.nat.stun, stun_server_default_port),
+                    utils::resolve<boost::asio::ip::udp>(service.gateway, stun_client_default_port),
+                    config.nat.hops,
+                    service.rendezvous.empty()
+                        ? plexus::rendezvous {
+                            plexus::emailer {
+                                utils::resolve<boost::asio::ip::tcp>(config.email.smtp, smtp_server_default_port),
+                                utils::resolve<boost::asio::ip::tcp>(config.email.imap, imap_server_default_port),
+                                config.email.login,
+                                config.email.password,
+                                config.email.cert,
+                                config.email.key,
+                                config.email.ca 
+                            }}
+                        : plexus::rendezvous {
+                            plexus::dhtnode {
+                                service.rendezvous,
+                                config.dht.port,
+                                config.dht.network
+                            }}
+                    };
             }
-        }
 
-        plexus::options make_options(const webpier::config& config, const webpier::service& service)
-        {
-            return plexus::options {
-                service.name,
-                config.repo,
-                resolve<boost::asio::ip::udp>(config.nat.stun, stun_server_default_port),
-                resolve<boost::asio::ip::udp>(service.gateway, stun_client_default_port),
-                config.nat.hops,
-                service.rendezvous.empty()
-                    ? plexus::rendezvous {
-                        plexus::emailer {
-                            resolve<boost::asio::ip::tcp>(config.email.smtp, smtp_server_default_port),
-                            resolve<boost::asio::ip::tcp>(config.email.imap, imap_server_default_port),
-                            config.email.login,
-                            config.email.password,
-                            config.email.cert,
-                            config.email.key,
-                            config.email.ca 
-                        }}
-                    : plexus::rendezvous {
-                        plexus::dhtnode {
-                            service.rendezvous,
-                            config.dht.port,
-                            config.dht.network
-                        }}
-                };
-        }
+            plexus::identity make_identity(const std::string& pier) noexcept(true)
+            {
+                static constexpr const char SLASH = '/';
+                size_t pos = pier.find(SLASH);
 
-        plexus::identity make_identity(const std::string& pier)
-        {
-            static constexpr const char SLASH = '/';
-            size_t pos = pier.find(SLASH);
+                return pos != std::string::npos
+                    ? plexus::identity { pier.substr(0, pos), pier.substr(pos + 1) } 
+                    : plexus::identity { pier, "" };
+            }
 
-            return pos != std::string::npos
-                ? plexus::identity { pier.substr(0, pos), pier.substr(pos + 1) } 
-                : plexus::identity { pier, "" };
-        }
+            std::string stringify(const plexus::identity& id) noexcept(true)
+            {
+                return id.owner + "/" + id.pin;
+            }
 
-        std::string stringify(const plexus::identity& id)
-        {
-            return id.owner + "/" + id.pin;
-        }
+            std::string stringify(const boost::asio::ip::udp::endpoint& ep) noexcept(true)
+            {
+                return ep.address().to_string() + ":" + std::to_string(ep.port());
+            }
 
-        std::string stringify(const boost::asio::ip::udp::endpoint& ep)
-        {
-            return ep.address().to_string() + ":" + std::to_string(ep.port());
-        }
+            std::string make_log_path(const std::string& folder) noexcept(true)
+            {
+                if (folder.empty())
+                    return "";
 
-        std::string make_log_path(const std::string& folder)
-        {
-            if (folder.empty())
-                return "";
-
-            return folder + webpier::make_timestamp("/slipway.%Y%m%d.log");
+                return folder + webpier::make_timestamp("/slipway.%Y%m%d.log");
+            }
         }
 
         class controller : public std::enable_shared_from_this<controller>
         {
-            struct session
+            class connector : public std::enable_shared_from_this<connector>
             {
-                boost::asio::io_context io;
-                std::shared_future<std::string> future;
+                using weak_ptr = std::weak_ptr<connector>;
+                using signal_ptr = std::shared_ptr<boost::asio::cancellation_signal>;
+
+                class spawner
+                {
+                    struct
+                    {
+                        webpier::config   config;
+                        webpier::service  service;
+                        plexus::connector connect;
+                        plexus::fallback  fallback;
+                    } 
+                    m_data;
+
+                    std::unique_ptr<boost::asio::io_context> m_io;
+                    std::unique_ptr<std::thread>             m_thread;
+
+                public:
+
+                    spawner(const webpier::config& config, const webpier::service& service, const plexus::connector& connect, const plexus::fallback& fallback)
+                    {
+                        m_data.config = config;
+                        m_data.service = service;
+                        m_data.connect = connect;
+                        m_data.fallback = fallback;
+                    }
+
+                    ~spawner()
+                    {
+                        complete();
+                    }
+
+                    void complete()
+                    {
+                        if (m_io)
+                            m_io->stop();
+
+                        if (m_thread && m_thread->joinable())
+                            m_thread->join();
+                    }
+
+                    void startup()
+                    {
+                        complete();
+
+                        m_io = std::make_unique<boost::asio::io_context>();
+
+                        m_thread = std::make_unique<std::thread>([this]()
+                        {
+                            auto host = utils::make_identity(m_data.config.pier);
+                            auto peer = utils::make_identity(m_data.service.pier);
+
+                            try
+                            {
+                                auto config = utils::make_options(m_data.config, m_data.service);
+
+                                m_data.service.local
+                                    ? plexus::spawn_accept(*m_io, config, host, peer, m_data.connect, m_data.fallback)
+                                    : plexus::spawn_invite(*m_io, config, host, peer, m_data.connect, m_data.fallback);
+
+                                m_io->run();
+                            }
+                            catch(const std::exception& ex)
+                            {
+                                m_data.fallback(host, peer, ex.what());
+                            }
+                        });
+                    }
+                };
+
+                void connect(const boost::asio::ip::udp::endpoint& bind, const plexus::reference& host, const plexus::reference& peer)
+                {
+                    boost::process::v2::process proc(m_io, webpier::get_module_path(CARRIER_MODULE).string(), 
+                    {
+                        "--purpose=" + std::string(m_service.local ? "export" : "import"),
+                        "--service=" + m_service.address,
+                        "--gateway=" + utils::stringify(bind),
+                        "--faraway=" + utils::stringify(peer.endpoint),
+                        "--obscure=" + std::to_string(m_service.obscure ? host.puzzle ^ peer.puzzle : 0),
+                        "--journal=" + (m_config.log.folder.empty() ? "" : m_config.log.folder + "/carrier.%p.log"),
+                        "--logging=" + std::to_string(m_config.log.level)
+                    });
+
+                    int pid = proc.id();
+ 
+                    m_service.local
+                        ? _inf_ << "starting " << pid << " export tunnel " << m_config.pier << ":" << m_service.name << " -> " << m_service.pier
+                        : _inf_ << "starting " << pid << " import tunnel " << m_service.pier << ":" << m_service.name << " -> " << m_config.pier;
+
+                    auto signal = std::make_shared<boost::asio::cancellation_signal>();
+                    m_tunnels.emplace(pid, signal);
+
+                    weak_ptr weak = shared_from_this();
+                    boost::process::v2::async_execute(std::move(proc), boost::asio::bind_cancellation_slot(signal->slot(),
+                        [this, weak, signal, pid](const boost::system::error_code& ec, int code)
+                        {
+                            if (ec && ec != boost::asio::error::operation_aborted)
+                                _err_ << ec.message();
+
+                            _inf_ << "joined " << pid << " tunnel with exit code " << code;
+
+                            if (auto ptr = weak.lock())
+                            {
+                                m_tunnels.erase(pid);
+
+                                if (m_service.local == false)
+                                    m_spawner->startup();
+                            }
+                        }));
+                }
+
+                void fallback(const std::string& error)
+                {
+                    m_error = error;
+
+                    m_service.local
+                        ? _err_ << "export service " << m_config.pier << ":" << m_service.name << " -> " << m_service.pier << " failed: " << error
+                        : _err_ << "import service " << m_service.pier << ":" << m_service.name << " -> " << m_config.pier << " failed: " << error;
+
+                    weak_ptr weak = shared_from_this();
+
+                    m_timer.expires_from_now(utils::get_retry_timeout());
+                    m_timer.async_wait([this, weak](const boost::system::error_code& ec)
+                    {
+                        if (ec)
+                            return;
+
+                        if(auto ptr = weak.lock())
+                        {
+                            m_error.clear();
+                            m_spawner->startup();
+                        }
+                    });
+                }
+
+            public:
+
+                connector(boost::asio::io_context& io)
+                    : m_io(io)
+                    , m_timer(io)
+                {
+                }
+
+                ~connector()
+                {
+                    boost::system::error_code ec;
+                    m_timer.cancel(ec);
+
+                    if (m_spawner)
+                        m_spawner->complete();
+
+                    for(auto& item : m_tunnels)
+                    {
+                        _inf_ << "terminate " << item.first << " tunnel";
+                        item.second->emit(boost::asio::cancellation_type::terminal);
+                    }
+                }
+
+                void restart(const webpier::config& config, const webpier::service& service)
+                {
+                    boost::system::error_code ec;
+                    m_timer.cancel(ec);
+
+                    if (m_spawner)
+                        m_spawner->complete();
+
+                    m_config = config;
+                    m_service = service;
+
+                    weak_ptr weak = shared_from_this();
+
+                    auto connect = [this, weak](const plexus::identity&, const plexus::identity&, const boost::asio::ip::udp::endpoint& bind, const plexus::reference& host, const plexus::reference& peer)
+                    {
+                        if(auto ptr = weak.lock())
+                        {
+                            m_io.post([weak, bind, host, peer]()
+                            {
+                                if(auto ptr = weak.lock())
+                                    ptr->connect(bind, host, peer);
+                            });
+                        }
+                    };
+
+                    auto fallback = [this, weak](const plexus::identity&, const plexus::identity&, const std::string& error)
+                    {
+                        if(auto ptr = weak.lock())
+                        {
+                            m_io.post([weak, error]()
+                            {
+                                if(auto ptr = weak.lock())
+                                    ptr->fallback(error);
+                            });
+                        }
+                    };
+
+                    m_spawner = std::make_unique<spawner>(m_config, m_service, connect, fallback);
+                    m_spawner->startup();
+                }
+
+                bool broken() const
+                {
+                    return !m_error.empty();
+                }
+
+                bool burden() const
+                {
+                    return !m_tunnels.empty();
+                }
+
+                std::string error() const
+                {
+                    return m_error;
+                }
+
+                std::vector<uint32_t> tunnels() const
+                {
+                    std::vector<uint32_t> res;
+
+                    for(auto& item : m_tunnels)
+                        res.emplace_back(static_cast<uint32_t>(item.first));
+    
+                    return std::vector<uint32_t>(std::move(res));
+                }
+
+            private:
+
+                boost::asio::io_context&    m_io;
+                boost::asio::deadline_timer m_timer;
+                webpier::config             m_config;
+                webpier::service            m_service;
+                std::unique_ptr<spawner>    m_spawner;
+                std::string                 m_error;
+                std::map<int, signal_ptr>   m_tunnels;
             };
-
-            boost::asio::io_context& m_io;
-            boost::asio::deadline_timer m_timer;
-            std::shared_ptr<session> m_job;
-            std::multimap<std::string, boost::process::v2::process> m_pool;
-
-            void start(const std::function<void()>& task)
-            {
-                m_job = std::make_shared<session>();
-
-                m_job->io.post(task);
-                m_job->future = std::async(std::launch::async, [this, task]
-                {
-                    std::string error;
-                    try
-                    {
-                        m_job->io.run();
-                    }
-                    catch(const std::exception& ex)
-                    {
-                        std::weak_ptr<controller> weak = shared_from_this();
-
-                        m_timer.expires_from_now(get_retry_timeout());
-                        m_timer.async_wait([weak, task](const boost::system::error_code& ec)
-                        {
-                            if (ec)
-                                return;
-
-                            auto ptr = weak.lock();
-                            if(ptr && ptr->state() != health::asleep)
-                                ptr->start(task);
-                        });
-
-                        _err_ << ex.what();
-                        error = ex.what();
-                    }
-
-                    return error;
-                });
-            }
-
-            void stop()
-            {
-                if (m_job && m_job->future.valid())
-                {
-                    m_job->io.stop();
-                    m_job->future.wait();
-                }
-
-                boost::system::error_code ec;
-                m_timer.cancel(ec);
-
-                m_job.reset();
-            }
-
-            void start_export(const webpier::config& conf, const webpier::service& serv)
-            {
-                std::set<std::string> piers;
-                boost::split(piers, serv.pier, boost::is_any_of(" "));
-
-                for(auto& item : m_pool)
-                {
-                    if (piers.find(item.first) == piers.end())
-                        item.second.terminate();
-                }
-
-                start([this, conf, serv, piers]()
-                {
-                    using namespace plexus;
-
-                    auto opts = make_options(conf, serv);
-                    auto host = make_identity(conf.pier);
-    
-                    auto on_accept = [this, conf, serv](const identity&, const identity& peer, const udp::endpoint& bind, const reference& self, const reference& mate)
-                    {
-                        boost::process::v2::process proc(m_io, webpier::get_module_path(CARRIER_MODULE).string(), 
-                        {
-                            "--purpose=export", 
-                            "--service=" + serv.address,
-                            "--gateway=" + stringify(bind),
-                            "--faraway=" + stringify(mate.endpoint),
-                            "--obscure=" + std::to_string(serv.obscure ? self.puzzle ^ mate.puzzle : 0),
-                            "--journal=" + (conf.log.folder.empty() ? "" : conf.log.folder + "/export.%p.log"),
-                            "--logging=" + std::to_string(conf.log.level)
-                        });
-
-                        _inf_ << "spawned process " << proc.id() << " to export " << serv.name << " to " << stringify(peer);
-
-                        std::weak_ptr<controller> weak = shared_from_this();
-                        proc.async_wait([this, weak, serv, peer, id = proc.id()](const boost::system::error_code& ec, int code)
-                        {
-                            _inf_ << "joined process " << id << " with exit code " << code << " (" << ec.message() << ")";
-
-                            if (auto ptr = weak.lock())
-                            {
-                                auto range = m_pool.equal_range(stringify(peer));
-                                m_pool.erase(std::find_if(range.first, range.second, [id](const auto& item)
-                                {
-                                    return item.second.id() == id;
-                                }));
-                            }
-                        });
-
-                        m_pool.emplace(stringify(peer), std::move(proc));
-                    };
-
-                    auto on_error = [serv](const identity&, const identity& peer, const std::string& error)
-                    {
-                        _err_ << "export " << serv.name << " to " << stringify(peer) << " failed: " << error;
-                    };
-    
-                    for (const auto& pier : piers)
-                    {
-                        _dbg_ << "start export " << serv.name << " to " << pier;
-                        plexus::spawn_accept(m_job->io, opts, host, make_identity(pier), on_accept, on_error);
-                    }
-                });
-            }
-
-            void start_import(const webpier::config& conf, const webpier::service& serv)
-            {
-                for(auto& item : m_pool)
-                    item.second.terminate();
-
-                start([this, conf, serv]()
-                {
-                    using namespace plexus;
-    
-                    auto opts = make_options(conf, serv);
-                    auto host = make_identity(conf.pier);
-                    auto peer = make_identity(serv.pier);
-    
-                    auto on_invite = [this, conf, serv](const identity&, const identity&, const udp::endpoint& bind, const reference& self, const reference& mate)
-                    {
-                        boost::process::v2::process proc(m_io, webpier::get_module_path(CARRIER_MODULE).string(), 
-                        {
-                            "--purpose=import", 
-                            "--service=" + serv.address,
-                            "--gateway=" + stringify(bind),
-                            "--faraway=" + stringify(mate.endpoint),
-                            "--obscure=" + std::to_string(serv.obscure ? self.puzzle ^ mate.puzzle : 0),
-                            "--journal=" + (conf.log.folder.empty() ? "" : conf.log.folder + "/import.%p.log"),
-                            "--logging=" + std::to_string(conf.log.level)
-                        });
-
-                        _inf_ << "spawned process " << proc.id() << " to import " << serv.pier << " from " << serv.name;
-
-                        std::weak_ptr<controller> weak = shared_from_this();
-                        proc.async_wait([this, weak, conf, serv, id = proc.id()](const boost::system::error_code& ec, int code)
-                        {
-                            _inf_ << "joined process " << id << " with exit code " << code << " (" << ec.message() << ")";
-
-                            if (auto ptr = weak.lock())
-                            {
-                                auto range = m_pool.equal_range(serv.pier);
-                                m_pool.erase(std::find_if(range.first, range.second, [id](const auto& item)
-                                {
-                                    return item.second.id() == id;
-                                }));
-
-                                if (ptr->state() != health::asleep)
-                                {
-                                    m_timer.expires_from_now(get_retry_timeout());
-                                    m_timer.async_wait([weak, conf, serv](const boost::system::error_code& ec)
-                                    {
-                                        if (ec)
-                                            return;
-            
-                                        auto ptr = weak.lock();
-                                        if(ptr && ptr->state() != health::asleep)
-                                            ptr->start_import(conf, serv);
-                                    });
-                                }
-                            }
-                        });
-
-                        m_pool.emplace(serv.pier, std::move(proc));
-                    };
-    
-                    auto on_error = [this, serv](const identity&, const identity&, const std::string& error)
-                    {
-                        _err_ << "import " << serv.name << " from " << serv.pier << " failed: " << error;
-                        throw std::runtime_error(error);
-                    };
-    
-                    _dbg_ << "start import " << serv.name << " from " << serv.pier;
-                    plexus::spawn_invite(m_job->io, opts, host, peer, on_invite, on_error);
-                });
-            }
 
         public:
 
-            controller(boost::asio::io_context& io) : m_io(io), m_timer(io)
+            controller(boost::asio::io_context& io)
+                : m_io(io)
             {
             }
 
-            ~controller()
+            void restart(const webpier::config& config, const webpier::service& service)
             {
-                stop();
-            }
+                std::set<std::string> piers;
+                boost::split(piers, service.pier, boost::is_any_of(" "));
 
-            void restart(const std::string& pier, const webpier::config& conf, const webpier::service& serv)
-            {
-                stop();
+                auto iter = m_bundle.begin();
+                while (iter != m_bundle.end())
+                {
+                    if (piers.find(iter->first) == piers.end())
+                        iter = m_bundle.erase(iter);
+                    else
+                        ++iter;
+                }
 
-                conf.pier == pier
-                    ? start_export(conf, serv) 
-                    : start_import(conf, serv);
+                for (auto& pier : piers)
+                {
+                    auto single = service;
+                    single.pier = pier;
+
+                    auto iter = m_bundle.find(pier);
+                    if (iter == m_bundle.end())
+                        iter = m_bundle.emplace(pier, std::make_shared<connector>(m_io)).first;
+
+                    iter->second->restart(config, single);
+                }
             }
 
             void suspend()
             {
-                stop();
-
-                for(auto& item : m_pool)
-                    item.second.terminate();
+                m_bundle.clear();
             }
 
             health::status state() const
             {
-                if (!m_job)
-                    return health::asleep;
-
-                if (m_job->future.valid() && m_job->future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready && !m_job->future.get().empty())
-                    return health::broken;
-
-                return m_pool.empty() ? health::lonely : health::burden;
+                health::status res = m_bundle.empty() ? health::asleep : health::lonely;
+                for(auto& item : m_bundle)
+                {
+                    if (item.second->broken())
+                    {
+                        res = health::broken;
+                        break;
+                    }
+                    else if (item.second->burden())
+                    {
+                        res = health::burden;
+                        break;
+                    }
+                }
+                return res;
             }
 
             std::string message() const
             {
-                if (m_job && m_job->future.valid() && m_job->future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
-                    return m_job->future.get();
+                for(auto& item : m_bundle)
+                {
+                    if (item.second->broken())
+                        return item.second->error();
+                }
                 return "";
             }
 
             std::vector<report::tunnel> tunnels()
             {
                 std::vector<report::tunnel> res;
-
-                for(auto& item : m_pool)
-                    res.emplace_back(report::tunnel{ item.first, static_cast<uint32_t>(item.second.id()) });
-
+                for(auto& item : m_bundle)
+                {
+                    for(auto& pid : item.second->tunnels())
+                        res.emplace_back(report::tunnel{ item.first, pid });
+                }
                 return std::vector<report::tunnel>(std::move(res));
             }
+
+        private:
+
+            boost::asio::io_context& m_io;
+            std::map<std::string, std::shared_ptr<connector>> m_bundle;
         };
 
         class engine
@@ -436,7 +511,7 @@ namespace slipway
                 auto folder = webpier::utf8_to_locale(doc.get<std::string>("log.folder", ""));
                 auto level = webpier::journal::severity(doc.get<int>("log.level", webpier::journal::info));
 
-                wormhole::log::set(wormhole::log::severity(level), make_log_path(folder));
+                wormhole::log::set(wormhole::log::severity(level), utils::make_log_path(folder));
 
                 return webpier::config {
                     webpier::utf8_to_locale(doc.get<std::string>("pier")),
@@ -477,6 +552,7 @@ namespace slipway
                         if (webpier::utf8_to_locale(item.second.get<std::string>("name")) == id.service)
                         {
                             return webpier::service {
+                                item.second.get<bool>("local", std::filesystem::exists(path.parent_path() / key_file_name)),
                                 webpier::utf8_to_locale(item.second.get<std::string>("name")),
                                 webpier::utf8_to_locale(item.second.get<std::string>("pier")),
                                 webpier::utf8_to_locale(item.second.get<std::string>("address")),
@@ -518,6 +594,7 @@ namespace slipway
                         for (auto& item : doc.get_child("services", array))
                         {
                             res[pier].emplace_back(webpier::service {
+                                item.second.get<bool>("local", std::filesystem::exists(pin.path() / key_file_name)),
                                 webpier::utf8_to_locale(item.second.get<std::string>("name")),
                                 webpier::utf8_to_locale(item.second.get<std::string>("pier")),
                                 webpier::utf8_to_locale(item.second.get<std::string>("address")),
@@ -554,12 +631,12 @@ namespace slipway
                             iter = pool.emplace(id, iter->second).first;
                             if (serv.autostart)
                             {
-                                _inf_ << "restart " << pier.first << ":" << serv.name;
-                                iter->second->restart(pier.first, conf, serv);
+                                _inf_ << "restart " << id.pier << ":" << id.service;
+                                iter->second->restart(conf, serv);
                             }
                             else if (!serv.autostart && iter->second->state() != slipway::health::asleep)
                             {
-                                _inf_ << "suspend " << pier.first << ":" << serv.name;
+                                _inf_ << "suspend " << id.pier << ":" << id.service;
                                 iter->second->suspend();
                             }
                         }
@@ -568,12 +645,12 @@ namespace slipway
                             iter = pool.emplace(id, std::make_shared<controller>(m_io)).first;
                             if (serv.autostart)
                             {
-                                _inf_ << "restart " << pier.first << ":" << serv.name;
-                                iter->second->restart(pier.first, conf, serv);
+                                _inf_ << "restart " << id.pier << ":" << id.service;
+                                iter->second->restart(conf, serv);
                             }
                             else
                             {
-                                _inf_ << "suspend " << pier.first << ":" << serv.name;
+                                _inf_ << "suspend " << id.pier << ":" << id.service;
                                 iter->second->suspend();
                             }
                         }
@@ -610,8 +687,8 @@ namespace slipway
                             iter = pool.emplace(id, iter->second).first;
                             if (iter->second->state() != slipway::health::asleep)
                             {
-                                _inf_ << "restart " << pier.first << ":" << serv.name;
-                                iter->second->restart(pier.first, conf, serv);
+                                _inf_ << "restart " << id.pier << ":" << id.service;
+                                iter->second->restart(conf, serv);
                             }
                         }
                         else
@@ -619,12 +696,12 @@ namespace slipway
                             iter = pool.emplace(id, std::make_shared<controller>(m_io)).first;
                             if (serv.autostart)
                             {
-                                _inf_ << "restart " << pier.first << ":" << serv.name;
-                                iter->second->restart(pier.first, conf, serv);
+                                _inf_ << "restart " << id.pier << ":" << id.service;
+                                iter->second->restart(conf, serv);
                             }
                             else
                             {
-                                _inf_ << "suspend " << pier.first << ":" << serv.name;
+                                _inf_ << "suspend " << id.pier << ":" << id.service;
                                 iter->second->suspend();
                             }
                         }
@@ -663,7 +740,7 @@ namespace slipway
 
                 _inf_ << "restart " << id.pier << ":" << id.service;
 
-                iter->second->restart(id.pier, conf, serv);
+                iter->second->restart(conf, serv);
             }
 
             void adjust(const slipway::handle& id) noexcept(false)
@@ -690,7 +767,7 @@ namespace slipway
                     if (serv.autostart)
                     {
                         _inf_ << "restart " << id.pier << ":" << id.service;
-                        iter->second->restart(id.pier, conf, serv);
+                        iter->second->restart(conf, serv);
                     }
                     else
                     {
@@ -701,7 +778,7 @@ namespace slipway
                 else if (iter->second->state() != slipway::health::asleep)
                 {
                     _inf_ << "restart " << id.pier << ":" << id.service;
-                    iter->second->restart(id.pier, conf, serv);
+                    iter->second->restart(conf, serv);
                 }
             }
 

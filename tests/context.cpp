@@ -63,6 +63,7 @@ BOOST_AUTO_TEST_CASE(context)
     BOOST_CHECK_EQUAL(out.email.ca, in.email.ca);
 
     webpier::service service {
+        true,
         "foo",
         peer,
         "127.0.0.1:1234",
@@ -91,14 +92,19 @@ BOOST_AUTO_TEST_CASE(context)
     BOOST_REQUIRE_NO_THROW(context->add_export_service(service));
     BOOST_REQUIRE_THROW(context->add_export_service(service), webpier::usage_error);
 
+    service.local = false;
+
     BOOST_REQUIRE_NO_THROW(context->add_import_service(service));
     BOOST_REQUIRE_THROW(context->add_import_service(service), webpier::usage_error);
 
+    service.local = true;
     service.name = "bar";
 
     BOOST_REQUIRE_NO_THROW(context->add_export_service(service));
     BOOST_REQUIRE_THROW(context->add_export_service(service), webpier::usage_error);
     
+    service.local = false;
+
     BOOST_REQUIRE_NO_THROW(context->add_import_service(service));
     BOOST_REQUIRE_THROW(context->add_import_service(service), webpier::usage_error);
 
@@ -109,6 +115,7 @@ BOOST_AUTO_TEST_CASE(context)
     context->get_export_services(locals);
 
     BOOST_REQUIRE_EQUAL(locals.size(), 1);
+    BOOST_CHECK_EQUAL(service.local, locals[0].local);
     BOOST_CHECK_EQUAL(service.name, locals[0].name);
     BOOST_CHECK_EQUAL(service.pier, locals[0].pier);
     BOOST_CHECK_EQUAL(service.address, locals[0].address);

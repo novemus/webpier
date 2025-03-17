@@ -169,6 +169,7 @@ namespace webpier
                         for (auto& item : doc.get_child("services", array))
                         {
                             service unit;
+                            unit.local = item.second.get<bool>("local", id == m_config.pier);
                             unit.name = utf8_to_locale(item.second.get<std::string>("name", ""));
                             unit.pier = utf8_to_locale(item.second.get<std::string>("pier", ""));
                             unit.address = utf8_to_locale(item.second.get<std::string>("address", ""));
@@ -197,6 +198,7 @@ namespace webpier
                     for (auto& unit : services)
                     {
                         boost::property_tree::ptree item;
+                        item.put("local", unit.second.local);
                         item.put("name", locale_to_utf8(unit.second.name));
                         item.put("pier", locale_to_utf8(unit.second.pier));
                         item.put("address", locale_to_utf8(unit.second.address));
@@ -332,9 +334,12 @@ namespace webpier
 
             void add_export_service(const service& info) noexcept(false) override
             {
+                if (info.local == false)
+                    throw usage_error("Wrong kind of the service");
+
                 auto iter = m_bundle.find(m_config.pier);
                 if (iter == m_bundle.end())
-                    throw usage_error("The local pier does not exist");
+                    throw usage_error("There is no such local pier");
 
                 if (iter->second.find(info.name) != iter->second.end())
                     throw usage_error("Such service already exists");
@@ -349,7 +354,7 @@ namespace webpier
             {
                 auto iter = m_bundle.find(m_config.pier);
                 if (iter == m_bundle.end())
-                    throw usage_error("The local pier does not exist");
+                    throw usage_error("There is no such local pier");
 
                 if (iter->second.erase(name))
                 {
@@ -360,9 +365,12 @@ namespace webpier
 
             void add_import_service(const service& info) noexcept(false) override
             {
+                if (info.local)
+                    throw usage_error("Wrong kind of the service");
+
                 auto iter = m_bundle.find(info.pier);
                 if (iter == m_bundle.end())
-                    throw usage_error("The remote pier does not exist");
+                    throw usage_error("There is no such remote pier");
 
                 if (iter->second.find(info.name) != iter->second.end())
                     throw usage_error("Such service already exists");
@@ -377,7 +385,7 @@ namespace webpier
             {
                 auto iter = m_bundle.find(pier);
                 if (iter == m_bundle.end())
-                    throw usage_error("The remote pier does not exist");
+                    throw usage_error("There is no such remote pier");
 
                 if (iter->second.erase(name))
                 {

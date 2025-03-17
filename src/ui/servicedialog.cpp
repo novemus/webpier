@@ -23,7 +23,7 @@ CServiceDialog::CServiceDialog(WebPier::Context::ConfigPtr config, WebPier::Cont
     mainSizer->SetMinSize( wxSize( 400,-1 ) );
     m_propGrid = new wxPropertyGrid(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPG_BOLD_MODIFIED|wxPG_HIDE_MARGIN);
     m_nameItem = m_propGrid->Append( new wxStringProperty( _("Name"), wxPG_LABEL, m_service->Name ) );
-    if (m_service->IsExport())
+    if (m_service->Local)
     {
         m_pierItem = m_propGrid->Append(new wxMultiChoiceProperty( _("Pier"), wxPG_LABEL, pierChoice, wxSplit(m_service->Pier, ' ')));
     }
@@ -108,7 +108,7 @@ void CServiceDialog::onPropertyChanged( wxPropertyGridEvent& event )
 void CServiceDialog::onOKButtonClick( wxCommandEvent& event )
 {
     m_service->Name = m_nameItem->GetValueAsString();
-    if (m_service->IsExport())
+    if (m_service->Local)
         m_service->Pier = wxJoin(m_pierItem->GetValue().GetArrayString(), ' ');
     else
         m_service->Pier = m_pierItem->GetValueAsString();
@@ -118,9 +118,9 @@ void CServiceDialog::onOKButtonClick( wxCommandEvent& event )
     m_service->Autostart = m_startItem->GetValue().GetBool();
     m_service->Rendezvous = m_bootItem ? m_bootItem->GetValueAsString() : "";
 
-    if (m_service->Name.IsEmpty() || m_service->Address.IsEmpty() || (m_service->IsImport() && m_service->Pier.IsEmpty()) || (m_bootItem && m_service->Rendezvous.IsEmpty()))
+    if (m_service->Name.IsEmpty() || m_service->Address.IsEmpty() || (m_service->Local && m_service->Pier.IsEmpty()) || (m_bootItem && m_service->Rendezvous.IsEmpty()))
     {
-        wxString message = m_service->IsImport() 
+        wxString message = m_service->Local 
             ? (m_bootItem ? _("Define the 'name', 'pier', 'address', 'gateway', 'bootstrap' properties") : _("Define the 'name', 'pier', 'address', 'gateway' properties"))
             : (m_bootItem ? _("Define the 'name', 'address', 'bootstrap', 'gateway' properties") : _("Define the 'name', 'address', 'gateway' properties"));
         CMessageDialog dialog(this, message, wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);

@@ -15,6 +15,7 @@ namespace WebPier
     {
         struct Service
         {
+            bool Local;
             wxString Name;
             wxString Pier;
             wxString Address;
@@ -31,8 +32,6 @@ namespace WebPier
             virtual void DelPier(const wxString& pier) noexcept(true) = 0;
             virtual bool HasPier(const wxString& pier) const noexcept(true) = 0;
             virtual bool IsDirty() const noexcept(true) = 0;
-            virtual bool IsExport() const noexcept(true) = 0;
-            virtual bool IsImport() const noexcept(true) = 0;
         };
 
         using ServicePtr = wxSharedPtr<Service>;

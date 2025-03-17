@@ -47,7 +47,7 @@ wxVector<wxVariant> CMainFrame::makeListItem(WebPier::Context::ServicePtr servic
 {
     WebPier::Backend::Health::Status state = service->Autostart ? WebPier::Backend::Health::Lonely : WebPier::Backend::Health::Asleep;
 
-    auto owner = service->IsExport() ? WebPier::Context::Pier() : service->Pier;
+    auto owner = service->Local ? WebPier::Context::Pier() : service->Pier;
     for (const auto& item : m_status)
     {
         if (item.Pier == owner && item.Service == service->Name)

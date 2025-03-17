@@ -121,13 +121,13 @@ namespace WebPier
                 && lhs->Obscure == rhs->Obscure;
         }
 
-        template<bool isExport> class ServiceImpl : public Service
+        class ServiceImpl : public Service
         {
             webpier::service m_origin;
 
         public:
 
-            ServiceImpl(webpier::service origin = {})
+            ServiceImpl(webpier::service origin)
                 : m_origin(origin)
             {
                 Revert();
@@ -139,6 +139,7 @@ namespace WebPier
                     return;
 
                 webpier::service actual {
+                    Local,
                     Name.ToStdString(),
                     Pier.ToStdString(),
                     Address.ToStdString(),
@@ -148,7 +149,7 @@ namespace WebPier
                     Obscure
                 };
 
-                if (IsExport())
+                if (Local)
                 {
                     if (!m_origin.name.empty())
                         g_context->del_export_service(m_origin.name);
@@ -162,7 +163,7 @@ namespace WebPier
                 }
                 m_origin = actual;
 
-                WebPier::Backend::Handle handle{IsExport() ? Context::Pier() : Pier, Name};
+                WebPier::Backend::Handle handle{Local ? Context::Pier() : Pier, Name};
                 try
                 {
                     WebPier::Backend::Adjust(handle);
@@ -175,7 +176,7 @@ namespace WebPier
 
             void Purge() noexcept(false) override
             {
-                if (IsExport())
+                if (Local)
                 {
                     if (!m_origin.name.empty())
                         g_context->del_export_service(m_origin.name);
@@ -186,7 +187,7 @@ namespace WebPier
                         g_context->del_import_service(m_origin.pier, m_origin.name);
                 }
 
-                WebPier::Backend::Handle handle{IsExport() ? Context::Pier() : Pier, Name};
+                WebPier::Backend::Handle handle{Local ? Context::Pier() : Pier, Name};
                 try
                 {
                     WebPier::Backend::Adjust(handle);
@@ -201,6 +202,7 @@ namespace WebPier
 
             void Revert() noexcept(true) override
             {
+                Local = m_origin.local;
                 Name = m_origin.name;
                 Pier = m_origin.pier;
                 Address = m_origin.address;
@@ -212,7 +214,7 @@ namespace WebPier
 
             void AddPier(const wxString& pier) noexcept(true) override
             {
-                if (IsExport())
+                if (Local)
                 {
                     auto arr = wxSplit(Pier, ' ');
                     if (arr.Index(pier) == wxNOT_FOUND)
@@ -227,7 +229,7 @@ namespace WebPier
 
             void DelPier(const wxString& pier) noexcept(true) override
             {
-                if (IsExport())
+                if (Local)
                 {
                     auto arr = wxSplit(Pier, ' ');
                     auto ind = arr.Index(pier);
@@ -243,7 +245,7 @@ namespace WebPier
 
             bool HasPier(const wxString& pier) const noexcept(true) override
             {
-                return IsExport() ? wxSplit(Pier, ' ').Index(pier) != wxNOT_FOUND : pier == Pier;
+                return Local ? wxSplit(Pier, ' ').Index(pier) != wxNOT_FOUND : pier == Pier;
             }
 
             bool IsDirty() const noexcept(true) override
@@ -256,29 +258,16 @@ namespace WebPier
                     || Autostart != m_origin.autostart
                     || Obscure != m_origin.obscure;
             }
-
-            bool IsExport() const noexcept(true) override
-            {
-                return isExport;
-            }
-
-            bool IsImport() const noexcept(true) override
-            {
-                return !isExport;
-            }
         };
-
-        using ExportService = ServiceImpl<true>;
-        using ImportService = ServiceImpl<false>;
 
         ServicePtr CreateExportService()
         {
-            return ServicePtr(new ExportService());
+            return ServicePtr(new ServiceImpl( webpier::service {true}));
         }
 
         ServicePtr CreateImportService()
         {
-            return ServicePtr(new ImportService());
+            return ServicePtr(new ServiceImpl( webpier::service {false}));
         }
 
         class ConfigImpl : public Config
@@ -314,7 +303,14 @@ namespace WebPier
 
                 g_context->set_config(actual);
 
+                bool reboot = actual.pier != m_origin.pier;
                 m_origin = actual;
+
+                if (reboot)
+                {
+                    WebPier::Backend::Unplug();
+                    WebPier::Backend::Engage();
+                }
             }
 
             void Revert() noexcept(true) override
@@ -356,7 +352,7 @@ namespace WebPier
             g_context->get_export_services(list);
             for (const auto& item : list)
             {
-                ServicePtr ptr(new ExportService(item));
+                ServicePtr ptr(new ServiceImpl(item));
                 collection[wxUIntPtr(ptr.get())] = ptr;
             }
             return collection;
@@ -369,7 +365,7 @@ namespace WebPier
             g_context->get_import_services(list);
             for (const auto& item : list)
             {
-                ServicePtr ptr(new ImportService(item));
+                ServicePtr ptr(new ServiceImpl(item));
                 collection[wxUIntPtr(ptr.get())] = ptr;
             }
 
@@ -469,7 +465,7 @@ namespace WebPier
             boost::property_tree::ptree array;
             for (auto& item : doc.get_child("services", array))
             {
-                ServicePtr service(new ImportService());
+                ServicePtr service = CreateExportService();
                 service->Name = webpier::utf8_to_locale(item.second.get<std::string>("name"));
                 service->Pier = offer.Pier;
                 service->Obscure = item.second.get<bool>("obscure");
