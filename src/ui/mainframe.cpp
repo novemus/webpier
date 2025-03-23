@@ -335,7 +335,7 @@ void CMainFrame::onServiceItemContextMenu(wxDataViewEvent& event)
                 wxMenu* tunnels = new wxMenu();
                 for (auto& tunnel : info.Tunnels)
                 {
-                    tunnels->Append(wxID_ANY, wxString::Format(wxT("pier=%s pid=%d"), tunnel.Pier, tunnel.Pid))->Enable(false);
+                    tunnels->Append(wxID_ANY, wxString::Format(wxT("%s %d"), tunnel.Pier, tunnel.Pid))->Enable(false);
                 }
                 menu->Append(wxID_ANY, "&Tunnels", tunnels);
             }
