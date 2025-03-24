@@ -527,13 +527,13 @@ namespace slipway
                         0
                     },
                     webpier::emailer {
-                        webpier::utf8_to_locale(doc.get<std::string>("emailer.smtp", "")),
-                        webpier::utf8_to_locale(doc.get<std::string>("emailer.imap", "")),
-                        webpier::utf8_to_locale(doc.get<std::string>("emailer.login", "")),
-                        webpier::utf8_to_locale(doc.get<std::string>("emailer.password", "")),
-                        webpier::utf8_to_locale(doc.get<std::string>("emailer.cert", "")),
-                        webpier::utf8_to_locale(doc.get<std::string>("emailer.key", "")),
-                        webpier::utf8_to_locale(doc.get<std::string>("emailer.ca", ""))
+                        webpier::utf8_to_locale(doc.get<std::string>("email.smtp", "")),
+                        webpier::utf8_to_locale(doc.get<std::string>("email.imap", "")),
+                        webpier::utf8_to_locale(doc.get<std::string>("email.login", "")),
+                        webpier::utf8_to_locale(doc.get<std::string>("email.password", "")),
+                        webpier::utf8_to_locale(doc.get<std::string>("email.cert", "")),
+                        webpier::utf8_to_locale(doc.get<std::string>("email.key", "")),
+                        webpier::utf8_to_locale(doc.get<std::string>("email.ca", ""))
                     }
                 };
             }

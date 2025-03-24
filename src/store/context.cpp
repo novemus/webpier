@@ -138,13 +138,13 @@ namespace webpier
                     doc.put("nat.hops", m_config.nat.hops);
                     doc.put("dht.bootstrap", locale_to_utf8(m_config.dht.bootstrap));
                     doc.put("dht.port", m_config.dht.port);
-                    doc.put("emailer.smtp", locale_to_utf8(m_config.email.smtp));
-                    doc.put("emailer.imap", locale_to_utf8(m_config.email.imap));
-                    doc.put("emailer.login", locale_to_utf8(m_config.email.login));
-                    doc.put("emailer.password", locale_to_utf8(m_config.email.password));
-                    doc.put("emailer.cert", locale_to_utf8(m_config.email.cert));
-                    doc.put("emailer.key", locale_to_utf8(m_config.email.key));
-                    doc.put("emailer.ca", locale_to_utf8(m_config.email.ca));
+                    doc.put("email.smtp", locale_to_utf8(m_config.email.smtp));
+                    doc.put("email.imap", locale_to_utf8(m_config.email.imap));
+                    doc.put("email.login", locale_to_utf8(m_config.email.login));
+                    doc.put("email.password", locale_to_utf8(m_config.email.password));
+                    doc.put("email.cert", locale_to_utf8(m_config.email.cert));
+                    doc.put("email.key", locale_to_utf8(m_config.email.key));
+                    doc.put("email.ca", locale_to_utf8(m_config.email.ca));
                     boost::property_tree::write_json(file.string(), doc);
                 }
                 catch(const std::exception& e)
