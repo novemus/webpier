@@ -16,7 +16,7 @@ BOOST_AUTO_TEST_CASE(client)
 
     BOOST_REQUIRE_NO_THROW(std::filesystem::create_directory(home));
 
-    BOOST_SCOPE_EXIT(&home) 
+    BOOST_SCOPE_EXIT(&home)
     {
         std::filesystem::remove_all(home);
     } 

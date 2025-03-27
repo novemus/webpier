@@ -118,7 +118,7 @@ void CServiceDialog::onOKButtonClick( wxCommandEvent& event )
     m_service->Autostart = m_startItem->GetValue().GetBool();
     m_service->Rendezvous = m_bootItem ? m_bootItem->GetValueAsString() : "";
 
-    if (m_service->Name.IsEmpty() || m_service->Address.IsEmpty() || (m_service->Local && m_service->Pier.IsEmpty()) || (m_bootItem && m_service->Rendezvous.IsEmpty()))
+    if (m_service->Name.IsEmpty() || m_service->Address.IsEmpty() || (!m_service->Local && m_service->Pier.IsEmpty()) || (m_bootItem && m_service->Rendezvous.IsEmpty()))
     {
         wxString message = m_service->Local 
             ? (m_bootItem ? _("Define the 'name', 'pier', 'address', 'gateway', 'bootstrap' properties") : _("Define the 'name', 'pier', 'address', 'gateway' properties"))

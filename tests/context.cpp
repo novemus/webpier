@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(context)
     context->get_export_services(locals);
 
     BOOST_REQUIRE_EQUAL(locals.size(), 1);
-    BOOST_CHECK_EQUAL(service.local, locals[0].local);
+    BOOST_CHECK_EQUAL(true, locals[0].local);
     BOOST_CHECK_EQUAL(service.name, locals[0].name);
     BOOST_CHECK_EQUAL(service.pier, locals[0].pier);
     BOOST_CHECK_EQUAL(service.address, locals[0].address);
@@ -128,6 +128,7 @@ BOOST_AUTO_TEST_CASE(context)
     context->get_import_services(remotes);
 
     BOOST_REQUIRE_EQUAL(remotes.size(), 1);
+    BOOST_CHECK_EQUAL(false, remotes[0].local);
     BOOST_CHECK_EQUAL(service.name, remotes[0].name);
     BOOST_CHECK_EQUAL(service.pier, remotes[0].pier);
     BOOST_CHECK_EQUAL(service.address, remotes[0].address);

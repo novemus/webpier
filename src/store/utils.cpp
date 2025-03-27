@@ -279,7 +279,7 @@ namespace webpier
 #else
             std::filesystem::path path("/etc/webpier/webpier.conf");
 #endif
-            if (!boost::filesystem::exists(path))
+            if (!std::filesystem::exists(path))
                 throw std::runtime_error("no configuration file");
 
             boost::program_options::options_description options;

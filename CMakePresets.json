@@ -44,53 +44,51 @@
             }
         },
         {
-            "name": "linux-static-release",
+            "name": "static-release",
             "displayName": "Static (Release)",
             "description": "Configure static Release build",
             "inherits": "config-base",
             "cacheVariables": {
                 "BUILD_SHARED_LIBS": "OFF",
-                "CMAKE_BUILD_TYPE": "Release",
-                "CPACK_PACKAGING_INSTALL_PREFIX": "/usr"
+                "CMAKE_BUILD_TYPE": "Release"
             },
             "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Linux"
+                "type": "inList",
+                "string": "${hostSystemName}",
+                "list": ["Linux", "Darwin"]
             },
             "installDir": "${sourceParentDir}/install/x64-static"
         },
         {
-            "name": "linux-static-debug",
+            "name": "static-debug",
             "displayName": "Static (Debug)",
             "description": "Configure static Debug build",
-            "inherits": "linux-static-release",
+            "inherits": "static-release",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug"
             }
         },
         {
-            "name": "linux-shared-release",
+            "name": "shared-release",
             "displayName": "Shared (Release)",
             "description": "Configure static Release build",
             "inherits": "config-base",
             "cacheVariables": {
                 "BUILD_SHARED_LIBS": "ON",
-                "CMAKE_BUILD_TYPE": "Release",
-                "CPACK_PACKAGING_INSTALL_PREFIX": "/usr"
+                "CMAKE_BUILD_TYPE": "Release"
             },
             "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Linux"
+                "type": "inList",
+                "string": "${hostSystemName}",
+                "list": ["Linux", "Darwin"]
             },
             "installDir": "${sourceParentDir}/install/x64"
         },
         {
-            "name": "linux-shared-debug",
+            "name": "shared-debug",
             "displayName": "Shared (Debug)",
             "description": "Configure static Debug build",
-            "inherits": "linux-shared-release",
+            "inherits": "shared-release",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug"
             }
@@ -110,28 +108,28 @@
             "configurePreset": "windows-static-release"
         },
         {
-            "name": "linux-static-debug",
+            "name": "static-debug",
             "displayName": "Debug",
             "configuration": "Debug",
-            "configurePreset": "linux-static-debug"
+            "configurePreset": "static-debug"
         },
         {
-            "name": "linux-static-release",
+            "name": "static-release",
             "displayName": "Release",
             "configuration": "Release",
-            "configurePreset": "linux-static-release"
+            "configurePreset": "static-release"
         },
         {
-            "name": "linux-shared-debug",
+            "name": "shared-debug",
             "displayName": "Debug",
             "configuration": "Debug",
-            "configurePreset": "linux-shared-debug"
+            "configurePreset": "shared-debug"
         },
         {
-            "name": "linux-shared-release",
+            "name": "shared-release",
             "displayName": "Release",
             "configuration": "Release",
-            "configurePreset": "linux-shared-release"
+            "configurePreset": "shared-release"
         }
     ],
     "testPresets": [
@@ -147,31 +145,31 @@
             "hidden": true
         },
         {
-            "name": "linux-static-release",
+            "name": "static-release",
             "description": "All project tests",
             "displayName": "Test",
-            "configurePreset": "linux-static-release",
+            "configurePreset": "static-release",
             "inherits": "test-base"
         },
         {
-            "name": "linux-static-debug",
+            "name": "static-debug",
             "description": "All project tests",
             "displayName": "Test",
-            "configurePreset": "linux-static-debug",
+            "configurePreset": "static-debug",
             "inherits": "test-base"
         },
         {
-            "name": "linux-shared-release",
+            "name": "shared-release",
             "description": "All project tests",
             "displayName": "Test",
-            "configurePreset": "linux-shared-release",
+            "configurePreset": "shared-release",
             "inherits": "test-base"
         },
         {
-            "name": "linux-shared-debug",
+            "name": "shared-debug",
             "description": "All project tests",
             "displayName": "Test",
-            "configurePreset": "linux-shared-debug",
+            "configurePreset": "shared-debug",
             "inherits": "test-base"
         },
         {
@@ -196,7 +194,7 @@
             "name": "debian-package",
             "displayName": "webpier (DEB)",
             "description": "Debian package",
-            "configurePreset": "linux-static-release",
+            "configurePreset": "static-release",
             "condition": {
                 "type": "equals",
                 "lhs": "${hostSystemName}",
