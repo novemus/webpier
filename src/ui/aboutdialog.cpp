@@ -5,7 +5,6 @@ CAboutDialog::CAboutDialog( wxWindow* parent, wxWindowID id, const wxString& tit
 {
     this->SetIcon(::GetAppIconBundle().GetIcon());
     this->SetSizeHints( wxDefaultSize, wxDefaultSize );
-    this->SetBackgroundColour( wxSystemSettings::GetColour( wxSYS_COLOUR_MENU ) );
 
     wxBoxSizer* mainSizer;
     mainSizer = new wxBoxSizer( wxVERTICAL );

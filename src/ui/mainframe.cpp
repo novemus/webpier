@@ -67,7 +67,6 @@ CMainFrame::CMainFrame() : wxFrame(nullptr, wxID_ANY, wxT("WebPier"), wxDefaultP
 {
     this->SetIcon(::GetAppIconBundle().GetIcon());
     this->SetSizeHints( wxDefaultSize, wxDefaultSize );
-    this->SetBackgroundColour( wxSystemSettings::GetColour( wxSYS_COLOUR_MENU ) );
 
     wxMenuBar* menubar = new wxMenuBar( 0 );
     wxMenu* fileMenu = new wxMenu();
