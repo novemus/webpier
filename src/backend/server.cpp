@@ -259,7 +259,10 @@ namespace slipway
                                 m_tunnels.erase(pid);
 
                                 if (m_service.local == false)
+                                {
+                                    m_error.clear();
                                     m_spawner->startup();
+                                }
                             }
                         }));
                 }
@@ -349,7 +352,12 @@ namespace slipway
                     };
 
                     m_spawner = std::make_unique<spawner>(m_config, m_service, connect, fallback);
-                    m_spawner->startup();
+
+                    if (m_service.local || m_tunnels.empty())
+                    {
+                        m_error.clear();
+                        m_spawner->startup();
+                    }
                 }
 
                 bool broken() const
