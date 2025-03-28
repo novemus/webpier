@@ -50,7 +50,8 @@
             "inherits": "config-base",
             "cacheVariables": {
                 "BUILD_SHARED_LIBS": "OFF",
-                "CMAKE_BUILD_TYPE": "Release"
+                "CMAKE_BUILD_TYPE": "Release",
+                "CPACK_PACKAGING_INSTALL_PREFIX": "/usr"
             },
             "condition": {
                 "type": "inList",
@@ -75,7 +76,8 @@
             "inherits": "config-base",
             "cacheVariables": {
                 "BUILD_SHARED_LIBS": "ON",
-                "CMAKE_BUILD_TYPE": "Release"
+                "CMAKE_BUILD_TYPE": "Release",
+                "CPACK_PACKAGING_INSTALL_PREFIX": "/usr"
             },
             "condition": {
                 "type": "inList",

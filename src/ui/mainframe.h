@@ -37,6 +37,7 @@ class CMainFrame : public wxFrame
     wxBitmapButton* m_deleteBtn;
     wxDataViewListCtrl* m_serviceList;
     wxStatusBar* m_statusBar;
+    wxPanel* m_mainPanel;
     wxTimer* m_timer;
     WebPier::Context::ConfigPtr m_config;
     WebPier::Context::ServiceList m_export;

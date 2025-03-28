@@ -92,47 +92,56 @@ CMainFrame::CMainFrame() : wxFrame(nullptr, wxID_ANY, wxT("WebPier"), wxDefaultP
 
     this->SetMenuBar( menubar );
 
-    wxBoxSizer* mainSizer;
-    mainSizer = new wxBoxSizer( wxVERTICAL );
+	wxBoxSizer* mainSizer;
+	mainSizer = new wxBoxSizer( wxVERTICAL );
+
+	m_mainPanel = new wxPanel( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	wxBoxSizer* panelSizer;
+	panelSizer = new wxBoxSizer( wxVERTICAL );
 
     wxBoxSizer* topSizer;
     topSizer = new wxBoxSizer( wxHORIZONTAL );
 
-    m_importBtn = new wxRadioButton( this, wxID_ANY, _("Import"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_importBtn = new wxRadioButton( m_mainPanel, wxID_ANY, _("Import"), wxDefaultPosition, wxDefaultSize, 0 );
     m_importBtn->SetValue( true );
     topSizer->Add( m_importBtn, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 
-    m_exportBtn = new wxRadioButton( this, wxID_ANY, _("Export"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_exportBtn = new wxRadioButton( m_mainPanel, wxID_ANY, _("Export"), wxDefaultPosition, wxDefaultSize, 0 );
     topSizer->Add( m_exportBtn, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 
-	m_pierLabel = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER_HORIZONTAL );
+	m_pierLabel = new wxStaticText( m_mainPanel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER_HORIZONTAL );
 	m_pierLabel->Wrap( -1 );
 	topSizer->Add( m_pierLabel, 1, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 
-    m_addBtn = new wxBitmapButton( this, wxID_ANY, wxArtProvider::GetBitmapBundle(wxART_NEW, wxART_BUTTON, wxSize(16, 16)), wxDefaultPosition, wxDefaultSize, wxBU_AUTODRAW|0 );
+    m_addBtn = new wxBitmapButton( m_mainPanel, wxID_ANY, wxArtProvider::GetBitmapBundle(wxART_NEW, wxART_BUTTON, wxSize(16, 16)), wxDefaultPosition, wxDefaultSize, wxBU_AUTODRAW|0 );
     m_addBtn->Enable(false);
     topSizer->Add( m_addBtn, 0, wxALL, 5 );
 
-    m_editBtn = new wxBitmapButton( this, wxID_ANY, wxArtProvider::GetBitmapBundle(wxART_EDIT, wxART_BUTTON, wxSize(16, 16)), wxDefaultPosition, wxDefaultSize, wxBU_AUTODRAW|0 );
+    m_editBtn = new wxBitmapButton( m_mainPanel, wxID_ANY, wxArtProvider::GetBitmapBundle(wxART_EDIT, wxART_BUTTON, wxSize(16, 16)), wxDefaultPosition, wxDefaultSize, wxBU_AUTODRAW|0 );
     m_editBtn->Enable(false);
     topSizer->Add( m_editBtn, 0, wxTOP|wxBOTTOM|wxRIGHT, 5 );
 
-    m_deleteBtn = new wxBitmapButton( this, wxID_ANY, wxArtProvider::GetBitmapBundle(wxART_DELETE, wxART_BUTTON, wxSize(16, 16)), wxDefaultPosition, wxDefaultSize, wxBU_AUTODRAW|0 );
+    m_deleteBtn = new wxBitmapButton( m_mainPanel, wxID_ANY, wxArtProvider::GetBitmapBundle(wxART_DELETE, wxART_BUTTON, wxSize(16, 16)), wxDefaultPosition, wxDefaultSize, wxBU_AUTODRAW|0 );
     m_deleteBtn->Enable(false);
     topSizer->Add( m_deleteBtn, 0, wxTOP|wxBOTTOM|wxRIGHT, 5 );
 
-    mainSizer->Add( topSizer, 0, wxEXPAND, 5 );
+    panelSizer->Add( topSizer, 0, wxEXPAND, 5 );
 
-    m_serviceList = new wxDataViewListCtrl( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxDV_HORIZ_RULES|wxDV_ROW_LINES|wxDV_SINGLE|wxDV_VERT_RULES );
+    m_serviceList = new wxDataViewListCtrl( m_mainPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxDV_HORIZ_RULES|wxDV_ROW_LINES|wxDV_SINGLE|wxDV_VERT_RULES );
     m_serviceList->AppendIconTextColumn( _("Service"), wxDATAVIEW_CELL_INERT, 100, static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE|wxDATAVIEW_COL_SORTABLE )->GetRenderer()->EnableEllipsize( wxELLIPSIZE_END );
     m_serviceList->AppendTextColumn( _("Pier"), wxDATAVIEW_CELL_INERT, 350, static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE|wxDATAVIEW_COL_SORTABLE )->GetRenderer()->EnableEllipsize( wxELLIPSIZE_END );
     m_serviceList->AppendTextColumn( _("Address"), wxDATAVIEW_CELL_INERT, 150, static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE|wxDATAVIEW_COL_SORTABLE )->GetRenderer()->EnableEllipsize( wxELLIPSIZE_END );
     m_serviceList->AppendTextColumn( _("Rendezvous"), wxDATAVIEW_CELL_INERT, 100, static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE|wxDATAVIEW_COL_SORTABLE )->GetRenderer()->EnableEllipsize( wxELLIPSIZE_END );
     m_serviceList->AppendTextColumn( _("Autostart"), wxDATAVIEW_CELL_INERT, 100, static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE|wxDATAVIEW_COL_SORTABLE )->GetRenderer()->EnableEllipsize( wxELLIPSIZE_END );
-    mainSizer->Add( m_serviceList, 1, wxALL|wxEXPAND, 5 );
+    panelSizer->Add( m_serviceList, 1, wxALL|wxEXPAND, 5 );
 
-    this->SetSizer( mainSizer );
-    this->Layout();
+	m_mainPanel->SetSizer( panelSizer );
+	m_mainPanel->Layout();
+	panelSizer->Fit( m_mainPanel );
+	mainSizer->Add( m_mainPanel, 1, wxEXPAND, 5 );
+
+	this->SetSizer( mainSizer );
+	this->Layout();
     m_statusBar = this->CreateStatusBar( 1, wxSTB_SIZEGRIP, wxID_ANY );
     m_statusBar->SetFieldsCount(2);
 
@@ -166,6 +175,7 @@ CMainFrame::~CMainFrame()
     delete m_deleteBtn;
     delete m_serviceList;
     delete m_statusBar;
+    delete m_mainPanel;
     delete m_timer;
 }
 
