@@ -2,6 +2,7 @@
 #include <store/utils.h>
 #include <boost/test/unit_test.hpp>
 #include <boost/scope_exit.hpp>
+#include <boost/filesystem.hpp>
 #include <filesystem>
 
 BOOST_AUTO_TEST_CASE(context)
@@ -9,7 +10,7 @@ BOOST_AUTO_TEST_CASE(context)
     std::string host = "host@mail.box/test";
     std::string peer = "peer@mail.box/test";
 
-    auto dest = std::filesystem::current_path() / std::to_string(std::time(0));
+    auto dest = std::filesystem::current_path() / boost::filesystem::unique_path().string();
     auto hrep = dest / webpier::to_hexadecimal(host.data(), host.size());
     auto prep = dest / webpier::to_hexadecimal(peer.data(), peer.size());
 

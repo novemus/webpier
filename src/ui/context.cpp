@@ -18,7 +18,7 @@ namespace WebPier
     namespace
     {
         std::shared_ptr<webpier::context> g_context;
-        std::shared_ptr<slipway::backend> g_backend;
+        std::shared_ptr<slipway::client> g_backend;
 
         std::string GetHome()
         {
@@ -58,9 +58,9 @@ namespace WebPier
             }
 
 #ifdef WIN32
-            static boost::process::child s_server(webpier::get_module_path(SLIPWAY_MODULE).string(), home, boost::process::windows::hide);
+            static boost::process::child s_server(webpier::get_module_path(webpier::slipway_module).string(), home, boost::process::windows::hide);
 #else
-            static boost::process::child s_server(webpier::get_module_path(SLIPWAY_MODULE).string(), home);
+            static boost::process::child s_server(webpier::get_module_path(webpier::slipway_module).string(), home);
 #endif
             if (!s_server.running())
             {
@@ -90,7 +90,7 @@ namespace WebPier
     {
         try
         {
-            if (webpier::get_module_path(WEBPIER_MODULE) != wxStandardPaths::Get().GetExecutablePath().ToStdWstring())
+            if (webpier::get_module_path(webpier::webpier_module) != wxStandardPaths::Get().GetExecutablePath().ToStdWstring())
                 throw std::runtime_error(_("Wrong module path"));
 
             InitContext();
@@ -465,7 +465,7 @@ namespace WebPier
             boost::property_tree::ptree array;
             for (auto& item : doc.get_child("services", array))
             {
-                ServicePtr service = CreateExportService();
+                ServicePtr service = CreateImportService();
                 service->Name = webpier::utf8_to_locale(item.second.get<std::string>("name"));
                 service->Pier = offer.Pier;
                 service->Obscure = item.second.get<bool>("obscure");
@@ -503,19 +503,19 @@ namespace WebPier
 
         void AssignAutostart()
         {
-            webpier::assign_autostart(webpier::get_module_path(SLIPWAY_MODULE), "\"" + g_context->home() + "\" daemon");
+            webpier::assign_autostart(webpier::get_module_path(webpier::slipway_module), "\"" + g_context->home() + "\" daemon");
         }
 
         void RevokeAutostart()
         {
-            webpier::revoke_autostart(webpier::get_module_path(SLIPWAY_MODULE), "\"" + g_context->home() + "\" daemon");
+            webpier::revoke_autostart(webpier::get_module_path(webpier::slipway_module), "\"" + g_context->home() + "\" daemon");
         }
 
         bool VerifyAutostart()
         {
             try
             {
-                return webpier::verify_autostart(webpier::get_module_path(SLIPWAY_MODULE), "\"" + g_context->home() + "\" daemon");
+                return webpier::verify_autostart(webpier::get_module_path(webpier::slipway_module), "\"" + g_context->home() + "\" daemon");
             }
             catch (const std::exception& ex) 
             {

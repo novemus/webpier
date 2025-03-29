@@ -16,10 +16,10 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #ifdef WIN32
-#include <windows.h>
-#include <boost/process/windows.hpp>
+    #include <windows.h>
+    #include <boost/process/windows.hpp>
 #elif __APPLE__
-#include <sysdir.h>
+    #include <sysdir.h>
 #endif
 
 namespace webpier
@@ -244,57 +244,88 @@ namespace webpier
         return ss.str();
     }
 
+    std::filesystem::path search_file(const std::filesystem::path& dir, const std::filesystem::path& name)
+    {
+        for (const auto& item : std::filesystem::directory_iterator(dir))
+        {
+            if (item.is_directory())
+            {
+                auto path = search_file(item.path(), name);
+                if (!path.empty())
+                    return path;
+            }
+
+            if (item.path().filename() == name)
+                return item.path();
+        }
+
+        return std::filesystem::path();
+    }
+
     std::filesystem::path get_module_path(const std::string& module) noexcept(false)
     {
-        std::filesystem::path file(module);
-        if (file.has_parent_path())
-            return file;
+#ifndef WEBPIER_CONFIG
+        static const std::map<std::string, std::string> s_config {
+    #ifdef WIN32
+            { taskxml_config, TASKXML_FILE_NAME },
+    #endif
+            { webpier_module, WEBPIER_FILE_NAME },
+            { slipway_module, SLIPWAY_FILE_NAME },
+            { carrier_module, CARRIER_FILE_NAME }
+        };
 
-#ifdef WIN32
+        auto iter = s_config.find(module);
+        if (iter == s_config.end())
+            throw std::runtime_error("Unknown module \"" + module + "\" name");
+
+        auto file = search_file(std::filesystem::current_path(), iter->second);
+        if (file.empty())
+            throw std::runtime_error("Can't find module \"" + module + "\" path");
+
+        return file;
+#else
+    #ifdef WIN32
         std::string value;
         value.resize(0xFFF);
 
         DWORD size = 0;
-        auto rc = RegGetValueA(HKEY_LOCAL_MACHINE, "Software\\WebPier", module.c_str(), RRF_RT_REG_SZ, nullptr, static_cast<void*>(value.data()), &size);
+        auto rc = RegGetValueA(HKEY_LOCAL_MACHINE, WEBPIER_CONFIG, module.c_str(), RRF_RT_REG_SZ, nullptr, static_cast<void*>(value.data()), &size);
 
         if (rc == ERROR_MORE_DATA)
         {
             value.resize(size / sizeof(char));
-            rc = RegGetValueA(HKEY_LOCAL_MACHINE, "Software\\WebPier", module.c_str(), RRF_RT_REG_SZ, nullptr, static_cast<void*>(value.data()), &size);
+            rc = RegGetValueA(HKEY_LOCAL_MACHINE, WEBPIER_CONFIG, module.c_str(), RRF_RT_REG_SZ, nullptr, static_cast<void*>(value.data()), &size);
         }
 
         if (rc != ERROR_SUCCESS)
-            throw std::runtime_error("Can't find module path: error=" + webpier::hexify(rc));
+            throw std::runtime_error("Can't get module \"" + module + "\" path: error=" + webpier::hexify(rc));
 
         value.resize(size / sizeof(char) - 1);
         return std::filesystem::path(value);
-#else
+    #else
         static std::once_flag s_flag;
         static boost::program_options::variables_map s_config;
 
         std::call_once(s_flag, [&]()
         {
-#if __APPLE__
-            std::filesystem::path path("/Library/Preferences/webpier/webpier.conf");
-#else
-            std::filesystem::path path("/etc/webpier/webpier.conf");
-#endif
+            std::filesystem::path path(WEBPIER_CONFIG);
             if (!std::filesystem::exists(path))
-                throw std::runtime_error("no configuration file");
+                throw std::runtime_error("No configuration file");
 
             boost::program_options::options_description options;
             options.add_options()
-                (WEBPIER_MODULE, boost::program_options::value<std::string>())
-                (SLIPWAY_MODULE, boost::program_options::value<std::string>())
-                (CARRIER_MODULE, boost::program_options::value<std::string>());
+                (webpier_module, boost::program_options::value<std::string>())
+                (slipway_module, boost::program_options::value<std::string>())
+                (carrier_module, boost::program_options::value<std::string>());
 
             boost::program_options::store(boost::program_options::parse_config_file<char>(path.string().c_str(), options, true), s_config);
         });
 
         if (!s_config.count(module))
-            throw std::runtime_error("unknown module name");
+            throw std::runtime_error("Unknown module \"" + module + "\" name");
 
-        return std::filesystem::path(s_config[module].as<std::string>());
+        return s_config[module].as<std::string>();
+    #endif
 #endif
     }
 
@@ -357,7 +388,7 @@ namespace webpier
         }
 #else
         boost::property_tree::ptree taskxml;
-        boost::property_tree::read_xml(get_module_path(TASKXML_MODULE).string(), taskxml);
+        boost::property_tree::read_xml(get_module_path(webpier::taskxml_config).string(), taskxml);
         taskxml.put("Task.RegistrationInfo.Date", webpier::make_timestamp("%Y-%m-%dT%H:%M:%S"));
         taskxml.put("Task.Actions.Exec.Command", exec.string());
         taskxml.put("Task.Actions.Exec.Arguments", args);

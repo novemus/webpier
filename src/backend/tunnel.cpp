@@ -18,7 +18,7 @@ endpoint parse_endpoint(const std::string& str)
 
 int main(int argc, char *argv[])
 {
-    if(webpier::get_module_path(CARRIER_MODULE) != argv[0])
+    if(webpier::get_module_path(webpier::carrier_module) != std::filesystem::canonical(argv[0]))
     {
         std::cerr << "wrong module path" << std::endl;
         return 1;

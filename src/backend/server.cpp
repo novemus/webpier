@@ -1,5 +1,5 @@
+#include <backend/server.h>
 #include <backend/message.h>
-#include <memory>
 #include <store/context.h>
 #include <store/utils.h>
 #include <plexus/plexus.h>
@@ -15,6 +15,7 @@
 #include <boost/algorithm/string.hpp>
 #include <filesystem>
 #include <iostream>
+#include <memory>
 #include <regex>
 #include <map>
 #include <set>
@@ -32,11 +33,8 @@ namespace slipway
         constexpr const char* stun_client_default_port = "0";
         constexpr const char* smtp_server_default_port = "smtps";
         constexpr const char* imap_server_default_port = "imaps";
-        constexpr const char* cert_file_name = "cert.crt";
-        constexpr const char* key_file_name = "private.key";
         constexpr const char* webpier_conf_file_name = "webpier.json";
         constexpr const char* webpier_lock_file_name = "webpier.lock";
-        constexpr const char* slipway_lock_file_name = "slipway.lock";
         constexpr const char* slipway_jack_file_name = "slipway.jack";
 
         namespace utils
@@ -225,7 +223,7 @@ namespace slipway
 
                 void connect(const boost::asio::ip::udp::endpoint& bind, const plexus::reference& host, const plexus::reference& peer)
                 {
-                    boost::process::v2::process proc(m_io, webpier::get_module_path(CARRIER_MODULE).string(), 
+                    boost::process::v2::process proc(m_io, webpier::get_module_path(webpier::carrier_module).string(), 
                     {
                         "--purpose=" + std::string(m_service.local ? "export" : "import"),
                         "--service=" + m_service.address,
@@ -560,7 +558,7 @@ namespace slipway
                         if (webpier::utf8_to_locale(item.second.get<std::string>("name")) == id.service)
                         {
                             return webpier::service {
-                                item.second.get<bool>("local", std::filesystem::exists(path.parent_path() / key_file_name)),
+                                item.second.get<bool>("local"),
                                 webpier::utf8_to_locale(item.second.get<std::string>("name")),
                                 webpier::utf8_to_locale(item.second.get<std::string>("pier")),
                                 webpier::utf8_to_locale(item.second.get<std::string>("address")),
@@ -602,7 +600,7 @@ namespace slipway
                         for (auto& item : doc.get_child("services", array))
                         {
                             res[pier].emplace_back(webpier::service {
-                                item.second.get<bool>("local", std::filesystem::exists(pin.path() / key_file_name)),
+                                item.second.get<bool>("local"),
                                 webpier::utf8_to_locale(item.second.get<std::string>("name")),
                                 webpier::utf8_to_locale(item.second.get<std::string>("pier")),
                                 webpier::utf8_to_locale(item.second.get<std::string>("address")),
@@ -900,16 +898,20 @@ namespace slipway
                 : m_io(io)
                 , m_home(home)
             {
+            }
+
+            void launch() noexcept(false)
+            {
                 engage();
             }
 
-            void handle_request(boost::asio::streambuf& buffer) noexcept(true)
+            void comply(boost::asio::streambuf& request) noexcept(true)
             {
                 slipway::message req, res;
 
                 try
                 {
-                    slipway::pull_message(buffer, req);
+                    slipway::pull_message(request, req);
 
                     _trc_ << "handle request: action=" << req.action << " payload=" << req.payload.index();
 
@@ -964,13 +966,13 @@ namespace slipway
                     res = slipway::message::make(req.action, ex.what());
                 }
 
-                slipway::push_message(buffer, res);
+                slipway::push_message(request, res);
             }
         };
 
-        class server
+        class server_impl : public server
         {
-            boost::asio::io_context& m_io;
+            boost::asio::io_context m_io;
             boost::asio::local::stream_protocol::acceptor m_acceptor;
             slipway::engine m_engine;
             size_t m_score;
@@ -997,7 +999,7 @@ namespace slipway
                     if (ec)
                         return cleanup();
 
-                    m_engine.handle_request(buffer);
+                    m_engine.comply(buffer);
 
                     boost::asio::async_write(socket, buffer, yield[ec]);
                     if (ec)
@@ -1040,75 +1042,46 @@ namespace slipway
 
         public:
 
-            server(boost::asio::io_context& io, const std::filesystem::path& socket, bool steady)
-                : m_io(io)
-                , m_acceptor(io, boost::asio::local::stream_protocol())
-                , m_engine(io, socket.parent_path())
+            server_impl(const std::filesystem::path& home, bool steady)
+                : m_acceptor(m_io, boost::asio::local::stream_protocol())
+                , m_engine(m_io, home)
                 , m_score(steady ? 1 : 0)
             {
+                auto socket = home / slipway_jack_file_name;
+
                 cleanup(socket.string());
 
                 m_acceptor.bind(boost::asio::local::stream_protocol::endpoint(socket.u8string()));
                 m_acceptor.listen();
-
-                accept();
             }
 
-            ~server()
+            ~server_impl()
             {
                 cleanup(webpier::utf8_to_locale(m_acceptor.local_endpoint().path()));
             }
+
+            void employ() noexcept(false) override
+            {
+                m_io.restart();
+                m_engine.launch();
+    
+                accept();
+    
+                m_io.run();
+            }
+
+            void cancel() noexcept(true) override
+            {
+                boost::system::error_code ec;
+                m_acceptor.cancel(ec);
+
+                m_io.stop();
+            }
         };
     }
-}
 
-int main(int argc, char* argv[])
-{
-    try
+    std::shared_ptr<server> create_backend(const std::string& home, bool steady) noexcept(false)
     {
-        if(webpier::get_module_path(SLIPWAY_MODULE) != argv[0])
-        {
-            std::cerr << "wrong module path" << std::endl;
-            return 1;
-        }
-
-        if (argc < 2)
-        {
-            std::cerr << "no home argument" << std::endl;
-            return 2;
-        }
-
-        std::filesystem::path home = std::filesystem::path(argv[1]);
-        if (!std::filesystem::exists(home) || !std::filesystem::exists(home / slipway::webpier_conf_file_name))
-        {
-            std::cerr << "wrong home argument" << std::endl;
-            return 3;
-        }
-
-        std::filesystem::path socket = home / slipway::slipway_jack_file_name;
-        std::filesystem::path locker = home / slipway::slipway_lock_file_name;
-
-        if (!std::filesystem::exists(locker))
-            std::ofstream(locker).close();
-
-        boost::interprocess::file_lock guard(locker.string().c_str());
-        boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(guard, boost::interprocess::try_to_lock_type());
-
-        if (!lock.owns())
-        {
-            std::cerr << "can't acquire lock" << std::endl;
-            return 4;
-        }
-
-        boost::asio::io_context io;
-        slipway::server server(io, socket, argc == 3 && std::strcmp(argv[2], "daemon") == 0);
-        io.run();
+        return std::make_shared<server_impl>(home, steady);
     }
-    catch (const std::exception& ex)
-    {
-        std::cerr << ex.what() << std::endl;
-        return 5;
-    }
-
-    return 0;
 }

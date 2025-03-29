@@ -6,9 +6,9 @@
 
 namespace slipway
 {
-    struct backend
+    struct client
     {
-        virtual ~backend() {}
+        virtual ~client() {}
         // suspend all services
         virtual void unplug() noexcept(false) = 0;
         // reset all services according to its configurations and drop removed ones
@@ -31,5 +31,6 @@ namespace slipway
         virtual void review(const slipway::handle& service, slipway::report& result) noexcept(false) = 0;
     };
 
-    std::shared_ptr<backend> connect_backend(const std::string& home) noexcept(false);
+    // home - path to the webpier context directory
+    std::shared_ptr<client> connect_backend(const std::string& home) noexcept(false);
 }

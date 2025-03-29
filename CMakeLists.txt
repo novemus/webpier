@@ -8,7 +8,7 @@ project(webpier VERSION 1.0.0 DESCRIPTION "The program for forwarding TCP applic
 
 option(WEBPIER_SKIP_TEST_RULES "Don't generate test rules" ON)
 option(WEBPIER_SKIP_INSTALL_RULES "Don't generate install rules" OFF)
-option(WEBPIER_SKIP_PACKAGE_RULES "Don't generate package rules" OFF)
+option(WEBPIER_SKIP_PACKAGE_RULES "Don't generate package rules" ON)
 
 ########## dependencies ##########
 
@@ -153,7 +153,9 @@ target_sources(${WEBPIER} PRIVATE
 target_sources(${SLIPWAY} PRIVATE
     src/backend/message.h
     src/backend/message.cpp
+    src/backend/server.h
     src/backend/server.cpp
+    src/backend/main.cpp
     src/store/utils.h
     src/store/utils.cpp
     )
@@ -180,20 +182,27 @@ target_compile_features(${WEBPIER} PRIVATE cxx_std_17)
 target_compile_features(${SLIPWAY} PRIVATE cxx_std_17)
 target_compile_features(${CARRIER} PRIVATE cxx_std_17)
 
-set(WEBPIER_MODULE "$<IF:$<BOOL:${WEBPIER_MODULE}>,${WEBPIER_MODULE},${WEBPIER}>")
-set(SLIPWAY_MODULE "$<IF:$<BOOL:${SLIPWAY_MODULE}>,${SLIPWAY_MODULE},${SLIPWAY}>")
-set(CARRIER_MODULE "$<IF:$<BOOL:${CARRIER_MODULE}>,${CARRIER_MODULE},${CARRIER}>")
+if(NOT WEBPIER_SKIP_PACKAGE_RULES)
+    if(NOT WEBPIER_CONFIG)
+        if(WIN32)
+            set(WEBPIER_CONFIG "Software\\\\WebPier")
+        elseif(APPLE)
+            set(WEBPIER_CONFIG "/Library/Preferences/webpier/webpier.conf")
+        else()
+            set(WEBPIER_CONFIG "/etc/webpier/webpier.conf")
+        endif()
+    endif()
 
-target_compile_definitions(${WEBPIER} PRIVATE WEBPIER_MODULE="${WEBPIER_MODULE}" SLIPWAY_MODULE="${SLIPWAY_MODULE}" CARRIER_MODULE="${CARRIER_MODULE}")
-target_compile_definitions(${SLIPWAY} PRIVATE WEBPIER_MODULE="${WEBPIER_MODULE}" SLIPWAY_MODULE="${SLIPWAY_MODULE}" CARRIER_MODULE="${CARRIER_MODULE}")
-target_compile_definitions(${CARRIER} PRIVATE WEBPIER_MODULE="${WEBPIER_MODULE}" SLIPWAY_MODULE="${SLIPWAY_MODULE}" CARRIER_MODULE="${CARRIER_MODULE}")
+    target_compile_definitions(${WEBPIER} PRIVATE WEBPIER_CONFIG="${WEBPIER_CONFIG}")
+    target_compile_definitions(${SLIPWAY} PRIVATE WEBPIER_CONFIG="${WEBPIER_CONFIG}")
+    target_compile_definitions(${CARRIER} PRIVATE WEBPIER_CONFIG="${WEBPIER_CONFIG}")
+endif()
 
-if(MSVC)
-    set(TASKXML_MODULE "$<IF:$<BOOL:${TASKXML_MODULE}>,${TASKXML_MODULE},taskxml>")
-    target_compile_definitions(${WEBPIER} PRIVATE TASKXML_MODULE="${TASKXML_MODULE}")
-    target_compile_definitions(${SLIPWAY} PRIVATE TASKXML_MODULE="${TASKXML_MODULE}")
-    target_compile_definitions(${CARRIER} PRIVATE TASKXML_MODULE="${TASKXML_MODULE}")
-    add_definitions(-D_WIN32_WINNT=0x0601 -D_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING)
+add_definitions(-DWEBPIER_FILE_NAME="$<TARGET_FILE_NAME:${WEBPIER}>" -DSLIPWAY_FILE_NAME="$<TARGET_FILE_NAME:${SLIPWAY}>" -DCARRIER_FILE_NAME="$<TARGET_FILE_NAME:${CARRIER}>")
+
+if(WIN32)
+    add_definitions(-D_WIN32_WINNT=0x0601 -D_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING -DTASKXML_FILE_NAME="task.xml")
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/windows/task.xml" "${CMAKE_CURRENT_BINARY_DIR}/task.xml" COPYONLY)
 endif()
 
 ########## install ##########
@@ -206,7 +215,7 @@ if(NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMAKE_SKIP_INSTALL_RULES)
     install(TARGETS ${SLIPWAY} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT binary_files)
     install(TARGETS ${CARRIER} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT binary_files)
 
-    if(MSVC)
+    if(WIN32)
         install(FILES "$<TARGET_PDB_FILE:${WEBPIER}>" COMPONENT pdb_files
             CONFIGURATIONS Debug RelWithDebInfo
             DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -219,27 +228,23 @@ if(NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMAKE_SKIP_INSTALL_RULES)
             CONFIGURATIONS Debug RelWithDebInfo
             DESTINATION ${CMAKE_INSTALL_BINDIR}
             OPTIONAL)
+        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/windows/task.xml DESTINATION ${CMAKE_INSTALL_DATADIR} COMPONENT windows_files)
     endif()
 endif()
 
 ########## tests ##########
 
-if(NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMAKE_SKIP_INSTALL_RULES)
+if(NOT WEBPIER_SKIP_TEST_RULES)
     set(WEBPIER_TEST webpier_ut)
-    add_executable(${WEBPIER_TEST} tests/utils.cpp tests/context.cpp tests/message.cpp tests/slipway.cpp src/store/context.cpp src/backend/message.cpp src/backend/client.cpp src/store/utils.cpp)
-    target_link_libraries(${WEBPIER_TEST} PRIVATE Boost::unit_test_framework Boost::coroutine Boost::filesystem Boost::program_options "$<$<BOOL:${MSVC}>:Boost::property_tree>" "$<$<BOOL:${MSVC}>:Crypt32>" OpenSSL::SSL OpenSSL::Crypto)
+    add_executable(${WEBPIER_TEST} tests/utils.cpp tests/context.cpp tests/message.cpp tests/slipway.cpp src/store/context.cpp src/backend/message.cpp src/backend/client.cpp src/backend/server.cpp src/store/utils.cpp)
+    target_link_libraries(${WEBPIER_TEST} PRIVATE Boost::unit_test_framework Boost::coroutine Boost::filesystem Boost::program_options "$<$<BOOL:${MSVC}>:Boost::property_tree>" "$<$<BOOL:${MSVC}>:Crypt32>" plexus::libplexus wormhole::libwormhole opendht fmt::fmt msgpack-cxx PkgConfig::GnuTLS PkgConfig::argon2 PkgConfig::Nettle PkgConfig::Jsoncpp OpenSSL::SSL OpenSSL::Crypto)
 
     target_compile_features(${WEBPIER_TEST} PRIVATE cxx_std_17)
-    target_compile_definitions(${WEBPIER_TEST} PRIVATE WEBPIER_MODULE="${WEBPIER_MODULE}" SLIPWAY_MODULE="${SLIPWAY_MODULE}" CARRIER_MODULE="${CARRIER_MODULE}")
+    set_target_properties(${WEBPIER_TEST} PROPERTIES DEBUG_POSTFIX "d" CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN ON)
     target_include_directories(${WEBPIER_TEST} PRIVATE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>" ${Boost_INCLUDE_DIRS})
-    set_target_properties(${WEBPIER_TEST} PROPERTIES DEBUG_POSTFIX "d")
-
-    if(MSVC)
-        target_compile_definitions(${WEBPIER_TEST} PRIVATE TASKXML_MODULE="${TASKXML_MODULE}")
-    endif()
 
     enable_testing()
-    add_test(NAME ${WEBPIER_TEST} COMMAND ${WEBPIER_TEST} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    add_test(NAME ${WEBPIER_TEST} COMMAND ${WEBPIER_TEST} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
 ########## package ##########
@@ -261,6 +266,10 @@ if(NOT WEBPIER_SKIP_PACKAGE_RULES AND NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMA
             install(FILES ${DOC_FILES} DESTINATION ${CMAKE_INSTALL_DOCDIR} COMPONENT debian_files)
             install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/assets/webpier.png DESTINATION /usr/share/pixmaps COMPONENT debian_files)
 
+            if(NOT CPACK_PACKAGING_INSTALL_PREFIX)
+                set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")
+            endif()
+
             configure_and_generate(${CMAKE_CURRENT_SOURCE_DIR}/debian/webpier.conf.in ${CMAKE_CURRENT_BINARY_DIR}/webpier.conf)
             configure_and_generate(${CMAKE_CURRENT_SOURCE_DIR}/debian/webpier.desktop.in ${CMAKE_CURRENT_BINARY_DIR}/webpier.desktop)
 
@@ -268,9 +277,6 @@ if(NOT WEBPIER_SKIP_PACKAGE_RULES AND NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMA
             install(FILES ${CMAKE_CURRENT_BINARY_DIR}/webpier.desktop DESTINATION /usr/share/applications COMPONENT debian_files)
         endif()
     elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Windows")
-
-        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/windows/task.xml DESTINATION ${CMAKE_INSTALL_DATADIR} COMPONENT windows_files)
-
         configure_and_generate(${CMAKE_CURRENT_SOURCE_DIR}/windows/modules.xml.in ${CMAKE_CURRENT_BINARY_DIR}/modules.xml)
 
         set(CPACK_PACKAGE_DESCRIPTION "The program for forwarding TCP services through NAT")

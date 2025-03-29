@@ -10,7 +10,7 @@ namespace slipway
     {
         constexpr const char* jack_file_name = "slipway.jack";
 
-        class client : public backend
+        class client_impl : public client
         {
             boost::asio::io_context m_io;
             boost::asio::local::stream_protocol::socket m_socket;
@@ -87,7 +87,7 @@ namespace slipway
 
         public:
 
-            client(const std::filesystem::path& home)
+            client_impl(const std::filesystem::path& home)
                 : m_socket(m_io)
             {
                 execute([&](boost::asio::yield_context yield)
@@ -181,8 +181,8 @@ namespace slipway
         };
     }
 
-    std::shared_ptr<backend> connect_backend(const std::string& home) noexcept(false)
+    std::shared_ptr<client> connect_backend(const std::string& home) noexcept(false)
     {
-        return std::make_shared<client>(home);
+        return std::make_shared<client_impl>(home);
     }
 }

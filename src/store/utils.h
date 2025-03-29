@@ -7,6 +7,14 @@
 
 namespace webpier
 {
+    constexpr const char* webpier_module = "webpier";
+    constexpr const char* slipway_module = "slipway";
+    constexpr const char* carrier_module = "carrier";
+
+#ifdef WIN32
+    constexpr const char* taskxml_config = "taskxml";
+#endif
+
     struct x509_error : public std::runtime_error { x509_error(const std::string& what) : std::runtime_error(what) {} };
 
     void generate_x509_pair(const std::filesystem::path& cert_path, const std::filesystem::path& key_path, const std::string& subject_name) noexcept(false);

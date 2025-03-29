@@ -3,12 +3,13 @@
 #include <store/utils.h>
 #include <boost/test/unit_test.hpp>
 #include <boost/scope_exit.hpp>
+#include <boost/filesystem.hpp>
 #include <filesystem>
 #include <fstream>
 
 BOOST_AUTO_TEST_CASE(x509)
 {
-    auto dest = std::filesystem::current_path() / std::to_string(std::time(0));
+    auto dest = std::filesystem::current_path() / boost::filesystem::unique_path().string();
 
     BOOST_SCOPE_EXIT(&dest) 
     {

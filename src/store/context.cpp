@@ -290,7 +290,9 @@ namespace webpier
                     hard_lock lock(m_guard);
 
                     std::filesystem::create_directories(m_config.repo);
-                    std::filesystem::create_directories(m_config.log.folder);
+
+                    if (!m_config.log.folder.empty())
+                        std::filesystem::create_directories(m_config.log.folder);
 
                     if (!std::filesystem::exists(cert) && !std::filesystem::exists(key))
                     {
