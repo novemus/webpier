@@ -12,6 +12,7 @@
 #endif
 #include <wx/stdpaths.h>
 #include <wx/timer.h>
+#include <filesystem>
 
 namespace WebPier
 {
@@ -90,7 +91,7 @@ namespace WebPier
     {
         try
         {
-            if (webpier::get_module_path(webpier::webpier_module) != wxStandardPaths::Get().GetExecutablePath().ToStdWstring())
+            if (webpier::get_module_path(webpier::webpier_module) != webpier::get_absolute_path(wxStandardPaths::Get().GetExecutablePath().ToStdString()))
                 throw std::runtime_error(_("Wrong module path"));
 
             InitContext();
@@ -101,7 +102,7 @@ namespace WebPier
         }
         catch (const std::exception& ex)
         {
-            CMessageDialog dialog(nullptr, _("Can't start the WebPier. ") + ex.what(), wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
+            CMessageDialog dialog(nullptr, _("Can't start the WebPier. ") + ex.what() + " $ " + wxStandardPaths::Get().GetExecutablePath().ToStdString() + " $ " + std::filesystem::current_path().string(), wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
             dialog.ShowModal();
         }
         return false;

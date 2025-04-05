@@ -262,6 +262,17 @@ namespace webpier
         return std::filesystem::path();
     }
 
+    std::filesystem::path get_absolute_path(const std::string& file) noexcept(false)
+    {
+        std::filesystem::path path(file);
+        if (std::filesystem::is_symlink(path))
+        {
+            auto target = std::filesystem::read_symlink(path);
+            return std::filesystem::canonical(target.is_absolute() ? target : path.parent_path() / target);
+        }
+        return std::filesystem::canonical(path);
+    }
+
     std::filesystem::path get_module_path(const std::string& module) noexcept(false)
     {
 #ifndef WEBPIER_CONFIG

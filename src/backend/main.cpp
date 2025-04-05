@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
 
     try
     {
-        if(webpier::get_module_path(webpier::slipway_module) != std::filesystem::canonical(argv[0]))
+        if(webpier::get_module_path(webpier::slipway_module) != webpier::get_absolute_path(argv[0]))
         {
             std::cerr << "wrong module path" << std::endl;
             return 1;

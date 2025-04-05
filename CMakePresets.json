@@ -4,8 +4,6 @@
         {
             "name": "config-base",
             "hidden": true,
-            "displayName": "Basic",
-            "description": "Basic Configure Preset",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "cacheVariables": {
                 "WEBPIER_SKIP_TEST_RULES": "OFF",
@@ -14,12 +12,34 @@
             }
         },
         {
+            "name": "static-config-base",
+            "hidden": true,
+            "inherits": "config-base",
+            "cacheVariables": {
+                "BUILD_SHARED_LIBS": "OFF"
+            },
+            "installDir": "${sourceParentDir}/install/x64-static"
+        },
+        {
+            "name": "shared-config-base",
+            "hidden": true,
+            "inherits": "config-base",
+            "cacheVariables": {
+                "BUILD_SHARED_LIBS": "ON"
+            },
+            "installDir": "${sourceParentDir}/install/x64"
+        },
+        {
+            "name": "vcpkg-config-base",
+            "hidden": true,
+            "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+        },
+        {
             "name": "windows-static-debug",
             "displayName": "Static (Debug)",
             "description": "Configure Debug static build",
-            "inherits": "config-base",
+            "inherits": ["static-config-base", "vcpkg-config-base"],
             "cacheVariables": {
-                "BUILD_SHARED_LIBS": "OFF",
                 "VCPKG_TARGET_TRIPLET": "x64-windows-static",
                 "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>",
                 "CMAKE_CONFIGURATION_TYPES": "Debug",
@@ -29,9 +49,7 @@
                 "type": "equals",
                 "lhs": "${hostSystemName}",
                 "rhs": "Windows"
-            },
-            "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-            "installDir": "${sourceParentDir}/install/x64-static"
+            }
         },
         {
             "name": "windows-static-release",
@@ -44,53 +62,99 @@
             }
         },
         {
-            "name": "static-release",
+            "name": "linux-static-release",
             "displayName": "Static (Release)",
             "description": "Configure static Release build",
-            "inherits": "config-base",
+            "inherits": "static-config-base",
             "cacheVariables": {
                 "BUILD_SHARED_LIBS": "OFF",
                 "CMAKE_BUILD_TYPE": "Release"
             },
             "condition": {
-                "type": "inList",
-                "string": "${hostSystemName}",
-                "list": ["Linux", "Darwin"]
-            },
-            "installDir": "${sourceParentDir}/install/x64-static"
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            }
         },
         {
-            "name": "static-debug",
+            "name": "linux-static-debug",
             "displayName": "Static (Debug)",
             "description": "Configure static Debug build",
-            "inherits": "static-release",
+            "inherits": "linux-static-release",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug"
             }
         },
         {
-            "name": "shared-release",
+            "name": "linux-shared-release",
             "displayName": "Shared (Release)",
             "description": "Configure static Release build",
-            "inherits": "config-base",
+            "inherits": "shared-config-base",
             "cacheVariables": {
                 "BUILD_SHARED_LIBS": "ON",
                 "CMAKE_BUILD_TYPE": "Release"
             },
             "condition": {
-                "type": "inList",
-                "string": "${hostSystemName}",
-                "list": ["Linux", "Darwin"]
-            },
-            "installDir": "${sourceParentDir}/install/x64"
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            }
         },
         {
-            "name": "shared-debug",
+            "name": "linux-shared-debug",
             "displayName": "Shared (Debug)",
             "description": "Configure static Debug build",
-            "inherits": "shared-release",
+            "inherits": "linux-shared-release",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "darwin-shared-debug",
+            "displayName": "Shared (Debug)",
+            "description": "Configure Debug shared build",
+            "inherits": ["shared-config-base", "vcpkg-config-base"],
+            "cacheVariables": {
+                "VCPKG_TARGET_TRIPLET": "x64-osx-dynamic",
+                "CMAKE_BUILD_TYPE": "Debug"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            }
+        },
+        {
+            "name": "darwin-shared-release",
+            "displayName": "Shared (Release)",
+            "description": "Configure Release shared build",
+            "inherits": "darwin-shared-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "darwin-static-debug",
+            "displayName": "Static (Debug)",
+            "description": "Configure Debug static build",
+            "inherits": ["static-config-base", "vcpkg-config-base"],
+            "cacheVariables": {
+                "VCPKG_TARGET_TRIPLET": "x64-osx",
+                "CMAKE_BUILD_TYPE": "Debug"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            }
+        },
+        {
+            "name": "darwin-static-release",
+            "displayName": "Static (Release)",
+            "description": "Configure Release static build",
+            "inherits": "darwin-static-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
             }
         }
     ],
@@ -106,30 +170,6 @@
             "displayName": "Release",
             "configuration": "Release",
             "configurePreset": "windows-static-release"
-        },
-        {
-            "name": "static-debug",
-            "displayName": "Debug",
-            "configuration": "Debug",
-            "configurePreset": "static-debug"
-        },
-        {
-            "name": "static-release",
-            "displayName": "Release",
-            "configuration": "Release",
-            "configurePreset": "static-release"
-        },
-        {
-            "name": "shared-debug",
-            "displayName": "Debug",
-            "configuration": "Debug",
-            "configurePreset": "shared-debug"
-        },
-        {
-            "name": "shared-release",
-            "displayName": "Release",
-            "configuration": "Release",
-            "configurePreset": "shared-release"
         }
     ],
     "testPresets": [
@@ -145,31 +185,31 @@
             "hidden": true
         },
         {
-            "name": "static-release",
+            "name": "linux-static-release",
             "description": "All project tests",
             "displayName": "Test",
-            "configurePreset": "static-release",
+            "configurePreset": "linux-static-release",
             "inherits": "test-base"
         },
         {
-            "name": "static-debug",
+            "name": "linux-static-debug",
             "description": "All project tests",
             "displayName": "Test",
-            "configurePreset": "static-debug",
+            "configurePreset": "linux-static-debug",
             "inherits": "test-base"
         },
         {
-            "name": "shared-release",
+            "name": "linux-shared-release",
             "description": "All project tests",
             "displayName": "Test",
-            "configurePreset": "shared-release",
+            "configurePreset": "linux-shared-release",
             "inherits": "test-base"
         },
         {
-            "name": "shared-debug",
+            "name": "linux-shared-debug",
             "description": "All project tests",
             "displayName": "Test",
-            "configurePreset": "shared-debug",
+            "configurePreset": "linux-shared-debug",
             "inherits": "test-base"
         },
         {
@@ -194,7 +234,7 @@
             "name": "debian-package",
             "displayName": "webpier (DEB)",
             "description": "Debian package",
-            "configurePreset": "static-release",
+            "configurePreset": "linux-static-release",
             "condition": {
                 "type": "equals",
                 "lhs": "${hostSystemName}",
@@ -233,6 +273,24 @@
             },
             "generators": [
                 "WIX"
+            ],
+            "configurations": [
+                "Release"
+            ],
+            "packageName": "WebPier",
+            "packageDirectory": ".."
+        },
+        {
+            "name": "darwin-pkg",
+            "displayName": "webpier (PKG)",
+            "configurePreset": "darwin-static-release",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            },
+            "generators": [
+                "productbuild"
             ],
             "configurations": [
                 "Release"

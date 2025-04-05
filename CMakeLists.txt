@@ -183,16 +183,13 @@ target_compile_features(${SLIPWAY} PRIVATE cxx_std_17)
 target_compile_features(${CARRIER} PRIVATE cxx_std_17)
 
 if(NOT WEBPIER_SKIP_PACKAGE_RULES)
-    if(NOT WEBPIER_CONFIG)
-        if(WIN32)
-            set(WEBPIER_CONFIG "Software\\\\WebPier")
-        elseif(APPLE)
-            set(WEBPIER_CONFIG "/Library/Preferences/webpier/webpier.conf")
-        else()
-            set(WEBPIER_CONFIG "/etc/webpier/webpier.conf")
-        endif()
+    if(WIN32)
+        set(WEBPIER_CONFIG "Software\\\\WebPier")
+    elseif(APPLE)
+        set(WEBPIER_CONFIG "$<IF:$<BOOL:${CPACK_PACKAGING_INSTALL_PREFIX}>,${CPACK_PACKAGING_INSTALL_PREFIX},${CMAKE_INSTALL_PREFIX}>/webpier.app/Contents/Resources/webpier.conf")
+    else()
+        set(WEBPIER_CONFIG "/etc/webpier/webpier.conf")
     endif()
-
     target_compile_definitions(${WEBPIER} PRIVATE WEBPIER_CONFIG="${WEBPIER_CONFIG}")
     target_compile_definitions(${SLIPWAY} PRIVATE WEBPIER_CONFIG="${WEBPIER_CONFIG}")
     target_compile_definitions(${CARRIER} PRIVATE WEBPIER_CONFIG="${WEBPIER_CONFIG}")
@@ -211,9 +208,9 @@ if(NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMAKE_SKIP_INSTALL_RULES)
 
     include(GNUInstallDirs)
 
-    install(TARGETS ${WEBPIER} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT binary_files)
-    install(TARGETS ${SLIPWAY} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT binary_files)
-    install(TARGETS ${CARRIER} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT binary_files)
+    install(TARGETS ${WEBPIER} RUNTIME DESTINATION "$<IF:$<BOOL:${APPLE}>,webpier.app/Contents/Resources/Modules,${CMAKE_INSTALL_BINDIR}>" COMPONENT binary_files)
+    install(TARGETS ${SLIPWAY} RUNTIME DESTINATION "$<IF:$<BOOL:${APPLE}>,webpier.app/Contents/Resources/Modules,${CMAKE_INSTALL_BINDIR}>" COMPONENT binary_files)
+    install(TARGETS ${CARRIER} RUNTIME DESTINATION "$<IF:$<BOOL:${APPLE}>,webpier.app/Contents/Resources/Modules,${CMAKE_INSTALL_BINDIR}>" COMPONENT binary_files)
 
     if(WIN32)
         install(FILES "$<TARGET_PDB_FILE:${WEBPIER}>" COMPONENT pdb_files
@@ -266,18 +263,14 @@ if(NOT WEBPIER_SKIP_PACKAGE_RULES AND NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMA
             install(FILES ${DOC_FILES} DESTINATION ${CMAKE_INSTALL_DOCDIR} COMPONENT debian_files)
             install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/assets/webpier.png DESTINATION /usr/share/pixmaps COMPONENT debian_files)
 
-            if(NOT CPACK_PACKAGING_INSTALL_PREFIX)
-                set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")
-            endif()
+            configure_and_generate("${CMAKE_CURRENT_SOURCE_DIR}/debian/webpier.conf.in" "${CMAKE_CURRENT_BINARY_DIR}/webpier.conf")
+            configure_and_generate("${CMAKE_CURRENT_SOURCE_DIR}/debian/webpier.desktop.in" "${CMAKE_CURRENT_BINARY_DIR}/webpier.desktop")
 
-            configure_and_generate(${CMAKE_CURRENT_SOURCE_DIR}/debian/webpier.conf.in ${CMAKE_CURRENT_BINARY_DIR}/webpier.conf)
-            configure_and_generate(${CMAKE_CURRENT_SOURCE_DIR}/debian/webpier.desktop.in ${CMAKE_CURRENT_BINARY_DIR}/webpier.desktop)
-
-            install(FILES ${CMAKE_CURRENT_BINARY_DIR}/webpier.conf DESTINATION /etc/webpier COMPONENT debian_files)
-            install(FILES ${CMAKE_CURRENT_BINARY_DIR}/webpier.desktop DESTINATION /usr/share/applications COMPONENT debian_files)
+            install(FILES "${CMAKE_CURRENT_BINARY_DIR}/webpier.conf" DESTINATION /etc/webpier COMPONENT debian_files)
+            install(FILES "${CMAKE_CURRENT_BINARY_DIR}/webpier.desktop" DESTINATION /usr/share/applications COMPONENT debian_files)
         endif()
     elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Windows")
-        configure_and_generate(${CMAKE_CURRENT_SOURCE_DIR}/windows/modules.xml.in ${CMAKE_CURRENT_BINARY_DIR}/modules.xml)
+        configure_and_generate("${CMAKE_CURRENT_SOURCE_DIR}/windows/modules.xml.in" "${CMAKE_CURRENT_BINARY_DIR}/modules.xml")
 
         set(CPACK_PACKAGE_DESCRIPTION "The program for forwarding TCP services through NAT")
         set(CPACK_WIX_UPGRADE_GUID "FC2671A8-8282-4170-B58F-9FE385A18EAC")
@@ -291,6 +284,29 @@ if(NOT WEBPIER_SKIP_PACKAGE_RULES AND NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMA
         set(CPACK_COMPONENT_WINDOWS_FILES_HIDDEN ON)
 
         set_property(INSTALL "${CMAKE_INSTALL_BINDIR}/$<TARGET_FILE_NAME:${WEBPIER}>" PROPERTY CPACK_START_MENU_SHORTCUTS "WebPier")
+    elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin")
+
+        if(NOT CPACK_PRODUCTBUILD_IDENTIFIER)
+            set(CPACK_PRODUCTBUILD_IDENTIFIER "dev.community.webpier")
+        endif()
+
+        configure_file("${CMAKE_CURRENT_SOURCE_DIR}/darwin/Info.plist.in" "${CMAKE_CURRENT_BINARY_DIR}/Info.plist" @ONLY)
+        configure_and_generate("${CMAKE_CURRENT_SOURCE_DIR}/darwin/webpier.conf.in" "${CMAKE_CURRENT_BINARY_DIR}/webpier.conf")
+        configure_and_generate("${CMAKE_CURRENT_SOURCE_DIR}/darwin/postinst.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/postinst.sh")
+
+        install(FILES "${CMAKE_CURRENT_BINARY_DIR}/Info.plist" DESTINATION webpier.app/Contents COMPONENT darwin_files)
+        install(FILES "${CMAKE_CURRENT_BINARY_DIR}/webpier.conf" DESTINATION webpier.app/Contents/Resources COMPONENT darwin_files)
+        install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/webpier.icns" DESTINATION webpier.app/Contents/Resources COMPONENT darwin_files)
+
+        set(CPACK_COMPONENTS_ALL "binary_files;darwin_files")
+        set(CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE ON)
+        set(CPACK_COMPONENT_BINARY_FILES_HIDDEN ON)
+        set(CPACK_COMPONENT_DARWIN_FILES_HIDDEN ON)
+        set(CPACK_POSTFLIGHT_BINARY_FILES_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/postinst.sh")
+
+        set(CPACK_RESOURCE_FILE_WELCOME "${CMAKE_CURRENT_SOURCE_DIR}/darwin/welcome.txt") 
+        set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/darwin/readme.txt") 
+        set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
     endif()
 
     include(CPack)
