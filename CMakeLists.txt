@@ -273,11 +273,12 @@ if(NOT WEBPIER_SKIP_PACKAGE_RULES AND NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMA
         configure_and_generate("${CMAKE_CURRENT_SOURCE_DIR}/windows/modules.xml.in" "${CMAKE_CURRENT_BINARY_DIR}/modules.xml")
 
         set(CPACK_PACKAGE_DESCRIPTION "The program for forwarding TCP services through NAT")
-        set(CPACK_WIX_UPGRADE_GUID "FC2671A8-8282-4170-B58F-9FE385A18EAC")
         set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
+        set(CPACK_WIX_UPGRADE_GUID "FC2671A8-8282-4170-B58F-9FE385A18EAC")
         set(CPACK_WIX_PRODUCT_ICON "${CMAKE_CURRENT_SOURCE_DIR}/assets/webpier.ico")
         set(CPACK_WIX_EXTENSIONS "WixFirewallExtension")
         set(CPACK_WIX_PATCH_FILE "${CMAKE_CURRENT_BINARY_DIR}/modules.xml")
+        set(CPACK_WIX_UI_REF "WixUI_InstallDir")
         set(CPACK_COMPONENTS_ALL "binary_files;windows_files")
         set(CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE ON)
         set(CPACK_COMPONENT_BINARY_FILES_HIDDEN ON)
