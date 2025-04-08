@@ -102,7 +102,7 @@ namespace WebPier
         }
         catch (const std::exception& ex)
         {
-            CMessageDialog dialog(nullptr, _("Can't start the WebPier. ") + ex.what() + " $ " + wxStandardPaths::Get().GetExecutablePath().ToStdString() + " $ " + std::filesystem::current_path().string(), wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
+            CMessageDialog dialog(nullptr, _("Can't start the WebPier. ") + ex.what(), wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
             dialog.ShowModal();
         }
         return false;

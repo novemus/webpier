@@ -1,5 +1,5 @@
 This package contains the 'WebPier' application.
 
-The 'WebPier' is intended for organizing and managing access to services running on machines located in subnets which are not routable to each other, but are connected to the Internet. For example, when hosts are located in providers local networks behind NATs.
+The 'WebPier' is a network application designed for organizing and managing access to services running on machines located in subnets which are not routable to each other, but are connected to the Internet. For example, when hosts are located in providers local networks behind NATs.
 
 Shall we continue?

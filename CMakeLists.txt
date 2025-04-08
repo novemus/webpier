@@ -186,7 +186,7 @@ if(NOT WEBPIER_SKIP_PACKAGE_RULES)
     if(WIN32)
         set(WEBPIER_CONFIG "Software\\\\WebPier")
     elseif(APPLE)
-        set(WEBPIER_CONFIG "$<IF:$<BOOL:${CPACK_PACKAGING_INSTALL_PREFIX}>,${CPACK_PACKAGING_INSTALL_PREFIX},${CMAKE_INSTALL_PREFIX}>/webpier.app/Contents/Resources/webpier.conf")
+        set(WEBPIER_CONFIG "$<IF:$<BOOL:${CPACK_PACKAGING_INSTALL_PREFIX}>,${CPACK_PACKAGING_INSTALL_PREFIX},${CMAKE_INSTALL_PREFIX}>/WebPier.app/Contents/Resources/webpier.conf")
     else()
         set(WEBPIER_CONFIG "/etc/webpier/webpier.conf")
     endif()
@@ -208,9 +208,9 @@ if(NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMAKE_SKIP_INSTALL_RULES)
 
     include(GNUInstallDirs)
 
-    install(TARGETS ${WEBPIER} RUNTIME DESTINATION "$<IF:$<BOOL:${APPLE}>,webpier.app/Contents/Resources/Modules,${CMAKE_INSTALL_BINDIR}>" COMPONENT binary_files)
-    install(TARGETS ${SLIPWAY} RUNTIME DESTINATION "$<IF:$<BOOL:${APPLE}>,webpier.app/Contents/Resources/Modules,${CMAKE_INSTALL_BINDIR}>" COMPONENT binary_files)
-    install(TARGETS ${CARRIER} RUNTIME DESTINATION "$<IF:$<BOOL:${APPLE}>,webpier.app/Contents/Resources/Modules,${CMAKE_INSTALL_BINDIR}>" COMPONENT binary_files)
+    install(TARGETS ${WEBPIER} RUNTIME DESTINATION "$<IF:$<BOOL:${APPLE}>,WebPier.app/Contents/Resources/Modules,${CMAKE_INSTALL_BINDIR}>" COMPONENT binary_files)
+    install(TARGETS ${SLIPWAY} RUNTIME DESTINATION "$<IF:$<BOOL:${APPLE}>,WebPier.app/Contents/Resources/Modules,${CMAKE_INSTALL_BINDIR}>" COMPONENT binary_files)
+    install(TARGETS ${CARRIER} RUNTIME DESTINATION "$<IF:$<BOOL:${APPLE}>,WebPier.app/Contents/Resources/Modules,${CMAKE_INSTALL_BINDIR}>" COMPONENT binary_files)
 
     if(WIN32)
         install(FILES "$<TARGET_PDB_FILE:${WEBPIER}>" COMPONENT pdb_files
@@ -295,9 +295,9 @@ if(NOT WEBPIER_SKIP_PACKAGE_RULES AND NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMA
         configure_and_generate("${CMAKE_CURRENT_SOURCE_DIR}/darwin/webpier.conf.in" "${CMAKE_CURRENT_BINARY_DIR}/webpier.conf")
         configure_and_generate("${CMAKE_CURRENT_SOURCE_DIR}/darwin/postinst.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/postinst.sh")
 
-        install(FILES "${CMAKE_CURRENT_BINARY_DIR}/Info.plist" DESTINATION webpier.app/Contents COMPONENT darwin_files)
-        install(FILES "${CMAKE_CURRENT_BINARY_DIR}/webpier.conf" DESTINATION webpier.app/Contents/Resources COMPONENT darwin_files)
-        install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/webpier.icns" DESTINATION webpier.app/Contents/Resources COMPONENT darwin_files)
+        install(FILES "${CMAKE_CURRENT_BINARY_DIR}/Info.plist" DESTINATION WebPier.app/Contents COMPONENT darwin_files)
+        install(FILES "${CMAKE_CURRENT_BINARY_DIR}/webpier.conf" DESTINATION WebPier.app/Contents/Resources COMPONENT darwin_files)
+        install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/webpier.icns" DESTINATION WebPier.app/Contents/Resources COMPONENT darwin_files)
 
         set(CPACK_COMPONENTS_ALL "binary_files;darwin_files")
         set(CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE ON)
