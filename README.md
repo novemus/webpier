@@ -2,7 +2,15 @@
 
 This repository is dedicated to the [WebPier](https://github.com/novemus/webpier) application. This program is still in development and not all planned features have been implemented yet. But it is already in a functional state and can be used for its intended purpose.
 
-The [WebPier](https://github.com/novemus/webpier) app is designed to exchange TCP services with remote hosts, primarily those located behind the NAT. Peers do not need to have public IP addresses and use third-party relay servers. The 'WebPier' creates a direct UDP tunnel between the hosts and maps the remote TCP service to the local interface, or forwards the local TCP service to the remote side. To overcome NAT is used well-known UDP-hole-punching technique and EMAIL or DHT services are used as a rendezvous for exchanging endpoints. This program is essentially a graphical shell for the [plexus](https://github.com/novemus/plexus) and [wormhole](https://github.com/novemus/wormhole) utilities and is designed to provide a user-friendly mean for managing the export/import of TCP services.
+The [WebPier](https://github.com/novemus/webpier) app is designed to exchange TCP services with remote hosts, primarily those located behind the NAT. Peers do not need to have public IP addresses and use third-party relay servers. The `WebPier` creates a direct UDP tunnel between the hosts and maps the remote TCP service to the local interface, or forwards the local TCP service to the remote side. To overcome NAT is used well-known UDP-hole-punching technique using the STUN server and EMAIL or DHT services are used as a rendezvous for exchanging endpoints. This program is essentially a graphical shell for the [plexus](https://github.com/novemus/plexus) and [wormhole](https://github.com/novemus/wormhole) utilities and is designed to provide a user-friendly mean for managing the export/import of TCP services.
+
+#### What are the benefits of using the WebPier?
+
+First of all, it is safety. Traffic of your services doesn't pass through third-party servers. There is no need to make your services public. You only open them to whom you wish and verify with the public key on the stage of tunnel creation. Feature of the channel obscuration reduces the risks of attacks on the channel protocol and protocols of forwarded services. Using `WebPier` as alternative to VPN gives a better throughput because of minimal packet route and absence of packet processing on the intermediate server.
+
+#### How about reliability?
+
+Of course, we all have to pay for security. Due to the fact that `WebPier` does not use third-party relay servers, the possibility to create a tunnel depends on the presence or settings of NAT. The policy of mapping internal endpoint (address-port) to public NAT endpoint must be *independent*. That is, outgoing packets from some internal endpoint to external one should not change the mapped endpoint when the destination endpoint is changed, but the source endpoint remains unchanged. Fortunately, providers usually implement this policy on their NATs. If both piers are located behind the same NAT, then the *hairpin* policy must be implemented on it so that packets from the internal endpoint can be transmitted back to the internal network. Also, discovering of piers in the local network has not yet been implemented. If the above is not your case, you can successfully use the `WebPier`.
 
 ## Using
 
@@ -65,7 +73,7 @@ $ cpack --preset=darwin-pkg # windows-msi
 
 ## Bugs and improvements
 
-Feel free to [report](https://github.com/novemus/webpier/issues) bugs and [suggest](https://github.com/webpier/plexus/issues) improvements. 
+Feel free to [report](https://github.com/novemus/webpier/issues) bugs and [suggest](https://github.com/novemus/webpier/issues) improvements. 
 
 ## License
 

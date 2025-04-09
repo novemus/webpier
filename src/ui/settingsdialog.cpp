@@ -3,6 +3,7 @@
 #include <ui/logo.h>
 #include <wx/msgdlg.h> 
 #include <wx/valnum.h>
+#include <cstdint>
 
 #ifdef WIN32
 #include <Shlobj_core.h>
