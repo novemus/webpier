@@ -347,16 +347,16 @@ namespace webpier
 
         boost::process::ipstream is;
         boost::process::child read("crontab -l", boost::process::std_out > is);
-        std::string line;
+        read.wait();
 
+        std::string line;
         bool seen = false;
-        while (read.running() && std::getline(is, line))
+        while (std::getline(is, line))
         {
             if (line == record)
                 seen = true;
         }
 
-        read.wait();
         return seen;
 #else
         std::string id = std::to_string(std::hash<std::string>()(exec.string() + args));
@@ -376,18 +376,17 @@ namespace webpier
         boost::process::opstream os;
 
         boost::process::child read("crontab -l", boost::process::std_out > is);
-        std::string line;
+        read.wait();
 
+        std::string line;
         bool seen = false;
-        while (read.running() && std::getline(is, line))
+        while (std::getline(is, line))
         {
             os << line << std::endl;
 
             if (line == record)
                 seen = true;
         }
-
-        read.wait();
 
         if (!seen)
         {
@@ -428,18 +427,17 @@ namespace webpier
         boost::process::opstream os;
 
         boost::process::child read("crontab -l", boost::process::std_out > is);
-        std::string line;
+        read.wait();
 
+        std::string line;
         bool seen = false;
-        while (read.running() && std::getline(is, line))
+        while (std::getline(is, line))
         {
             if (line != record)
                 os << line << std::endl;
             else
                 seen = true;
         }
-
-        read.wait();
 
         if (seen)
         {
