@@ -2,7 +2,7 @@
 
 This repository is dedicated to the [WebPier](https://github.com/novemus/webpier) application. This program is still in development and not all planned features have been implemented yet. But it is already in a functional state and can be used for its intended purpose.
 
-The [WebPier](https://github.com/novemus/webpier) app is designed to exchange TCP services with remote hosts, primarily those located behind the NAT. Peers do not need to have public IP addresses and use third-party relay servers. The `WebPier` creates a direct UDP tunnel between the hosts and maps the remote TCP service to the local interface, or forwards the local TCP service to the remote side. To overcome NAT is used well-known UDP-hole-punching technique using the STUN server and EMAIL or DHT services are used as a rendezvous for exchanging endpoints. This program is essentially a graphical shell for the [plexus](https://github.com/novemus/plexus) and [wormhole](https://github.com/novemus/wormhole) utilities and is designed to provide a user-friendly mean for managing the export/import of TCP services.
+The [WebPier](https://github.com/novemus/webpier) app is designed to exchange TCP services with remote hosts, primarily those located behind the NAT. Peers do not need to have public IP addresses and use third-party relay servers. The `WebPier` creates a direct UDP tunnel between the hosts and maps the remote TCP service to the local interface, or forwards the local TCP service to the remote side. UDP-hole-punching technique using STUN server is used to overcome NAT, and EMAIL or DHT services are used as a rendezvous for exchanging endpoints. This program is essentially a graphical shell for the [plexus](https://github.com/novemus/plexus) and [wormhole](https://github.com/novemus/wormhole) utilities and is designed to provide a user-friendly mean for managing the export/import of TCP services.
 
 #### What are the benefits of using the WebPier?
 
@@ -14,7 +14,7 @@ Of course, we all have to pay for security. Due to the fact that `WebPier` does 
 
 ## Using
 
-The easiest way to get started is to download and install the [prebuilt](https://github.com/novemus/webpier/releases) package for Debian, Windows and MacOS platforms.
+The easiest way to get started is to download and install the [prebuilt](https://github.com/novemus/webpier/releases) package for Linux, Windows and MacOS platforms.
 
 On the first start, you will be prompted to define the local *pier* identity.
 

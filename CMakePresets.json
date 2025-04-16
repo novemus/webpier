@@ -246,18 +246,27 @@
             "configurations": [
                 "Release"
             ],
+            "packageName": "webpier",
+            "packageDirectory": ".."
+        },
+        {
+            "name": "linux-package",
+            "displayName": "webpier (RPM)",
+            "description": "Linux package",
+            "configurePreset": "linux-static-release",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            },
+            "generators": [
+                "RPM"
+            ],
+            "configurations": [
+                "Release"
+            ],
             "variables": {
-                "CPACK_DEBIAN_PACKAGE_RELEASE": "beta",
-                "CPACK_DEBIAN_PACKAGE_MAINTAINER": "Community",
-                "CPACK_PACKAGE_DESCRIPTION_SUMMARY": "An application for forwarding TCP services through NAT",
-                "CPACK_PACKAGE_DESCRIPTION": "The 'webpier' app allows to forward non-public TCP services\nvia an UDP tunnel without using third-party relay servers.",
-                "CPACK_COMPONENTS_ALL": "binary_files;debian_files",
-                "CPACK_DEBIAN_FILE_NAME": "DEB-DEFAULT",
-                "CPACK_DEBIAN_PACKAGE_SHLIBDEPS": "ON",
-                "CPACK_DEBIAN_PACKAGE_SECTION": "admin",
-                "CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS": "ON",
-                "CPACK_DEB_COMPONENT_INSTALL": "ON",
-                "CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE": "ON"
+                "CPACK_RPM_PACKAGE_REQUIRES": "wxGTK >= 3.2.2, fmt >= 9.1.0, jsoncpp >= 1.9.5, openssl-libs >= 3.0.15, gnutls >= 3.7.9, nettle >= 3.8.1, libargon2 >= 20171227"
             },
             "packageName": "webpier",
             "packageDirectory": ".."
