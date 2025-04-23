@@ -142,8 +142,10 @@ CMainFrame::CMainFrame() : wxFrame(nullptr, wxID_ANY, wxT("WebPier"), wxDefaultP
 
 	this->SetSizer( mainSizer );
 	this->Layout();
-    m_statusBar = this->CreateStatusBar( 1, wxSTB_SIZEGRIP, wxID_ANY );
+    m_statusBar = this->CreateStatusBar( 2, wxSTB_DEFAULT_STYLE, wxID_ANY );
     m_statusBar->SetFieldsCount(2);
+    int widths[] = { 100, -1 };
+    m_statusBar->SetStatusWidths(WXSIZEOF(widths), widths);
 
     this->Centre( wxBOTH );
 
@@ -179,6 +181,23 @@ CMainFrame::~CMainFrame()
     delete m_timer;
 }
 
+void CMainFrame::Notify(const WebPier::Backend::Health& curr, const WebPier::Backend::Health& next)
+{
+    if (curr.State != next.State)
+    {
+        if (next.State == WebPier::Backend::Health::Broken)
+        {
+            wxNotificationMessage msg(wxT("WebPier"), _("Service ") + next.Pier + wxT(":") + next.Service + _(" failed with error: ") + next.Message, nullptr, wxICON_ERROR);
+            msg.Show(10);
+        }
+        else if (next.State == WebPier::Backend::Health::Burden)
+        {
+            wxNotificationMessage msg(wxT("WebPier"), _("Service ") + next.Pier + wxT(":") + next.Service + _(" has started forwarding"), nullptr, wxICON_INFORMATION);
+            msg.Show(10);
+        }
+    }
+}
+
 void CMainFrame::RefreshStatus(const WebPier::Backend::Handle& handle)
 {
     WebPier::Backend::Health health { handle, WebPier::Backend::Health::Broken };
@@ -188,14 +207,15 @@ void CMainFrame::RefreshStatus(const WebPier::Backend::Handle& handle)
     }
     catch(const std::exception& ex)
     {
-        wxNotificationMessage msg(wxEmptyString, _("Can't get the pier status. ") + ex.what(), nullptr, wxICON_ERROR);
-        msg.Show();
+        wxNotificationMessage msg(wxT("WebPier"), _("Can't get the pier status. ") + ex.what(), nullptr, wxICON_ERROR);
+        msg.Show(10);
     }
 
     for (auto& status : m_status)
     {
         if (handle.Pier == status.Pier && handle.Service == status.Service)
         {
+            Notify(status, health);
             status = health;
             break;
         }
@@ -227,12 +247,29 @@ void CMainFrame::RefreshStatus()
 {
     try
     {
+        auto current = m_status;
         m_status = WebPier::Backend::Status();
+
+        for (const auto& status : m_status)
+        {
+            WebPier::Backend::Health health = { { status.Pier, status.Service }, WebPier::Backend::Health::Asleep };
+
+            for (const auto& item : current)
+            {
+                if (item.Pier == status.Pier && item.Service == status.Service)
+                {
+                    health = item;
+                    break;
+                }
+            }
+
+            Notify(health, status);
+        }
     }
     catch(const std::exception& ex)
     {
-        wxNotificationMessage msg(wxEmptyString, _("Can't refresh the status. ") + ex.what(), nullptr, wxICON_ERROR);
-        msg.Show();
+        wxNotificationMessage msg(wxT("WebPier"), _("Can't refresh the status. ") + ex.what(), nullptr, wxICON_ERROR);
+        msg.Show(10);
         m_status.clear();
     }
 
@@ -283,7 +320,8 @@ void CMainFrame::onServiceItemSelectionChanged(wxDataViewEvent& event)
     {
         if (item.Pier == pier && item.Service == service)
         {
-            m_statusBar->SetStatusText(Stringify(item.State));
+            m_statusBar->SetStatusText(Stringify(item.State), 0);
+            m_statusBar->SetStatusText(item.Message, 1);
             break;
         }
     }
@@ -316,8 +354,8 @@ void CMainFrame::onServiceItemContextMenu(wxDataViewEvent& event)
                 }
                 catch(const std::exception& ex)
                 {
-                    wxNotificationMessage msg(wxEmptyString, _("Can't start the pier. ") + ex.what(), nullptr, wxICON_ERROR);
-                    msg.Show();
+                    wxNotificationMessage msg(wxT("WebPier"), _("Can't start the pier. ") + ex.what(), nullptr, wxICON_ERROR);
+                    msg.Show(10);
                 }
                 RefreshStatus(info);
             }, 
@@ -333,8 +371,8 @@ void CMainFrame::onServiceItemContextMenu(wxDataViewEvent& event)
                 }
                 catch(const std::exception& ex)
                 {
-                    wxNotificationMessage msg(wxEmptyString, _("Can't stop the pier. ") + ex.what(), nullptr, wxICON_ERROR);
-                    msg.Show();
+                    wxNotificationMessage msg(wxT("WebPier"), _("Can't stop the pier. ") + ex.what(), nullptr, wxICON_ERROR);
+                    msg.Show(10);
                 }
                 RefreshStatus(info);
             }, menu->Append(wxID_ANY, _("&Unplug"))->GetId());
@@ -354,8 +392,8 @@ void CMainFrame::onServiceItemContextMenu(wxDataViewEvent& event)
     }
     catch(const std::exception& ex)
     {
-        wxNotificationMessage msg(wxEmptyString, _("Can't popup the menu. ") + ex.what(), nullptr, wxICON_ERROR);
-        msg.Show();
+        wxNotificationMessage msg(wxT("WebPier"), _("Can't popup the menu. ") + ex.what(), nullptr, wxICON_ERROR);
+        msg.Show(10);
     }
 }
 
@@ -648,7 +686,7 @@ void CMainFrame::onDeleteServiceButtonClick(wxCommandEvent& event)
             throw std::runtime_error(_("The service item is not found"));
 
         auto service = iter->second;
-        CMessageDialog dialog(this, _("Do you want to remove the service ") + service->Name, wxDEFAULT_DIALOG_STYLE | wxICON_QUESTION);
+        CMessageDialog dialog(this, _("Do you want to remove ") + (service->Local ? WebPier::Context::Pier() : service->Pier) + ":" + service->Name + _(" service"), wxDEFAULT_DIALOG_STYLE | wxICON_QUESTION);
         if (dialog.ShowModal() == wxID_YES)
         {
             service->Purge();

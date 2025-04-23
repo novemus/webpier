@@ -169,8 +169,8 @@ protected:
                         }
                         catch(const std::exception& ex)
                         {
-                            wxNotificationMessage msg(wxEmptyString, _("Can't start the pier. ") + ex.what(), nullptr, wxICON_ERROR);
-                            msg.Show();
+                            wxNotificationMessage msg(wxT("WebPier"), _("Can't start ") + item.Pier + wxT(":") + item.Service + _(" service. ") + ex.what(), nullptr, wxICON_ERROR);
+                            msg.Show(10);
                         }
                         m_frame->RefreshStatus(item);
                     }, check->GetId());
@@ -187,8 +187,8 @@ protected:
                         }
                         catch(const std::exception& ex)
                         {
-                            wxNotificationMessage msg(wxEmptyString, _("Can't stop the pier. ") + ex.what(), nullptr, wxICON_ERROR);
-                            msg.Show();
+                            wxNotificationMessage msg(wxT("WebPier"), _("Can't stop ") + item.Pier + wxT(":") + item.Service + _(" service. ") + ex.what(), nullptr, wxICON_ERROR);
+                            msg.Show(10);
                         }
                         m_frame->RefreshStatus(item);
                     }, check->GetId());
@@ -197,8 +197,8 @@ protected:
         }
         catch(const std::exception& ex)
         {
-            wxNotificationMessage msg(wxEmptyString, _("Can't popup menu. ") + ex.what(), nullptr, wxICON_ERROR);
-            msg.Show();
+            wxNotificationMessage msg(wxT("WebPier"), _("Can't popup menu. ") + ex.what(), nullptr, wxICON_ERROR);
+            msg.Show(10);
         }
 
         menu->Append(wxID_ANY, "&Import", imports);
@@ -215,8 +215,8 @@ protected:
             }
             catch(const std::exception& ex)
             {
-                wxNotificationMessage msg(wxEmptyString, _("Can't unplug the pier. ") + ex.what(), nullptr, wxICON_ERROR);
-                msg.Show();
+                wxNotificationMessage msg(wxT("WebPier"), _("Can't unplug the pier. ") + ex.what(), nullptr, wxICON_ERROR);
+                msg.Show(10);
             }
             m_frame->RefreshStatus();
         }, unplug->GetId());
@@ -229,8 +229,8 @@ protected:
             }
             catch(const std::exception& ex)
             {
-                wxNotificationMessage msg(wxEmptyString, _("Can't reboot the pier. ") + ex.what(), nullptr, wxICON_ERROR);
-                msg.Show();
+                wxNotificationMessage msg(wxT("WebPier"), _("Can't reboot the pier. ") + ex.what(), nullptr, wxICON_ERROR);
+                msg.Show(10);
             }
             m_frame->RefreshStatus();
         }, reboot->GetId());

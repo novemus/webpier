@@ -70,4 +70,5 @@ public:
     void Populate();
     void RefreshStatus();
     void RefreshStatus(const WebPier::Backend::Handle& handle);
+    void Notify(const WebPier::Backend::Health& curr, const WebPier::Backend::Health& next);
 };
