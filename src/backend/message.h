@@ -4,6 +4,7 @@
 #include <variant>
 #include <stdexcept>
 #include <streambuf>
+#include <cstdint>
 
 namespace slipway
 {

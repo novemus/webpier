@@ -24,9 +24,11 @@
 #include <wx/frame.h>
 #include <wx/aboutdlg.h> 
 #include <wx/timer.h>
+#include <wx/taskbar.h>
 
 class CMainFrame : public wxFrame
 {
+    wxTaskBarIcon* m_taskBar;
     wxMenuItem* m_importItem;
     wxMenuItem* m_exportItem;
     wxRadioButton* m_importBtn;
@@ -64,7 +66,7 @@ protected:
 
 public:
 
-    CMainFrame();
+    CMainFrame(wxTaskBarIcon* taskBar);
     ~CMainFrame();
 
     void Populate();

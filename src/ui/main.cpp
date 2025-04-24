@@ -68,9 +68,9 @@ const wxBitmap& GetGreyCircleImage()
     return s_image;
 }
 
-CMainFrame* CreateMainFrame()
+CMainFrame* CreateMainFrame(wxTaskBarIcon* taskBar = nullptr)
 {
-    CMainFrame* frame = new CMainFrame();
+    CMainFrame* frame = new CMainFrame(taskBar);
 
     frame->Populate();
     frame->Show(true);
@@ -93,7 +93,7 @@ public:
     {
         this->SetIcon(wxBitmapBundle::FromIconBundle(::GetAppIconBundle()));
 
-        m_frame = CreateMainFrame();
+        m_frame = CreateMainFrame(this);
         m_frame->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(CTaskBarIcon::OnFrameClose), NULL, this);
     }
 
@@ -170,6 +170,9 @@ protected:
                         catch(const std::exception& ex)
                         {
                             wxNotificationMessage msg(wxT("WebPier"), _("Can't start ") + item.Pier + wxT(":") + item.Service + _(" service. ") + ex.what(), nullptr, wxICON_ERROR);
+#if defined(__WXMSW__) && defined(wxHAS_NATIVE_NOTIFICATION_MESSAGE)
+                            msg.UseTaskBarIcon(this);
+#endif
                             msg.Show(10);
                         }
                         m_frame->RefreshStatus(item);
@@ -188,6 +191,9 @@ protected:
                         catch(const std::exception& ex)
                         {
                             wxNotificationMessage msg(wxT("WebPier"), _("Can't stop ") + item.Pier + wxT(":") + item.Service + _(" service. ") + ex.what(), nullptr, wxICON_ERROR);
+#if defined(__WXMSW__) && defined(wxHAS_NATIVE_NOTIFICATION_MESSAGE)
+                            msg.UseTaskBarIcon(this);
+#endif
                             msg.Show(10);
                         }
                         m_frame->RefreshStatus(item);
@@ -198,6 +204,9 @@ protected:
         catch(const std::exception& ex)
         {
             wxNotificationMessage msg(wxT("WebPier"), _("Can't popup menu. ") + ex.what(), nullptr, wxICON_ERROR);
+#if defined(__WXMSW__) && defined(wxHAS_NATIVE_NOTIFICATION_MESSAGE)
+            msg.UseTaskBarIcon(this);
+#endif
             msg.Show(10);
         }
 
@@ -216,6 +225,9 @@ protected:
             catch(const std::exception& ex)
             {
                 wxNotificationMessage msg(wxT("WebPier"), _("Can't unplug the pier. ") + ex.what(), nullptr, wxICON_ERROR);
+#if defined(__WXMSW__) && defined(wxHAS_NATIVE_NOTIFICATION_MESSAGE)
+                msg.UseTaskBarIcon(this);
+#endif
                 msg.Show(10);
             }
             m_frame->RefreshStatus();
@@ -230,6 +242,9 @@ protected:
             catch(const std::exception& ex)
             {
                 wxNotificationMessage msg(wxT("WebPier"), _("Can't reboot the pier. ") + ex.what(), nullptr, wxICON_ERROR);
+#if defined(__WXMSW__) && defined(wxHAS_NATIVE_NOTIFICATION_MESSAGE)
+                msg.UseTaskBarIcon(this);
+#endif
                 msg.Show(10);
             }
             m_frame->RefreshStatus();
