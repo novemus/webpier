@@ -306,7 +306,8 @@ void CMainFrame::onServiceItemSelectionChanged(wxDataViewEvent& event)
     int row = m_serviceList->ItemToRow(event.GetItem());
     if (row == wxNOT_FOUND)
     {
-        m_statusBar->SetStatusText(wxEmptyString);
+        m_statusBar->SetStatusText(wxEmptyString, 0);
+        m_statusBar->SetStatusText(wxEmptyString, 1);
         return;
     }
     

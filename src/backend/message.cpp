@@ -1,5 +1,6 @@
-#include <boost/property_tree/json_parser.hpp>
 #include <backend/message.h>
+#include <store/utils.h>
+#include <boost/property_tree/json_parser.hpp>
 
 namespace slipway
 {
@@ -8,53 +9,53 @@ namespace slipway
         boost::property_tree::ptree convert_handle(const slipway::handle& obj) noexcept(true)
         {
             boost::property_tree::ptree doc;
-            doc.put("pier", obj.pier);
-            doc.put("service", obj.service);
+            doc.put("pier", webpier::locale_to_utf8(obj.pier));
+            doc.put("service", webpier::locale_to_utf8(obj.service));
             return doc;
         }
 
         slipway::handle convert_handle(const boost::property_tree::ptree& doc) noexcept(false)
         {
             slipway::handle obj;
-            obj.pier = doc.get<std::string>("pier");
-            obj.service = doc.get<std::string>("service");
+            obj.pier = webpier::utf8_to_locale(doc.get<std::string>("pier"));
+            obj.service = webpier::utf8_to_locale(doc.get<std::string>("service"));
             return obj;
         }
 
         boost::property_tree::ptree convert_health(const slipway::health& obj) noexcept(true)
         {
             boost::property_tree::ptree doc;
-            doc.put("pier", obj.pier);
-            doc.put("service", obj.service);
+            doc.put("pier", webpier::locale_to_utf8(obj.pier));
+            doc.put("service", webpier::locale_to_utf8(obj.service));
             doc.put("state", obj.state);
-            doc.put("message", obj.message);
+            doc.put("message", webpier::locale_to_utf8(obj.message));
             return doc;
         }
 
         slipway::health convert_health(const boost::property_tree::ptree& doc) noexcept(false)
         {
             slipway::health obj;
-            obj.pier = doc.get<std::string>("pier");
-            obj.service = doc.get<std::string>("service");
+            obj.pier = webpier::utf8_to_locale(doc.get<std::string>("pier"));
+            obj.service = webpier::utf8_to_locale(doc.get<std::string>("service"));
             obj.state = static_cast<health::status>(doc.get<int>("state"));
-            obj.message = doc.get<std::string>("message");
+            obj.message = webpier::utf8_to_locale(doc.get<std::string>("message"));
             return obj;
         }
 
         boost::property_tree::ptree convert_report(const slipway::report& obj) noexcept(true)
         {
             boost::property_tree::ptree doc;
-            doc.put("pier", obj.pier);
-            doc.put("service", obj.service);
+            doc.put("pier", webpier::locale_to_utf8(obj.pier));
+            doc.put("service", webpier::locale_to_utf8(obj.service));
             doc.put("state", obj.state);
-            doc.put("message", obj.message);
+            doc.put("message", webpier::locale_to_utf8(obj.message));
 
             boost::property_tree::ptree context;
             for(const auto& link : obj.tunnels)
             {
                 boost::property_tree::ptree item;
                 item.put("pid", link.pid);
-                item.put("pier", link.pier);
+                item.put("pier", webpier::locale_to_utf8(link.pier));
                 context.push_back(std::make_pair("", item));
             }
             doc.put_child("tunnels", context);
@@ -64,17 +65,17 @@ namespace slipway
         slipway::report convert_report(const boost::property_tree::ptree& doc) noexcept(false)
         {
             slipway::report obj;
-            obj.pier = doc.get<std::string>("pier");
-            obj.service = doc.get<std::string>("service");
+            obj.pier = webpier::utf8_to_locale(doc.get<std::string>("pier"));
+            obj.service = webpier::utf8_to_locale(doc.get<std::string>("service"));
             obj.state = static_cast<health::status>(doc.get<int>("state"));
-            obj.message = doc.get<std::string>("message");
+            obj.message = webpier::utf8_to_locale(doc.get<std::string>("message"));
 
             boost::property_tree::ptree tunnels;
             for (auto& item : doc.get_child("tunnels", tunnels))
             {
                 report::tunnel tunnel;
                 tunnel.pid = item.second.get<int>("pid");
-                tunnel.pier = item.second.get<std::string>("pier");
+                tunnel.pier = webpier::utf8_to_locale(item.second.get<std::string>("pier"));
                 obj.tunnels.emplace_back(std::move(tunnel));
             }
             return obj;
@@ -92,7 +93,7 @@ namespace slipway
             {
                 const auto& error = std::get<std::string>(msg.payload);
                 if (!error.empty())
-                    doc.put("error", error);
+                    doc.put("error", webpier::locale_to_utf8(error));
                 break;
             }
             case 1:
@@ -148,7 +149,7 @@ namespace slipway
 
         if (doc.count("error"))
         {
-            msg.payload = doc.get<std::string>("error");
+            msg.payload = webpier::utf8_to_locale(doc.get<std::string>("error"));
         }
         else if (doc.count("handle"))
         {
