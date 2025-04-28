@@ -8,3 +8,6 @@ const wxBitmap& GetBlueCircleImage();
 const wxBitmap& GetGreenCircleImage();
 const wxBitmap& GetRedCircleImage();
 const wxBitmap& GetGreyCircleImage();
+const wxBitmap& GetAddBtnImage();
+const wxBitmap& GetEditBtnImage();
+const wxBitmap& GetDeleteBtnImage();

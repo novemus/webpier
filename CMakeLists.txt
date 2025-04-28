@@ -126,6 +126,9 @@ if(NOT WIN32)
     convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/red.png ${CMAKE_CURRENT_BINARY_DIR}/assets/red.h red_circle_png)
     convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/green.png ${CMAKE_CURRENT_BINARY_DIR}/assets/green.h green_circle_png)
     convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/grey.png ${CMAKE_CURRENT_BINARY_DIR}/assets/grey.h grey_circle_png)
+    convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/add.png ${CMAKE_CURRENT_BINARY_DIR}/assets/add.h add_btn_png)
+    convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/edit.png ${CMAKE_CURRENT_BINARY_DIR}/assets/edit.h edit_btn_png)
+    convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/delete.png ${CMAKE_CURRENT_BINARY_DIR}/assets/delete.h delete_btn_png)
 endif()
 
 target_sources(${WEBPIER} PRIVATE

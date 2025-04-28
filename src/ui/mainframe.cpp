@@ -113,16 +113,19 @@ CMainFrame::CMainFrame(wxTaskBarIcon* taskBar) : wxFrame(nullptr, wxID_ANY, wxT(
 	m_pierLabel->Wrap( -1 );
 	topSizer->Add( m_pierLabel, 1, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 
-    m_addBtn = new wxBitmapButton( m_mainPanel, wxID_ANY, wxArtProvider::GetBitmapBundle(wxART_NEW, wxART_BUTTON, wxSize(16, 16)), wxDefaultPosition, wxDefaultSize, wxBU_AUTODRAW|0 );
+    m_addBtn = new wxBitmapButton( m_mainPanel, wxID_ANY, ::GetAddBtnImage(), wxDefaultPosition, wxDefaultSize, 0 );
     m_addBtn->Enable(false);
+    m_addBtn->SetToolTip( _("Create service") );
     topSizer->Add( m_addBtn, 0, wxALL, 5 );
 
-    m_editBtn = new wxBitmapButton( m_mainPanel, wxID_ANY, wxArtProvider::GetBitmapBundle(wxART_EDIT, wxART_BUTTON, wxSize(16, 16)), wxDefaultPosition, wxDefaultSize, wxBU_AUTODRAW|0 );
+    m_editBtn = new wxBitmapButton( m_mainPanel, wxID_ANY, ::GetEditBtnImage(), wxDefaultPosition, wxDefaultSize, 0 );
     m_editBtn->Enable(false);
+    m_editBtn->SetToolTip( _("Edit service") );
     topSizer->Add( m_editBtn, 0, wxTOP|wxBOTTOM|wxRIGHT, 5 );
 
-    m_deleteBtn = new wxBitmapButton( m_mainPanel, wxID_ANY, wxArtProvider::GetBitmapBundle(wxART_DELETE, wxART_BUTTON, wxSize(16, 16)), wxDefaultPosition, wxDefaultSize, wxBU_AUTODRAW|0 );
+    m_deleteBtn = new wxBitmapButton( m_mainPanel, wxID_ANY, ::GetDeleteBtnImage(), wxDefaultPosition, wxDefaultSize, 0 );
     m_deleteBtn->Enable(false);
+    m_deleteBtn->SetToolTip( _("Delete service") );
     topSizer->Add( m_deleteBtn, 0, wxTOP|wxBOTTOM|wxRIGHT, 5 );
 
     panelSizer->Add( topSizer, 0, wxEXPAND, 5 );

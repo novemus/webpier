@@ -70,6 +70,7 @@ CServiceDialog::CServiceDialog(WebPier::Context::ConfigPtr config, WebPier::Cont
     this->SetSizer( mainSizer );
     this->Layout();
     mainSizer->Fit( this );
+    m_propGrid->FitColumns();
 
     this->Centre( wxBOTH );
 

@@ -12,6 +12,9 @@
 #include <assets/green.h>
 #include <assets/red.h>
 #include <assets/grey.h>
+#include <assets/add.h>
+#include <assets/edit.h>
+#include <assets/delete.h>
 #endif
 
 const wxIconBundle& GetAppIconBundle()
@@ -64,6 +67,36 @@ const wxBitmap& GetGreyCircleImage()
     static const wxBitmap s_image(wxBITMAP_PNG(IDB_GREY));
 #else
     static const wxBitmap s_image(wxBITMAP_PNG_FROM_DATA(grey_circle));
+#endif
+    return s_image;
+}
+
+const wxBitmap& GetAddBtnImage()
+{
+#ifdef WIN32
+    static const wxBitmap s_image(wxBITMAP_PNG(IDB_ADD));
+#else
+    static const wxBitmap s_image(wxBITMAP_PNG_FROM_DATA(add_btn));
+#endif
+    return s_image;
+}
+
+const wxBitmap& GetEditBtnImage()
+{
+#ifdef WIN32
+    static const wxBitmap s_image(wxBITMAP_PNG(IDB_EDIT));
+#else
+    static const wxBitmap s_image(wxBITMAP_PNG_FROM_DATA(edit_btn));
+#endif
+    return s_image;
+}
+
+const wxBitmap& GetDeleteBtnImage()
+{
+#ifdef WIN32
+    static const wxBitmap s_image(wxBITMAP_PNG(IDB_DELETE));
+#else
+    static const wxBitmap s_image(wxBITMAP_PNG_FROM_DATA(delete_btn));
 #endif
     return s_image;
 }
