@@ -43,7 +43,7 @@ wxString Stringify(WebPier::Backend::Health::Status state)
     return _("unknown");
 }
 
-wxVector<wxVariant> CMainFrame::makeListItem(WebPier::Context::ServicePtr service)
+wxVector<wxVariant> CMainFrame::makeListItem(WebPier::Context::ServicePtr service) const
 {
     WebPier::Backend::Health::Status state = service->Autostart ? WebPier::Backend::Health::Lonely : WebPier::Backend::Health::Asleep;
 
@@ -61,6 +61,61 @@ wxVector<wxVariant> CMainFrame::makeListItem(WebPier::Context::ServicePtr servic
     data.push_back(wxVariant(wxString(service->Rendezvous.IsEmpty() ? wxT("Email") : wxT("DHT"))));
     data.push_back(wxVariant(wxString(service->Autostart ? _("yes") : _("no"))));
     return data;
+}
+
+WebPier::Context::ServicePtr CMainFrame::findService(const WebPier::Backend::Handle& handle) const
+{
+    if (handle.Pier == WebPier::Context::Pier())
+    {
+        for(auto& item : m_export)
+        {
+            if (item.second->Name == handle.Service)
+                return item.second;
+        }
+    }
+    else
+    {
+        for(auto& item : m_import)
+        {
+            if (handle.Pier == item.second->Pier && item.second->Name == handle.Service)
+                return item.second;
+        }
+    }
+    return WebPier::Context::ServicePtr();
+}
+
+void CMainFrame::notify(const WebPier::Backend::Health& curr, const WebPier::Backend::Health& next)
+{
+    if (curr.State != next.State)
+    {
+        if (next.State == WebPier::Backend::Health::Broken)
+        {
+            wxNotificationMessage msg(wxT("WebPier"), _("Service ") + next.Pier + wxT(":") + next.Service + _(" failed with error: ") + next.Message, this, wxICON_ERROR);
+#if defined(__WXMSW__) && defined(wxHAS_NATIVE_NOTIFICATION_MESSAGE)
+            msg.UseTaskBarIcon(m_taskBar);
+#endif
+            msg.Show(10);
+        }
+        else if (next.State == WebPier::Backend::Health::Burden)
+        {
+            auto service = findService(next);
+            if (!service)
+            {
+                wxNotificationMessage msg(wxT("WebPier"), _("Can't find ") + next.Pier + wxT(":") + next.Service + _(" service"), this, wxICON_ERROR);
+#if defined(__WXMSW__) && defined(wxHAS_NATIVE_NOTIFICATION_MESSAGE)
+                msg.UseTaskBarIcon(m_taskBar);
+#endif
+                msg.Show(10);
+                return;
+            }
+
+            wxNotificationMessage msg(wxT("WebPier"), _("Service ") + next.Pier + wxT(":") + next.Service + _(" started ") + (service->Local ? _("exporting from ") : _("importing to ")) + service->Address, this, wxICON_INFORMATION);
+#if defined(__WXMSW__) && defined(wxHAS_NATIVE_NOTIFICATION_MESSAGE)
+            msg.UseTaskBarIcon(m_taskBar);
+#endif
+            msg.Show(10);
+        }
+    }
 }
 
 CMainFrame::CMainFrame(wxTaskBarIcon* taskBar) : wxFrame(nullptr, wxID_ANY, wxT("WebPier"), wxDefaultPosition, wxSize(950, 500), wxDEFAULT_FRAME_STYLE | wxTAB_TRAVERSAL), m_taskBar(taskBar)
@@ -184,29 +239,6 @@ CMainFrame::~CMainFrame()
     delete m_timer;
 }
 
-void CMainFrame::Notify(const WebPier::Backend::Health& curr, const WebPier::Backend::Health& next)
-{
-    if (curr.State != next.State)
-    {
-        if (next.State == WebPier::Backend::Health::Broken)
-        {
-            wxNotificationMessage msg(wxT("WebPier"), _("Service ") + next.Pier + wxT(":") + next.Service + _(" failed with error: ") + next.Message, this, wxICON_ERROR);
-#if defined(__WXMSW__) && defined(wxHAS_NATIVE_NOTIFICATION_MESSAGE)
-            msg.UseTaskBarIcon(m_taskBar);
-#endif
-            msg.Show(10);
-        }
-        else if (next.State == WebPier::Backend::Health::Burden)
-        {
-            wxNotificationMessage msg(wxT("WebPier"), _("Service ") + next.Pier + wxT(":") + next.Service + _(" has started forwarding"), this, wxICON_INFORMATION);
-#if defined(__WXMSW__) && defined(wxHAS_NATIVE_NOTIFICATION_MESSAGE)
-            msg.UseTaskBarIcon(m_taskBar);
-#endif
-            msg.Show(10);
-        }
-    }
-}
-
 void CMainFrame::RefreshStatus(const WebPier::Backend::Handle& handle)
 {
     WebPier::Backend::Health health { handle, WebPier::Backend::Health::Broken };
@@ -227,7 +259,7 @@ void CMainFrame::RefreshStatus(const WebPier::Backend::Handle& handle)
     {
         if (handle.Pier == status.Pier && handle.Service == status.Service)
         {
-            Notify(status, health);
+            notify(status, health);
             status = health;
             break;
         }
@@ -275,7 +307,7 @@ void CMainFrame::RefreshStatus()
                 }
             }
 
-            Notify(health, status);
+            notify(health, status);
         }
     }
     catch(const std::exception& ex)

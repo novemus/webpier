@@ -46,7 +46,7 @@ Send the *offer* to your partner, retrieve the counter *offer* and adopt it by t
 
 ![adopt](resources/adopt.png)
 
-Your partner must adopt yours *offer* too. After that you can manage the services from the context menu or from the desktop tray. The services can be created and edited later, but their parameters must be synchronized with the remote piers. It is not necessary to exchange offers again.
+Your partner must adopt your *offer* too. After that you can manage the services from the context menu or from the desktop tray. It takes some time to establish a tunnel. You will be notified about the tunnel status and service indicator will change color. The services can be created and edited later, but their parameters must be synchronized with the remote piers. It is not necessary to exchange offers again.
 
 ## Build
 

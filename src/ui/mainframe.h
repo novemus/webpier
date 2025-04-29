@@ -48,7 +48,9 @@ class CMainFrame : public wxFrame
 
 protected:
 
-    wxVector<wxVariant> makeListItem(WebPier::Context::ServicePtr service);
+    wxVector<wxVariant> makeListItem(WebPier::Context::ServicePtr service) const;
+    WebPier::Context::ServicePtr findService(const WebPier::Backend::Handle& handle) const;
+    void notify(const WebPier::Backend::Health& curr, const WebPier::Backend::Health& next);
 
     void onSettingsMenuSelection(wxCommandEvent& event);
     void onImportMenuSelection(wxCommandEvent& event);
@@ -72,5 +74,4 @@ public:
     void Populate();
     void RefreshStatus();
     void RefreshStatus(const WebPier::Backend::Handle& handle);
-    void Notify(const WebPier::Backend::Health& curr, const WebPier::Backend::Health& next);
 };
