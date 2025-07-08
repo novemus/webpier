@@ -27,7 +27,7 @@ CAboutDialog::CAboutDialog( wxWindow* parent, wxWindowID id, const wxString& tit
 
     titleSizer->Add( appName, 0, 0, 5 );
 
-    wxStaticText* appVersion = new wxStaticText( m_panel, wxID_ANY, wxT("1.0.0-beta"), wxDefaultPosition, wxDefaultSize, 0 );
+    wxStaticText* appVersion = new wxStaticText( m_panel, wxID_ANY, wxT("1.0.0"), wxDefaultPosition, wxDefaultSize, 0 );
     appVersion->Wrap( -1 );
     titleSizer->Add( appVersion, 0, 0, 5 );
 
