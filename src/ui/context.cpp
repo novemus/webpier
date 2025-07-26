@@ -4,6 +4,7 @@
 #include <store/context.h>
 #include <store/utils.h>
 #include <backend/client.h>
+#include <plexus/plexus.h>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/process.hpp>
 #include <boost/scope_exit.hpp>
@@ -18,6 +19,9 @@ namespace WebPier
 {
     namespace
     {
+        constexpr const char* stun_server_default_port = "3478";
+        constexpr const char* stun_client_default_port = "0";
+
         std::shared_ptr<webpier::context> g_context;
         std::shared_ptr<slipway::client> g_backend;
 
@@ -591,6 +595,47 @@ namespace WebPier
                 ret.push_back(Convert(item));
 
             return ret;
+        }
+    }
+
+    namespace Utils
+    {
+        void ExploreNat(const wxString& bind, const wxString& stun, const std::function<void(const NatState&)>& callback) noexcept(true)
+        {
+            std::thread([bind, stun, callback]()
+            {
+                try
+                {
+                    boost::asio::io_context io;
+
+                    plexus::explore_network(io,
+                        webpier::make_udp_endpoint(webpier::locale_to_utf8(bind.ToStdString()), webpier::stun_client_default_port),
+                        webpier::make_udp_endpoint(webpier::locale_to_utf8(stun.ToStdString()), webpier::stun_server_default_port), 
+                        [callback](const plexus::traverse& res)
+                        {
+                            callback(NatState {
+                                wxEmptyString,
+                                res.traits.nat,
+                                res.traits.hairpin,
+                                res.traits.random_port,
+                                res.traits.variable_address,
+                                static_cast<NatState::Binding>(res.traits.mapping),
+                                static_cast<NatState::Binding>(res.traits.filtering),
+                                wxString(webpier::utf8_to_locale(res.inner_endpoint.address().to_string() + ":" + std::to_string(res.inner_endpoint.port()))),
+                                wxString(webpier::utf8_to_locale(res.outer_endpoint.address().to_string() + ":" + std::to_string(res.outer_endpoint.port())))
+                            });
+                        },
+                        [callback](const std::string& error)
+                        {
+                            callback(NatState { error });
+                        });
+                    io.run();
+                }
+                catch (const std::exception& ex)
+                {
+                     callback(NatState { ex.what() });
+                }
+            }).detach();
         }
     }
 }

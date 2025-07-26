@@ -176,7 +176,7 @@ target_sources(${CARRIER} PRIVATE
     src/backend/tunnel.cpp
     )
 
-target_link_libraries(${WEBPIER} PRIVATE ${wxWidgets_LIBRARIES} Boost::coroutine Boost::filesystem Boost::program_options "$<$<BOOL:${MSVC}>:Boost::property_tree>" "$<$<BOOL:${MSVC}>:Crypt32>" OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(${WEBPIER} PRIVATE ${wxWidgets_LIBRARIES} Boost::coroutine Boost::filesystem Boost::program_options "$<$<BOOL:${MSVC}>:Boost::property_tree>" "$<$<BOOL:${MSVC}>:Crypt32>" plexus::libplexus OpenSSL::SSL OpenSSL::Crypto)
 target_link_libraries(${CARRIER} PRIVATE Boost::filesystem Boost::program_options "$<$<BOOL:${MSVC}>:Crypt32>" wormhole::libwormhole tubus::libtubus OpenSSL::SSL OpenSSL::Crypto)
 target_link_libraries(${SLIPWAY} PRIVATE Boost::coroutine Boost::filesystem Boost::program_options "$<$<BOOL:${MSVC}>:Boost::property_tree>" "$<$<BOOL:${MSVC}>:Crypt32>" plexus::libplexus wormhole::libwormhole tubus::libtubus opendht fmt::fmt msgpack-cxx PkgConfig::GnuTLS PkgConfig::argon2 PkgConfig::Nettle PkgConfig::Jsoncpp OpenSSL::SSL OpenSSL::Crypto)
 

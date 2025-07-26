@@ -16,7 +16,6 @@
 #include <filesystem>
 #include <iostream>
 #include <memory>
-#include <regex>
 #include <map>
 #include <set>
 
@@ -29,10 +28,6 @@ namespace slipway
     namespace 
     {
         constexpr const int default_retry_timeout = 15;
-        constexpr const char* stun_server_default_port = "3478";
-        constexpr const char* stun_client_default_port = "0";
-        constexpr const char* smtp_server_default_port = "smtps";
-        constexpr const char* imap_server_default_port = "imaps";
         constexpr const char* webpier_conf_file_name = "webpier.json";
         constexpr const char* webpier_lock_file_name = "webpier.lock";
         constexpr const char* slipway_jack_file_name = "slipway.jack";
@@ -54,55 +49,19 @@ namespace slipway
                 return boost::posix_time::seconds(default_retry_timeout);
             }
 
-            template<class protocol>
-            typename protocol::endpoint resolve(const std::string& url, const std::string& service) noexcept(false)
-            {
-                try 
-                {
-                    if (url.empty() && service.empty())
-                        return typename protocol::endpoint();
-
-                    boost::asio::io_context io;
-                    typename protocol::resolver resolver(io);
-
-                    std::smatch match;
-                    if (std::regex_search(url, match, std::regex("^(\\w+://)?\\[([a-zA-Z0-9:]+)\\]:(\\d+).*")))
-                        return *resolver.resolve(match[2].str(), match[3].str());
-
-                    if (std::regex_search(url, match, std::regex("^(\\w+)://\\[([a-zA-Z0-9:]+)\\].*")))
-                        return *resolver.resolve(match[2].str(), match[1].str());
-
-                    if (std::regex_search(url, match, std::regex("^\\[([a-zA-Z0-9:]+)\\].*")))
-                        return *resolver.resolve(match[1].str(), service);
-
-                    if (std::regex_search(url, match, std::regex("^(\\w+://)?([\\w\\.]+):(\\d+).*")))
-                        return *resolver.resolve(match[2].str(), match[3].str());
-
-                    if (std::regex_search(url, match, std::regex("^(\\w+)://([\\w\\.]+).*")))
-                        return *resolver.resolve(match[2].str(), match[1].str());
-
-                    return *resolver.resolve(url, service);
-                } 
-                catch (const std::exception& ex)
-                {
-                    _err_ << ex.what();
-                    throw std::runtime_error("can't resolve " + url);
-                }
-            }
-
             plexus::options make_options(const webpier::config& config, const webpier::service& service) noexcept(false)
             {
                 return plexus::options {
                     service.name,
                     config.repo,
-                    utils::resolve<boost::asio::ip::udp>(config.nat.stun, stun_server_default_port),
-                    utils::resolve<boost::asio::ip::udp>(service.gateway, stun_client_default_port),
+                    webpier::make_udp_endpoint(config.nat.stun, webpier::stun_server_default_port),
+                    webpier::make_udp_endpoint(service.gateway, webpier::stun_client_default_port),
                     config.nat.hops,
                     service.rendezvous.empty()
                         ? plexus::rendezvous {
                             plexus::emailer {
-                                utils::resolve<boost::asio::ip::tcp>(config.email.smtp, smtp_server_default_port),
-                                utils::resolve<boost::asio::ip::tcp>(config.email.imap, imap_server_default_port),
+                                webpier::make_tcp_endpoint(config.email.smtp, webpier::smtp_server_default_port),
+                                webpier::make_tcp_endpoint(config.email.imap, webpier::imap_server_default_port),
                                 config.email.login,
                                 config.email.password,
                                 config.email.cert,

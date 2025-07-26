@@ -147,4 +147,30 @@ namespace WebPier
         void RevokeAutostart() noexcept(false);
         bool VerifyAutostart() noexcept(false);
     }
+
+    namespace Utils
+    {
+        struct NatState
+        {
+            enum Binding
+            {
+                Independent = 0,
+                PortDependent = 1,
+                AddressDependent = 2,
+                AddressAndPortDependent = 3
+            };
+
+            wxString Error;
+            bool Nat = false;
+            bool Hairpin = false;
+            bool RandomPort = false;
+            bool VariableAddress = false;
+            Binding Mapping;
+            Binding Filtering;
+            wxString InnerEndpoint;
+            wxString OuterEndpoint;
+        };
+
+        void ExploreNat(const wxString& bind, const wxString& stun, const std::function<void(const NatState&)>& callback) noexcept(true);
+    }
 }

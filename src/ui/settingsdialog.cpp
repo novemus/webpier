@@ -9,6 +9,22 @@
 #include <Shlobj_core.h>
 #endif
 
+wxString ToString(const WebPier::Utils::NatState::Binding& value)
+{
+    switch (value)
+    {
+        case WebPier::Utils::NatState::PortDependent:
+            return _("port dependent");
+        case WebPier::Utils::NatState::AddressDependent:
+            return _("address dependent");
+        case WebPier::Utils::NatState::AddressAndPortDependent:
+            return _("address and port dependent");
+        default:
+            return _("independent");
+    }
+    return wxEmptyString;
+}
+
 CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style)
     : wxDialog(parent, id, title, pos, size, style)
     , m_config(config)

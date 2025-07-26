@@ -5,6 +5,7 @@
 #include <sstream>
 #include <cwchar>
 #include <codecvt>
+#include <regex>
 #include <openssl/x509v3.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
@@ -453,5 +454,43 @@ namespace webpier
         if (proc.exit_code() != ERROR_SUCCESS)
             throw std::runtime_error("Can't revoke the task: error=" + webpier::hexify(proc.exit_code()));
 #endif
+    }
+
+    template<class endpoint>
+    endpoint parse_endpoint(const std::string& url, const std::string& service)
+    {
+        if (url.empty() && service.empty())
+            return endpoint();
+
+        boost::asio::io_context io;
+        typename endpoint::protocol_type::resolver resolver(io);
+
+        std::smatch match;
+        if (std::regex_search(url, match, std::regex("^(\\w+://)?\\[([a-zA-Z0-9:]+)\\]:(\\d+).*")))
+            return *resolver.resolve(match[2].str(), match[3].str());
+
+        if (std::regex_search(url, match, std::regex("^(\\w+)://\\[([a-zA-Z0-9:]+)\\].*")))
+            return *resolver.resolve(match[2].str(), match[1].str());
+
+        if (std::regex_search(url, match, std::regex("^\\[([a-zA-Z0-9:]+)\\].*")))
+            return *resolver.resolve(match[1].str(), service);
+
+        if (std::regex_search(url, match, std::regex("^(\\w+://)?([\\w\\.]+):(\\d+).*")))
+            return *resolver.resolve(match[2].str(), match[3].str());
+
+        if (std::regex_search(url, match, std::regex("^(\\w+)://([\\w\\.]+).*")))
+            return *resolver.resolve(match[2].str(), match[1].str());
+
+        return *resolver.resolve(url, service);
+    }
+
+    boost::asio::ip::udp::endpoint make_udp_endpoint(const std::string& url, const std::string& service) noexcept(false)
+    {
+        return parse_endpoint<boost::asio::ip::udp::endpoint>(url, service);
+    }
+
+    boost::asio::ip::tcp::endpoint make_tcp_endpoint(const std::string& url, const std::string& service) noexcept(false)
+    {
+        return parse_endpoint<boost::asio::ip::tcp::endpoint>(url, service);
     }
 }

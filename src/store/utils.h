@@ -4,6 +4,9 @@
 #include <string>
 #include <stdexcept>
 #include <filesystem>
+#include <boost/asio.hpp>
+#include <boost/asio/ip/udp.hpp>
+#include <boost/asio/ip/udp.hpp>
 
 namespace webpier
 {
@@ -14,6 +17,11 @@ namespace webpier
 #ifdef WIN32
     constexpr const char* taskxml_config = "taskxml";
 #endif
+
+    constexpr const char* stun_server_default_port = "3478";
+    constexpr const char* stun_client_default_port = "0";
+    constexpr const char* smtp_server_default_port = "smtps";
+    constexpr const char* imap_server_default_port = "imaps";
 
     struct x509_error : public std::runtime_error { x509_error(const std::string& what) : std::runtime_error(what) {} };
 
@@ -31,4 +39,6 @@ namespace webpier
     bool verify_autostart(const std::filesystem::path& exec, const std::string& args) noexcept(false);
     void assign_autostart(const std::filesystem::path& exec, const std::string& args) noexcept(false);
     void revoke_autostart(const std::filesystem::path& exec, const std::string& args) noexcept(false);
+    boost::asio::ip::udp::endpoint make_udp_endpoint(const std::string& url, const std::string& service) noexcept(false);
+    boost::asio::ip::tcp::endpoint make_tcp_endpoint(const std::string& url, const std::string& service) noexcept(false);
 }
