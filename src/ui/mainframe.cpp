@@ -410,7 +410,7 @@ void CMainFrame::onServiceItemContextMenu(wxDataViewEvent& event)
                 }
                 RefreshStatus(info);
             }, 
-            menu->Append(wxID_ANY, _("&Engage"))->GetId());
+            menu->Append(wxID_ANY, m_exportBtn->GetValue() ? _("&Export") : _("&Import"))->GetId());
         }
         else
         {

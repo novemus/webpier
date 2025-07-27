@@ -378,8 +378,7 @@ void CSettingsDialog::onStunTestClick(wxCommandEvent& event)
                 if (state.Error.IsEmpty())
                 {
                     m_stunTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(state.Mapping == WebPier::Utils::NatState::Independent ? wxART_TICK_MARK : wxART_WARNING), wxASCII_STR(wxART_BUTTON)));
-                    m_natPanel->SetToolTip(wxString::Format(_("%s\n\nNAT: %s\nHairpin: %s\nRandom port: %s\nVariable IP: %s\nMapping: %s\nFiltering: %s\nInner EP: %s\nMapped EP: %s"),
-                            m_stunCtrl->GetValue(),
+                    m_natPanel->SetToolTip(wxString::Format(_("NAT: %s\nHairpin: %s\nRandom port: %s\nVariable IP: %s\nMapping: %s\nFiltering: %s\nInner EP: %s\nMapped EP: %s"),
                             ToString(state.Nat),
                             ToString(state.Hairpin),
                             ToString(state.RandomPort),
@@ -393,7 +392,7 @@ void CSettingsDialog::onStunTestClick(wxCommandEvent& event)
                 else
                 {
                     m_stunTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_CROSS_MARK), wxASCII_STR(wxART_BUTTON)));
-                    m_natPanel->SetToolTip(wxString::Format(wxT("%s\n\n%s"), m_stunCtrl->GetValue(), state.Error));
+                    m_natPanel->SetToolTip(wxString::Format(_("STUN request failed!\n\n%s"), state.Error));
                 }
             });
         }
@@ -421,12 +420,12 @@ void CSettingsDialog::onDhtTestClick(wxCommandEvent& event)
                 if (error.IsEmpty())
                 {
                     m_dhtTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_TICK_MARK), wxASCII_STR(wxART_BUTTON)));
-                    m_dhtPanel->SetToolTip(wxString::Format(_("%s\n\nDHT rendezvous is Ok!"), m_dhtBootCtrl->GetValue()));
+                    m_dhtPanel->SetToolTip(_("DHT rendezvous is Ok!"));
                 }
                 else
                 {
                     m_dhtTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_CROSS_MARK), wxASCII_STR(wxART_BUTTON)));
-                    m_dhtPanel->SetToolTip(wxString::Format(wxT("%s\n\n%s"), m_dhtBootCtrl->GetValue(), error));
+                    m_dhtPanel->SetToolTip(wxString::Format(_("DHT rendezvous is wrong!\n\n%s"), error));
                 }
             });
         }
@@ -438,6 +437,14 @@ void CSettingsDialog::onDhtTestClick(wxCommandEvent& event)
 
 void CSettingsDialog::onEmailTestClick(wxCommandEvent& event)
 {
+    auto pier = m_ownerCtrl->GetValue() + '/' + m_pierCtrl->GetValue();
+    if (m_config->Pier != pier)
+    {
+        CMessageDialog dialog(this, _("The identity has been changed, but the context hasn't been replaced yet. You should apply changes before this test."), wxDEFAULT_DIALOG_STYLE|wxICON_WARNING);
+        dialog.ShowModal();
+        return;
+    }
+
     std::weak_ptr<CSettingsDialog> weak = shared_from_this();
     WebPier::Utils::CheckEmailRendezvous(m_smtpCtrl->GetValue(), m_imapCtrl->GetValue(), m_loginCtrl->GetValue(), m_passCtrl->GetValue(), m_certPicker->GetPath(), m_keyPicker->GetPath(), m_caPicker->GetPath(), [this, weak](const wxString& error)
     {
@@ -456,7 +463,7 @@ void CSettingsDialog::onEmailTestClick(wxCommandEvent& event)
                 else
                 {
                     m_emailTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_CROSS_MARK), wxASCII_STR(wxART_BUTTON)));
-                    m_emailPanel->SetToolTip(wxString::Format(wxT("Email rendezvous is wrong!\n\n%s"), error));
+                    m_emailPanel->SetToolTip(wxString::Format(_("Email rendezvous is wrong!\n\n%s"), error));
                 }
             });
         }

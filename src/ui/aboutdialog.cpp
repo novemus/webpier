@@ -51,20 +51,20 @@ CAboutDialog::CAboutDialog( wxWindow* parent, wxWindowID id, const wxString& tit
     homeLabel->Wrap( -1 );
     homeLabel->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString ) );
 
-    bottomSizer->Add( homeLabel, 0, wxRIGHT|wxLEFT, 10 );
+    bottomSizer->Add( homeLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 10 );
 
     wxHyperlinkCtrl* homepage = new wxHyperlinkCtrl( m_panel, wxID_ANY, wxT("https://github.com/novemus/webpier"), wxT("https://github.com/novemus/webpier"), wxDefaultPosition, wxDefaultSize, wxHL_DEFAULT_STYLE );
-    bottomSizer->Add( homepage, 0, wxRIGHT, 10 );
+    bottomSizer->Add( homepage, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT, 10 );
 
     wxStaticText* copyLabel = new wxStaticText( m_panel, wxID_ANY, _("Copyright:"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
     copyLabel->Wrap( -1 );
     copyLabel->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString ) );
 
-    bottomSizer->Add( copyLabel, 0, wxRIGHT|wxLEFT, 10 );
+    bottomSizer->Add( copyLabel, 0, wxBOTTOM|wxRIGHT|wxLEFT|wxALIGN_CENTER_VERTICAL, 10 );
 
     wxStaticText* copyright = new wxStaticText( m_panel, wxID_ANY, _("2024 Novemus Band"), wxDefaultPosition, wxDefaultSize, 0 );
     copyright->Wrap( -1 );
-    bottomSizer->Add( copyright, 0, wxBOTTOM|wxRIGHT, 10 );
+    bottomSizer->Add( copyright, 0, wxBOTTOM|wxRIGHT|wxALIGN_CENTER_VERTICAL, 10 );
 
     panelSizer->Add( bottomSizer, 0, wxEXPAND|wxALL, 10 );
 
