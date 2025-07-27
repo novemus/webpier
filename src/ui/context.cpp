@@ -638,7 +638,7 @@ namespace WebPier
             }).detach();
         }
 
-        void CheckDhtRendezvous(const wxString& bootstrap, wxUint32 network, wxUint16 port, const std::function<void(const wxString&)>& callback) noexcept(true)
+        void CheckRendezvous(const plexus::rendezvous& receiver, const plexus::rendezvous& forwarder, const std::function<void(const wxString&)>& callback) noexcept(true)
         {
             std::thread([=]()
             {
@@ -648,7 +648,6 @@ namespace WebPier
                     g_context->get_config(config);
 
                     plexus::identity host { config.pier.substr(0, config.pier.find('/')), config.pier.substr(config.pier.find('/') + 1) };
-                    plexus::rendezvous receiver { plexus::dhtnode { webpier::locale_to_utf8(bootstrap.ToStdString()), port, network } };
 
                     boost::asio::io_context io;
                     plexus::receive_advent(io, receiver, "webpier", config.repo, host, host,
@@ -663,9 +662,6 @@ namespace WebPier
                             callback(error);
                         });
 
-                    std::srand(std::time(nullptr));
-
-                    plexus::rendezvous forwarder { plexus::dhtnode { webpier::locale_to_utf8(bootstrap.ToStdString()), uint16_t(49152u + std::rand() % 16383u), network } };
                     plexus::forward_advent(io, forwarder, "webpier", config.repo, host, host,
                         [](const plexus::identity&, const plexus::identity&)
                         {
@@ -678,7 +674,7 @@ namespace WebPier
 
                     boost::asio::deadline_timer timer(io);
 
-                    timer.expires_from_now(boost::posix_time::seconds(20));
+                    timer.expires_from_now(boost::posix_time::seconds(60));
                     timer.async_wait([&](const boost::system::error_code& error)
                     {
                         io.stop();
@@ -692,6 +688,60 @@ namespace WebPier
                     callback(ex.what());
                 }
             }).detach();
+        }
+
+        void CheckDhtRendezvous(const wxString& bootstrap, wxUint32 network, wxUint16 port, const std::function<void(const wxString&)>& callback) noexcept(true)
+        {
+            try
+            {
+                plexus::rendezvous receiver {
+                    plexus::dhtnode {
+                        webpier::locale_to_utf8(bootstrap.ToStdString()),
+                        port,
+                        network
+                    } 
+                };
+
+                std::srand(std::time(nullptr));
+
+                plexus::rendezvous forwarder {
+                    plexus::dhtnode {
+                        webpier::locale_to_utf8(bootstrap.ToStdString()),
+                        uint16_t(49152u + std::rand() % 16383u),
+                        network
+                    } 
+                };
+
+                CheckRendezvous(receiver, forwarder, callback);
+            }
+            catch (const std::exception& ex)
+            {
+                callback(ex.what());
+            }
+        }
+
+        void CheckEmailRendezvous(const wxString& smtp, const wxString& imap, const wxString& login, const wxString& password, const wxString& cert, const wxString& key, const wxString& ca, const std::function<void(const wxString&)>& callback) noexcept(true)
+        {
+            try
+            {
+                plexus::rendezvous mediator {
+                    plexus::emailer { 
+                        webpier::make_tcp_endpoint(webpier::locale_to_utf8(smtp.ToStdString()), webpier::smtp_server_default_port),
+                        webpier::make_tcp_endpoint(webpier::locale_to_utf8(imap.ToStdString()), webpier::imap_server_default_port),
+                        webpier::locale_to_utf8(login.ToStdString()),
+                        webpier::locale_to_utf8(password.ToStdString()),
+                        webpier::locale_to_utf8(cert.ToStdString()),
+                        webpier::locale_to_utf8(key.ToStdString()),
+                        webpier::locale_to_utf8(ca.ToStdString())
+                    } 
+                };
+
+                CheckRendezvous(mediator, mediator, callback);
+            }
+            catch (const std::exception& ex)
+            {
+                callback(ex.what());
+            }
         }
     }
 }

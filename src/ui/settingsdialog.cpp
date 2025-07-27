@@ -128,11 +128,10 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxStr
 
     m_stunTest = new wxButton(m_natPanel, wxID_ANY, _("Test"), wxDefaultPosition, wxDefaultSize, 0);
     m_stunTest->SetBitmap( wxArtProvider::GetBitmap( wxASCII_STR(wxART_REDO), wxASCII_STR(wxART_BUTTON)));
-    stunGridSizer->Add(m_stunTest, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_CENTER_HORIZONTAL, 10);
+    stunGridSizer->Add(m_stunTest, 0, wxALIGN_CENTER_VERTICAL, 10);
 
-    m_stunGauge = new wxGauge(m_natPanel, wxID_ANY, 20, wxDefaultPosition, wxDefaultSize, wxGA_HORIZONTAL);
-    m_stunGauge->SetValue(0);
-    m_stunGauge->Enable(false);
+    m_stunGauge = new wxGauge(m_natPanel, wxID_ANY, 100, wxDefaultPosition, wxDefaultSize, wxGA_HORIZONTAL);
+    m_stunGauge->Hide();
 
     stunGridSizer->Add(m_stunGauge, 0, wxEXPAND | wxALIGN_CENTER_VERTICAL | wxRIGHT | wxLEFT, 5);
 
@@ -174,11 +173,10 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxStr
 
     m_dhtTest = new wxButton(m_dhtPanel, wxID_ANY, _("Test"), wxDefaultPosition, wxDefaultSize, 0);
     m_dhtTest->SetBitmap( wxArtProvider::GetBitmap( wxASCII_STR(wxART_REDO), wxASCII_STR(wxART_BUTTON)));
-    dhtGridSizer->Add(m_dhtTest, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_CENTER_HORIZONTAL, 10);
+    dhtGridSizer->Add(m_dhtTest, 0, wxALIGN_CENTER_VERTICAL, 10);
 
-    m_dhtGauge = new wxGauge(m_dhtPanel, wxID_ANY, 20, wxDefaultPosition, wxDefaultSize, wxGA_HORIZONTAL);
-    m_dhtGauge->SetValue(0);
-    m_dhtGauge->Enable(false);
+    m_dhtGauge = new wxGauge(m_dhtPanel, wxID_ANY, 100, wxDefaultPosition, wxDefaultSize, wxGA_HORIZONTAL);
+    m_dhtGauge->Hide();
 
     dhtGridSizer->Add(m_dhtGauge, 0, wxEXPAND | wxALIGN_CENTER_VERTICAL | wxRIGHT | wxLEFT, 5);
 
@@ -188,9 +186,9 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxStr
     m_dhtPanel->Layout();
     dhtSizer->Fit( m_dhtPanel );
     m_notebook->AddPage( m_dhtPanel, _("DHT"), false );
-    wxPanel* emailPanel;
-    emailPanel = new wxPanel( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-    emailPanel->SetToolTip( _("Email settings") );
+
+    m_emailPanel = new wxPanel( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    m_emailPanel->SetToolTip( _("Email settings") );
 
     wxBoxSizer* emailSizer;
     emailSizer = new wxBoxSizer( wxVERTICAL );
@@ -202,69 +200,78 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxStr
     emailGridSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
     wxStaticText* smtpLabel;
-    smtpLabel = new wxStaticText( emailPanel, wxID_ANY, _("SMTP"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
+    smtpLabel = new wxStaticText( m_emailPanel, wxID_ANY, _("SMTP"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
     smtpLabel->Wrap( -1 );
     emailGridSizer->Add( smtpLabel, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
 
-    m_smtpCtrl = new wxTextCtrl( emailPanel, wxID_ANY, m_config->SmtpServer, wxDefaultPosition, wxDefaultSize, 0 );
+    m_smtpCtrl = new wxTextCtrl( m_emailPanel, wxID_ANY, m_config->SmtpServer, wxDefaultPosition, wxDefaultSize, 0 );
     emailGridSizer->Add( m_smtpCtrl, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
 
     wxStaticText* imapLabel;
-    imapLabel = new wxStaticText( emailPanel, wxID_ANY, _("IMAP"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
+    imapLabel = new wxStaticText( m_emailPanel, wxID_ANY, _("IMAP"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
     imapLabel->Wrap( -1 );
     emailGridSizer->Add( imapLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
-    m_imapCtrl = new wxTextCtrl( emailPanel, wxID_ANY, m_config->ImapServer, wxDefaultPosition, wxDefaultSize, 0 );
+    m_imapCtrl = new wxTextCtrl( m_emailPanel, wxID_ANY, m_config->ImapServer, wxDefaultPosition, wxDefaultSize, 0 );
     emailGridSizer->Add( m_imapCtrl, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
     wxStaticText* loginLabel;
-    loginLabel = new wxStaticText( emailPanel, wxID_ANY, _("Login"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
+    loginLabel = new wxStaticText( m_emailPanel, wxID_ANY, _("Login"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
     loginLabel->Wrap( -1 );
     emailGridSizer->Add( loginLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
-    m_loginCtrl = new wxTextCtrl( emailPanel, wxID_ANY, m_config->EmailLogin, wxDefaultPosition, wxDefaultSize, 0 );
+    m_loginCtrl = new wxTextCtrl( m_emailPanel, wxID_ANY, m_config->EmailLogin, wxDefaultPosition, wxDefaultSize, 0 );
     emailGridSizer->Add( m_loginCtrl, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
     wxStaticText* passLabel;
-    passLabel = new wxStaticText( emailPanel, wxID_ANY, _("Password"), wxDefaultPosition, wxDefaultSize, 0 );
+    passLabel = new wxStaticText( m_emailPanel, wxID_ANY, _("Password"), wxDefaultPosition, wxDefaultSize, 0 );
     passLabel->Wrap( -1 );
     passLabel->SetMinSize( wxSize( 100,-1 ) );
 
     emailGridSizer->Add( passLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
-    m_passCtrl = new wxTextCtrl( emailPanel, wxID_ANY, m_config->EmailPassword, wxDefaultPosition, wxDefaultSize, wxTE_PASSWORD );
+    m_passCtrl = new wxTextCtrl( m_emailPanel, wxID_ANY, m_config->EmailPassword, wxDefaultPosition, wxDefaultSize, wxTE_PASSWORD );
     emailGridSizer->Add( m_passCtrl, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
     wxStaticText* certLabel;
-    certLabel = new wxStaticText( emailPanel, wxID_ANY, _("Certificate"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
+    certLabel = new wxStaticText( m_emailPanel, wxID_ANY, _("Certificate"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
     certLabel->Wrap( -1 );
     emailGridSizer->Add( certLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
-    m_certPicker = new wxFilePickerCtrl( emailPanel, wxID_ANY, m_config->EmailX509Cert, _("Select a file"), _("*.*"), wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE );
+    m_certPicker = new wxFilePickerCtrl( m_emailPanel, wxID_ANY, m_config->EmailX509Cert, _("Select a file"), _("*.*"), wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE );
     emailGridSizer->Add( m_certPicker, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
     wxStaticText* keyLabel;
-    keyLabel = new wxStaticText( emailPanel, wxID_ANY, _("Key"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
+    keyLabel = new wxStaticText( m_emailPanel, wxID_ANY, _("Key"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
     keyLabel->Wrap( -1 );
     emailGridSizer->Add( keyLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
-    m_keyPicker = new wxFilePickerCtrl( emailPanel, wxID_ANY, m_config->EmailX509Key, _("Select a file"), _("*.*"), wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE );
+    m_keyPicker = new wxFilePickerCtrl( m_emailPanel, wxID_ANY, m_config->EmailX509Key, _("Select a file"), _("*.*"), wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE );
     emailGridSizer->Add( m_keyPicker, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
     wxStaticText* caLabel;
-    caLabel = new wxStaticText( emailPanel, wxID_ANY, _("CA"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
+    caLabel = new wxStaticText( m_emailPanel, wxID_ANY, _("CA"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
     caLabel->Wrap( -1 );
     emailGridSizer->Add( caLabel, 0, wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
 
-    m_caPicker = new wxFilePickerCtrl( emailPanel, wxID_ANY, m_config->EmailX509Ca, _("Select a file"), _("*.*"), wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE );
+    m_caPicker = new wxFilePickerCtrl( m_emailPanel, wxID_ANY, m_config->EmailX509Ca, _("Select a file"), _("*.*"), wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE );
     emailGridSizer->Add( m_caPicker, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
 
-    emailSizer->Add( emailGridSizer, 1, wxEXPAND|wxALL, 5 );
+    m_emailTest = new wxButton(m_emailPanel, wxID_ANY, _("Test"), wxDefaultPosition, wxDefaultSize, 0);
+    m_emailTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_REDO), wxASCII_STR(wxART_BUTTON)));
+    emailGridSizer->Add(m_emailTest, 0, wxALIGN_CENTER_VERTICAL, 10);
 
-    emailPanel->SetSizer( emailSizer );
-    emailPanel->Layout();
-    emailSizer->Fit( emailPanel );
-    m_notebook->AddPage( emailPanel, _("Email"), false );
+    m_emailGauge = new wxGauge(m_emailPanel, wxID_ANY, 100, wxDefaultPosition, wxDefaultSize, wxGA_HORIZONTAL);
+    m_emailGauge->Hide();
+
+    emailGridSizer->Add(m_emailGauge, 0, wxEXPAND | wxALIGN_CENTER_VERTICAL | wxRIGHT | wxLEFT, 5);
+
+    emailSizer->Add(emailGridSizer, 1, wxEXPAND|wxALL, 5 );
+
+    m_emailPanel->SetSizer( emailSizer );
+    m_emailPanel->Layout();
+    emailSizer->Fit( m_emailPanel );
+    m_notebook->AddPage( m_emailPanel, _("Email"), false );
 
     mainSizer->Add( m_notebook, 1, wxEXPAND | wxALL, 5 );
 
@@ -304,6 +311,14 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxStr
     m_dhtBootCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( CSettingsDialog::onDhtChange ), NULL, this );
     m_dhtPortCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( CSettingsDialog::onDhtChange ), NULL, this );
     m_dhtTest->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CSettingsDialog::onDhtTestClick ), NULL, this );
+    m_smtpCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( CSettingsDialog::onEmailChange ), NULL, this );
+    m_imapCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( CSettingsDialog::onEmailChange ), NULL, this );
+    m_loginCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( CSettingsDialog::onEmailChange ), NULL, this );
+    m_passCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( CSettingsDialog::onEmailChange ), NULL, this );
+    m_certPicker->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( CSettingsDialog::onEmailChange ), NULL, this );
+    m_keyPicker->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( CSettingsDialog::onEmailChange ), NULL, this );
+    m_caPicker->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( CSettingsDialog::onEmailChange ), NULL, this );
+    m_emailTest->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CSettingsDialog::onEmailTestClick ), NULL, this );
 }
 
 CSettingsDialog::~CSettingsDialog()
@@ -315,26 +330,36 @@ CSettingsDialog::~CSettingsDialog()
 
 void CSettingsDialog::onIdle(wxIdleEvent& event)
 {
-    if (m_stunGauge->IsEnabled())
-        m_stunGauge->SetValue(wxDateTime::Now().GetSecond() % 60 * 3 % 20);
-    
-    if (m_dhtGauge->IsEnabled())
-        m_dhtGauge->SetValue(wxDateTime::Now().GetSecond() % 60 * 3 % 20);
+    if (m_stunGauge->IsShown())
+        m_stunGauge->Pulse();
+
+    if (m_dhtGauge->IsShown())
+        m_dhtGauge->Pulse();
+
+    if (m_emailGauge->IsShown())
+        m_emailGauge->Pulse();
 
     event.Skip();
 }
 
 void CSettingsDialog::onStunChange(wxCommandEvent& event)
 {
-    m_stunTest->SetBitmap( wxArtProvider::GetBitmap( wxASCII_STR(wxART_REDO), wxASCII_STR(wxART_BUTTON)));
+    m_stunTest->SetBitmap(wxArtProvider::GetBitmap( wxASCII_STR(wxART_REDO), wxASCII_STR(wxART_BUTTON)));
     m_natPanel->SetToolTip(wxEmptyString);
     event.Skip();
 }
 
 void CSettingsDialog::onDhtChange(wxCommandEvent& event)
 {
-    m_dhtTest->SetBitmap( wxArtProvider::GetBitmap( wxASCII_STR(wxART_REDO), wxASCII_STR(wxART_BUTTON)));
+    m_dhtTest->SetBitmap(wxArtProvider::GetBitmap( wxASCII_STR(wxART_REDO), wxASCII_STR(wxART_BUTTON)));
     m_dhtPanel->SetToolTip(wxEmptyString);
+    event.Skip();
+}
+
+void CSettingsDialog::onEmailChange(wxCommandEvent& event)
+{
+    m_emailTest->SetBitmap(wxArtProvider::GetBitmap( wxASCII_STR(wxART_REDO), wxASCII_STR(wxART_BUTTON)));
+    m_emailPanel->SetToolTip(wxEmptyString);
     event.Skip();
 }
 
@@ -349,7 +374,7 @@ void CSettingsDialog::onStunTestClick(wxCommandEvent& event)
             {
                 m_stunTest->Enable();
                 m_stunGauge->SetValue(0);
-                m_stunGauge->Disable();
+                m_stunGauge->Hide();
                 if (state.Error.IsEmpty())
                 {
                     m_stunTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(state.Mapping == WebPier::Utils::NatState::Independent ? wxART_TICK_MARK : wxART_WARNING), wxASCII_STR(wxART_BUTTON)));
@@ -373,8 +398,8 @@ void CSettingsDialog::onStunTestClick(wxCommandEvent& event)
             });
         }
     });
-    m_stunGauge->Enable();
-    m_stunGauge->SetValue(0);
+    m_stunGauge->Show();
+    m_stunGauge->Pulse();
     m_stunTest->Disable();
 }
 
@@ -392,11 +417,11 @@ void CSettingsDialog::onDhtTestClick(wxCommandEvent& event)
             {
                 m_dhtTest->Enable();
                 m_dhtGauge->SetValue(0);
-                m_dhtGauge->Disable();
+                m_dhtGauge->Hide();
                 if (error.IsEmpty())
                 {
                     m_dhtTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_TICK_MARK), wxASCII_STR(wxART_BUTTON)));
-                    m_dhtPanel->SetToolTip(wxString::Format(_("%s\n\nDHT is Ok!"), m_dhtBootCtrl->GetValue()));
+                    m_dhtPanel->SetToolTip(wxString::Format(_("%s\n\nDHT rendezvous is Ok!"), m_dhtBootCtrl->GetValue()));
                 }
                 else
                 {
@@ -406,9 +431,39 @@ void CSettingsDialog::onDhtTestClick(wxCommandEvent& event)
             });
         }
     });
-    m_dhtGauge->Enable();
-    m_dhtGauge->SetValue(0);
+    m_dhtGauge->Show();
+    m_dhtGauge->Pulse();
     m_dhtTest->Disable();
+}
+
+void CSettingsDialog::onEmailTestClick(wxCommandEvent& event)
+{
+    std::weak_ptr<CSettingsDialog> weak = shared_from_this();
+    WebPier::Utils::CheckEmailRendezvous(m_smtpCtrl->GetValue(), m_imapCtrl->GetValue(), m_loginCtrl->GetValue(), m_passCtrl->GetValue(), m_certPicker->GetPath(), m_keyPicker->GetPath(), m_caPicker->GetPath(), [this, weak](const wxString& error)
+    {
+        if(auto ptr = weak.lock())
+        {
+            ptr->CallAfter([this, ptr, error]()
+            {
+                m_emailTest->Enable();
+                m_emailGauge->SetValue(0);
+                m_emailGauge->Hide();
+                if (error.IsEmpty())
+                {
+                    m_emailTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_TICK_MARK), wxASCII_STR(wxART_BUTTON)));
+                    m_emailPanel->SetToolTip(_("Email rendezvous is Ok!"));
+                }
+                else
+                {
+                    m_emailTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_CROSS_MARK), wxASCII_STR(wxART_BUTTON)));
+                    m_emailPanel->SetToolTip(wxString::Format(wxT("Email rendezvous is wrong!\n\n%s"), error));
+                }
+            });
+        }
+    });
+    m_emailGauge->Show();
+    m_emailGauge->Pulse();
+    m_emailTest->Disable();
 }
 
 void CSettingsDialog::onDaemonCheckBoxClick(wxCommandEvent& event)

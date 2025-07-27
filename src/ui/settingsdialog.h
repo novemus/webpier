@@ -43,6 +43,7 @@ class CSettingsDialog : public wxDialog, public std::enable_shared_from_this<CSe
     wxTextCtrl* m_dhtPortCtrl;
     wxButton* m_dhtTest;
     wxGauge* m_dhtGauge;
+    wxPanel* m_emailPanel;
     wxTextCtrl* m_smtpCtrl;
     wxTextCtrl* m_imapCtrl;
     wxTextCtrl* m_loginCtrl;
@@ -50,6 +51,8 @@ class CSettingsDialog : public wxDialog, public std::enable_shared_from_this<CSe
     wxFilePickerCtrl* m_certPicker;
     wxFilePickerCtrl* m_keyPicker;
     wxFilePickerCtrl* m_caPicker;
+    wxButton* m_emailTest;
+    wxGauge* m_emailGauge;
     wxButton* m_cancelBtn;
     wxButton* m_okBtn;
     WebPier::Context::ConfigPtr m_config;
@@ -59,9 +62,11 @@ class CSettingsDialog : public wxDialog, public std::enable_shared_from_this<CSe
     void onDaemonCheckBoxClick(wxCommandEvent& event);
     void onStunTestClick(wxCommandEvent& event);
     void onDhtTestClick(wxCommandEvent& event);
+    void onEmailTestClick(wxCommandEvent& event);
     void onIdle(wxIdleEvent& event);
     void onStunChange(wxCommandEvent& event);
     void onDhtChange(wxCommandEvent& event);
+    void onEmailChange(wxCommandEvent& event);
 
 public:
 
