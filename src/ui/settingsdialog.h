@@ -38,8 +38,11 @@ class CSettingsDialog : public wxDialog, public std::enable_shared_from_this<CSe
     wxTextCtrl* m_punchCtrl;
     wxButton* m_stunTest;
     wxGauge* m_stunGauge;
+    wxPanel* m_dhtPanel;
     wxTextCtrl* m_dhtBootCtrl;
     wxTextCtrl* m_dhtPortCtrl;
+    wxButton* m_dhtTest;
+    wxGauge* m_dhtGauge;
     wxTextCtrl* m_smtpCtrl;
     wxTextCtrl* m_imapCtrl;
     wxTextCtrl* m_loginCtrl;
@@ -55,8 +58,10 @@ class CSettingsDialog : public wxDialog, public std::enable_shared_from_this<CSe
     void onOkButtonClick(wxCommandEvent& event);
     void onDaemonCheckBoxClick(wxCommandEvent& event);
     void onStunTestClick(wxCommandEvent& event);
+    void onDhtTestClick(wxCommandEvent& event);
     void onIdle(wxIdleEvent& event);
     void onStunChange(wxCommandEvent& event);
+    void onDhtChange(wxCommandEvent& event);
 
 public:
 

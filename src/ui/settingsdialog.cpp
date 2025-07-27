@@ -142,9 +142,9 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxStr
     m_natPanel->Layout();
     stunSizer->Fit( m_natPanel );
     m_notebook->AddPage( m_natPanel, _("NAT"), false );
-    wxPanel* dhtPanel;
-    dhtPanel = new wxPanel( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-    dhtPanel->SetToolTip( _("DHT node settings") );
+
+    m_dhtPanel = new wxPanel( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    m_dhtPanel->SetToolTip( _("DHT node settings") );
 
     wxBoxSizer* dhtSizer;
     dhtSizer = new wxBoxSizer( wxVERTICAL );
@@ -156,28 +156,38 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxStr
     dhtGridSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
     wxStaticText* dhtBootLabel;
-    dhtBootLabel = new wxStaticText( dhtPanel, wxID_ANY, _("Bootstrap"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
+    dhtBootLabel = new wxStaticText( m_dhtPanel, wxID_ANY, _("Bootstrap"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
     dhtBootLabel->Wrap( -1 );
     dhtGridSizer->Add( dhtBootLabel, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
 
-    m_dhtBootCtrl = new wxTextCtrl( dhtPanel, wxID_ANY, m_config->DhtBootstrap, wxDefaultPosition, wxSize( -1,-1 ), 0 );
+    m_dhtBootCtrl = new wxTextCtrl( m_dhtPanel, wxID_ANY, m_config->DhtBootstrap, wxDefaultPosition, wxSize( -1,-1 ), 0 );
     dhtGridSizer->Add( m_dhtBootCtrl, 0, wxEXPAND|wxTOP|wxRIGHT|wxLEFT|wxALIGN_CENTER_VERTICAL, 5 );
 
     wxStaticText* dhtPortLabel;
-    dhtPortLabel = new wxStaticText( dhtPanel, wxID_ANY, _("Port"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
+    dhtPortLabel = new wxStaticText( m_dhtPanel, wxID_ANY, _("Port"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
     dhtPortLabel->Wrap( -1 );
     dhtGridSizer->Add( dhtPortLabel, 0, wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
 
-    m_dhtPortCtrl = new wxTextCtrl( dhtPanel, wxID_ANY, wxString::Format(wxT("%d"), (int)m_config->DhtPort), wxDefaultPosition, wxDefaultSize, 0 );
+    m_dhtPortCtrl = new wxTextCtrl( m_dhtPanel, wxID_ANY, wxString::Format(wxT("%d"), (int)m_config->DhtPort), wxDefaultPosition, wxDefaultSize, 0 );
     m_dhtPortCtrl->SetValidator( wxIntegerValidator<unsigned int>() );
     dhtGridSizer->Add( m_dhtPortCtrl, 0, wxALIGN_CENTER_VERTICAL|wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
 
+    m_dhtTest = new wxButton(m_dhtPanel, wxID_ANY, _("Test"), wxDefaultPosition, wxDefaultSize, 0);
+    m_dhtTest->SetBitmap( wxArtProvider::GetBitmap( wxASCII_STR(wxART_REDO), wxASCII_STR(wxART_BUTTON)));
+    dhtGridSizer->Add(m_dhtTest, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_CENTER_HORIZONTAL, 10);
+
+    m_dhtGauge = new wxGauge(m_dhtPanel, wxID_ANY, 20, wxDefaultPosition, wxDefaultSize, wxGA_HORIZONTAL);
+    m_dhtGauge->SetValue(0);
+    m_dhtGauge->Enable(false);
+
+    dhtGridSizer->Add(m_dhtGauge, 0, wxEXPAND | wxALIGN_CENTER_VERTICAL | wxRIGHT | wxLEFT, 5);
+
     dhtSizer->Add( dhtGridSizer, 0, wxALL|wxEXPAND, 5 );
 
-    dhtPanel->SetSizer( dhtSizer );
-    dhtPanel->Layout();
-    dhtSizer->Fit( dhtPanel );
-    m_notebook->AddPage( dhtPanel, _("DHT"), false );
+    m_dhtPanel->SetSizer( dhtSizer );
+    m_dhtPanel->Layout();
+    dhtSizer->Fit( m_dhtPanel );
+    m_notebook->AddPage( m_dhtPanel, _("DHT"), false );
     wxPanel* emailPanel;
     emailPanel = new wxPanel( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
     emailPanel->SetToolTip( _("Email settings") );
@@ -291,6 +301,9 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxStr
 
     m_stunCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( CSettingsDialog::onStunChange ), NULL, this );
     m_stunTest->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CSettingsDialog::onStunTestClick ), NULL, this );
+    m_dhtBootCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( CSettingsDialog::onDhtChange ), NULL, this );
+    m_dhtPortCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( CSettingsDialog::onDhtChange ), NULL, this );
+    m_dhtTest->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CSettingsDialog::onDhtTestClick ), NULL, this );
 }
 
 CSettingsDialog::~CSettingsDialog()
@@ -304,6 +317,9 @@ void CSettingsDialog::onIdle(wxIdleEvent& event)
 {
     if (m_stunGauge->IsEnabled())
         m_stunGauge->SetValue(wxDateTime::Now().GetSecond() % 60 * 3 % 20);
+    
+    if (m_dhtGauge->IsEnabled())
+        m_dhtGauge->SetValue(wxDateTime::Now().GetSecond() % 60 * 3 % 20);
 
     event.Skip();
 }
@@ -312,6 +328,13 @@ void CSettingsDialog::onStunChange(wxCommandEvent& event)
 {
     m_stunTest->SetBitmap( wxArtProvider::GetBitmap( wxASCII_STR(wxART_REDO), wxASCII_STR(wxART_BUTTON)));
     m_natPanel->SetToolTip(wxEmptyString);
+    event.Skip();
+}
+
+void CSettingsDialog::onDhtChange(wxCommandEvent& event)
+{
+    m_dhtTest->SetBitmap( wxArtProvider::GetBitmap( wxASCII_STR(wxART_REDO), wxASCII_STR(wxART_BUTTON)));
+    m_dhtPanel->SetToolTip(wxEmptyString);
     event.Skip();
 }
 
@@ -344,7 +367,7 @@ void CSettingsDialog::onStunTestClick(wxCommandEvent& event)
                 }
                 else
                 {
-                    m_stunTest->SetBitmap( wxArtProvider::GetBitmap( wxASCII_STR(wxART_CROSS_MARK), wxASCII_STR(wxART_BUTTON)));
+                    m_stunTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_CROSS_MARK), wxASCII_STR(wxART_BUTTON)));
                     m_natPanel->SetToolTip(wxString::Format(wxT("%s\n\n%s"), m_stunCtrl->GetValue(), state.Error));
                 }
             });
@@ -353,6 +376,39 @@ void CSettingsDialog::onStunTestClick(wxCommandEvent& event)
     m_stunGauge->Enable();
     m_stunGauge->SetValue(0);
     m_stunTest->Disable();
+}
+
+void CSettingsDialog::onDhtTestClick(wxCommandEvent& event)
+{
+    std::weak_ptr<CSettingsDialog> weak = shared_from_this();
+
+    wxUint32 port = 0;
+    m_dhtPortCtrl->GetValue().ToUInt(&port);
+    WebPier::Utils::CheckDhtRendezvous(m_dhtBootCtrl->GetValue(), 0, port, [this, weak](const wxString& error)
+    {
+        if(auto ptr = weak.lock())
+        {
+            ptr->CallAfter([this, ptr, error]()
+            {
+                m_dhtTest->Enable();
+                m_dhtGauge->SetValue(0);
+                m_dhtGauge->Disable();
+                if (error.IsEmpty())
+                {
+                    m_dhtTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_TICK_MARK), wxASCII_STR(wxART_BUTTON)));
+                    m_dhtPanel->SetToolTip(wxString::Format(_("%s\n\nDHT is Ok!"), m_dhtBootCtrl->GetValue()));
+                }
+                else
+                {
+                    m_dhtTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_CROSS_MARK), wxASCII_STR(wxART_BUTTON)));
+                    m_dhtPanel->SetToolTip(wxString::Format(wxT("%s\n\n%s"), m_dhtBootCtrl->GetValue(), error));
+                }
+            });
+        }
+    });
+    m_dhtGauge->Enable();
+    m_dhtGauge->SetValue(0);
+    m_dhtTest->Disable();
 }
 
 void CSettingsDialog::onDaemonCheckBoxClick(wxCommandEvent& event)

@@ -172,5 +172,6 @@ namespace WebPier
         };
 
         void ExploreNat(const wxString& bind, const wxString& stun, const std::function<void(const NatState&)>& callback) noexcept(true);
+        void CheckDhtRendezvous(const wxString& bootstrap, wxUint32 network, wxUint16 port, const std::function<void(const wxString&)>& callback) noexcept(true);
     }
 }

@@ -602,7 +602,7 @@ namespace WebPier
     {
         void ExploreNat(const wxString& bind, const wxString& stun, const std::function<void(const NatState&)>& callback) noexcept(true)
         {
-            std::thread([bind, stun, callback]()
+            std::thread([=]()
             {
                 try
                 {
@@ -634,6 +634,62 @@ namespace WebPier
                 catch (const std::exception& ex)
                 {
                     callback(NatState { ex.what() });
+                }
+            }).detach();
+        }
+
+        void CheckDhtRendezvous(const wxString& bootstrap, wxUint32 network, wxUint16 port, const std::function<void(const wxString&)>& callback) noexcept(true)
+        {
+            std::thread([=]()
+            {
+                try
+                {
+                    webpier::config config;
+                    g_context->get_config(config);
+
+                    plexus::identity host { config.pier.substr(0, config.pier.find('/')), config.pier.substr(config.pier.find('/') + 1) };
+                    plexus::rendezvous receiver { plexus::dhtnode { webpier::locale_to_utf8(bootstrap.ToStdString()), port, network } };
+
+                    boost::asio::io_context io;
+                    plexus::receive_advent(io, receiver, "webpier", config.repo, host, host,
+                        [&io, callback](const plexus::identity&, const plexus::identity&)
+                        {
+                            io.stop();
+                            callback(wxEmptyString);
+                        },
+                        [&io, callback](const plexus::identity&, const plexus::identity&, const std::string& error)
+                        {
+                            io.stop();
+                            callback(error);
+                        });
+
+                    std::srand(std::time(nullptr));
+
+                    plexus::rendezvous forwarder { plexus::dhtnode { webpier::locale_to_utf8(bootstrap.ToStdString()), uint16_t(49152u + std::rand() % 16383u), network } };
+                    plexus::forward_advent(io, forwarder, "webpier", config.repo, host, host,
+                        [](const plexus::identity&, const plexus::identity&)
+                        {
+                        },
+                        [&io, callback](const plexus::identity&, const plexus::identity&, const std::string& error)
+                        {
+                            io.stop();
+                            callback(error);
+                        });
+
+                    boost::asio::deadline_timer timer(io);
+
+                    timer.expires_from_now(boost::posix_time::seconds(20));
+                    timer.async_wait([&](const boost::system::error_code& error)
+                    {
+                        io.stop();
+                        callback("timeout");
+                    });
+
+                    io.run();
+                }
+                catch (const std::exception& ex)
+                {
+                    callback(ex.what());
                 }
             }).detach();
         }
