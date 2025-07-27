@@ -24,15 +24,20 @@
 #include <wx/notebook.h>
 #include <wx/button.h>
 #include <wx/dialog.h>
+#include <wx/gauge.h>
+#include <memory>
 
-class CSettingsDialog : public wxDialog
+class CSettingsDialog : public wxDialog, public std::enable_shared_from_this<CSettingsDialog>
 {
     wxNotebook* m_notebook;
     wxTextCtrl* m_ownerCtrl;
     wxTextCtrl* m_pierCtrl;
     wxCheckBox* m_daemonCtrl;
+    wxPanel* m_natPanel;
     wxTextCtrl* m_stunCtrl;
     wxTextCtrl* m_punchCtrl;
+    wxButton* m_stunTest;
+    wxGauge* m_stunGauge;
     wxTextCtrl* m_dhtBootCtrl;
     wxTextCtrl* m_dhtPortCtrl;
     wxTextCtrl* m_smtpCtrl;
@@ -49,9 +54,12 @@ class CSettingsDialog : public wxDialog
 
     void onOkButtonClick(wxCommandEvent& event);
     void onDaemonCheckBoxClick(wxCommandEvent& event);
+    void onStunTestClick(wxCommandEvent& event);
+    void onIdle(wxIdleEvent& event);
+    void onStunChange(wxCommandEvent& event);
 
 public:
 
-    CSettingsDialog( WebPier::Context::ConfigPtr config, wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Settings"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER );
+    CSettingsDialog( WebPier::Context::ConfigPtr config, const wxString& title = _("Settings"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER );
     ~CSettingsDialog();
 };

@@ -633,7 +633,7 @@ namespace WebPier
                 }
                 catch (const std::exception& ex)
                 {
-                     callback(NatState { ex.what() });
+                    callback(NatState { ex.what() });
                 }
             }).detach();
         }

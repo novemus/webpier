@@ -3,6 +3,8 @@
 #include <ui/logo.h>
 #include <wx/msgdlg.h> 
 #include <wx/valnum.h>
+#include <wx/datetime.h>
+#include <wx/notifmsg.h>
 #include <cstdint>
 
 #ifdef WIN32
@@ -25,8 +27,13 @@ wxString ToString(const WebPier::Utils::NatState::Binding& value)
     return wxEmptyString;
 }
 
-CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style)
-    : wxDialog(parent, id, title, pos, size, style)
+wxString ToString(bool value)
+{
+    return value ? _("yes") : _("no");
+}
+
+CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxString& title, const wxPoint& pos, const wxSize& size, long style)
+    : wxDialog(nullptr, wxID_ANY, title, pos, size, style)
     , m_config(config)
     , m_daemon(WebPier::Backend::VerifyAutostart())
 {
@@ -91,43 +98,50 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, wxWindow* p
     basicPanel->Layout();
     basicSizer->Fit( basicPanel );
     m_notebook->AddPage( basicPanel, _("Basic"), true );
-    wxPanel* natPanel;
-    natPanel = new wxPanel( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-    natPanel->SetToolTip( _("NAT traverse settings") );
+    m_natPanel = new wxPanel( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    m_natPanel->SetToolTip( _("NAT traverse settings") );
 
     wxBoxSizer* stunSizer;
     stunSizer = new wxBoxSizer( wxVERTICAL );
 
-    wxFlexGridSizer* stunGridSizer;
-    stunGridSizer = new wxFlexGridSizer( 0, 2, 5, 5 );
-    stunGridSizer->AddGrowableCol( 1 );
-    stunGridSizer->SetFlexibleDirection( wxHORIZONTAL );
-    stunGridSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+    wxFlexGridSizer *stunGridSizer;
+    stunGridSizer = new wxFlexGridSizer(0, 2, 5, 5);
+    stunGridSizer->AddGrowableCol(1);
+    stunGridSizer->SetFlexibleDirection(wxHORIZONTAL);
+    stunGridSizer->SetNonFlexibleGrowMode(wxFLEX_GROWMODE_SPECIFIED);
 
-    wxStaticText* stunLabel;
-    stunLabel = new wxStaticText( natPanel, wxID_ANY, _("STUN server"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
-    stunLabel->Wrap( -1 );
-    stunGridSizer->Add( stunLabel, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
+    wxStaticText *stunLabel;
+    stunLabel = new wxStaticText(m_natPanel, wxID_ANY, _("STUN server"), wxDefaultPosition, wxSize(100, -1), 0);
+    stunLabel->Wrap(-1);
+    stunGridSizer->Add(stunLabel, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxRIGHT | wxLEFT, 5);
 
-    m_stunCtrl = new wxTextCtrl( natPanel, wxID_ANY, m_config->StunServer, wxDefaultPosition, wxDefaultSize, 0 );
-    stunGridSizer->Add( m_stunCtrl, 0, wxALIGN_CENTER_VERTICAL|wxEXPAND|wxTOP|wxRIGHT|wxLEFT, 5 );
+    m_stunCtrl = new wxTextCtrl(m_natPanel, wxID_ANY, _("stun.ekiga.net"), wxDefaultPosition, wxDefaultSize, 0);
+    stunGridSizer->Add(m_stunCtrl, 1, wxTOP | wxRIGHT | wxLEFT | wxEXPAND | wxALIGN_CENTER_VERTICAL, 5);
 
-    wxStaticText* punchLabel;
-    punchLabel = new wxStaticText( natPanel, wxID_ANY, _("Punch hops"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
-    punchLabel->Wrap( -1 );
-    stunGridSizer->Add( punchLabel, 0, wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
+    wxStaticText *punchLabel;
+    punchLabel = new wxStaticText(m_natPanel, wxID_ANY, _("Punch hops"), wxDefaultPosition, wxSize(100, -1), 0);
+    punchLabel->Wrap(-1);
+    stunGridSizer->Add(punchLabel, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT | wxLEFT, 5);
 
-    m_punchCtrl = new wxTextCtrl( natPanel, wxID_ANY, wxString::Format(wxT("%d"), (int)m_config->PunchHops), wxDefaultPosition, wxDefaultSize, 0 );
-    m_punchCtrl->SetValidator( wxIntegerValidator<unsigned char>() );
+    m_punchCtrl = new wxTextCtrl(m_natPanel, wxID_ANY, _("7"), wxDefaultPosition, wxDefaultSize, 0);
+    stunGridSizer->Add(m_punchCtrl, 0, wxALIGN_CENTER_VERTICAL | wxEXPAND | wxRIGHT | wxLEFT, 5);
 
-    stunGridSizer->Add( m_punchCtrl, 0, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT|wxALIGN_CENTER_VERTICAL, 5 );
+    m_stunTest = new wxButton(m_natPanel, wxID_ANY, _("Test"), wxDefaultPosition, wxDefaultSize, 0);
+    m_stunTest->SetBitmap( wxArtProvider::GetBitmap( wxASCII_STR(wxART_REDO), wxASCII_STR(wxART_BUTTON)));
+    stunGridSizer->Add(m_stunTest, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_CENTER_HORIZONTAL, 10);
 
-    stunSizer->Add( stunGridSizer, 0, wxEXPAND|wxALL, 5 );
+    m_stunGauge = new wxGauge(m_natPanel, wxID_ANY, 20, wxDefaultPosition, wxDefaultSize, wxGA_HORIZONTAL);
+    m_stunGauge->SetValue(0);
+    m_stunGauge->Enable(false);
 
-    natPanel->SetSizer( stunSizer );
-    natPanel->Layout();
-    stunSizer->Fit( natPanel );
-    m_notebook->AddPage( natPanel, _("NAT"), false );
+    stunGridSizer->Add(m_stunGauge, 0, wxEXPAND | wxALIGN_CENTER_VERTICAL | wxRIGHT | wxLEFT, 5);
+
+    stunSizer->Add(stunGridSizer, 0, wxEXPAND | wxALL, 5);
+
+    m_natPanel->SetSizer( stunSizer );
+    m_natPanel->Layout();
+    stunSizer->Fit( m_natPanel );
+    m_notebook->AddPage( m_natPanel, _("NAT"), false );
     wxPanel* dhtPanel;
     dhtPanel = new wxPanel( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
     dhtPanel->SetToolTip( _("DHT node settings") );
@@ -268,11 +282,15 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, wxWindow* p
 
     this->Centre( wxBOTH );
 
+    this->Connect( wxEVT_IDLE, wxIdleEventHandler( CSettingsDialog::onIdle ) );
     m_okBtn->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CSettingsDialog::onOkButtonClick ), NULL, this );
 
 #ifdef WIN32
     m_daemonCtrl->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( CSettingsDialog::onDaemonCheckBoxClick ), NULL, this );
 #endif
+
+    m_stunCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( CSettingsDialog::onStunChange ), NULL, this );
+    m_stunTest->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CSettingsDialog::onStunTestClick ), NULL, this );
 }
 
 CSettingsDialog::~CSettingsDialog()
@@ -280,6 +298,61 @@ CSettingsDialog::~CSettingsDialog()
     delete m_notebook;
     delete m_cancelBtn;
     delete m_okBtn;
+}
+
+void CSettingsDialog::onIdle(wxIdleEvent& event)
+{
+    if (m_stunGauge->IsEnabled())
+        m_stunGauge->SetValue(wxDateTime::Now().GetSecond() % 60 * 3 % 20);
+
+    event.Skip();
+}
+
+void CSettingsDialog::onStunChange(wxCommandEvent& event)
+{
+    m_stunTest->SetBitmap( wxArtProvider::GetBitmap( wxASCII_STR(wxART_REDO), wxASCII_STR(wxART_BUTTON)));
+    m_natPanel->SetToolTip(wxEmptyString);
+    event.Skip();
+}
+
+void CSettingsDialog::onStunTestClick(wxCommandEvent& event)
+{
+    std::weak_ptr<CSettingsDialog> weak = shared_from_this();
+    WebPier::Utils::ExploreNat(wxT("0.0.0.0"), m_stunCtrl->GetValue(), [this, weak](const WebPier::Utils::NatState& state)
+    {
+        if(auto ptr = weak.lock())
+        {
+            ptr->CallAfter([this, ptr, state]()
+            {
+                m_stunTest->Enable();
+                m_stunGauge->SetValue(0);
+                m_stunGauge->Disable();
+                if (state.Error.IsEmpty())
+                {
+                    m_stunTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(state.Mapping == WebPier::Utils::NatState::Independent ? wxART_TICK_MARK : wxART_WARNING), wxASCII_STR(wxART_BUTTON)));
+                    m_natPanel->SetToolTip(wxString::Format(_("%s\n\nNAT: %s\nHairpin: %s\nRandom port: %s\nVariable IP: %s\nMapping: %s\nFiltering: %s\nInner EP: %s\nMapped EP: %s"),
+                            m_stunCtrl->GetValue(),
+                            ToString(state.Nat),
+                            ToString(state.Hairpin),
+                            ToString(state.RandomPort),
+                            ToString(state.VariableAddress),
+                            ToString(state.Mapping),
+                            ToString(state.Filtering),
+                            state.InnerEndpoint,
+                            state.OuterEndpoint
+                        ));
+                }
+                else
+                {
+                    m_stunTest->SetBitmap( wxArtProvider::GetBitmap( wxASCII_STR(wxART_CROSS_MARK), wxASCII_STR(wxART_BUTTON)));
+                    m_natPanel->SetToolTip(wxString::Format(wxT("%s\n\n%s"), m_stunCtrl->GetValue(), state.Error));
+                }
+            });
+        }
+    });
+    m_stunGauge->Enable();
+    m_stunGauge->SetValue(0);
+    m_stunTest->Disable();
 }
 
 void CSettingsDialog::onDaemonCheckBoxClick(wxCommandEvent& event)

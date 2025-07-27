@@ -357,7 +357,7 @@ void CMainFrame::onServiceItemSelectionChanged(wxDataViewEvent& event)
         m_statusBar->SetStatusText(wxEmptyString, 1);
         return;
     }
-    
+
     wxVariant value;
     m_serviceList->GetValue(value, row, 0);
 
@@ -514,8 +514,8 @@ void CMainFrame::onSettingsMenuSelection(wxCommandEvent& event)
 {
     try
     {
-        CSettingsDialog dialog(m_config, this);
-        if (dialog.ShowModal() == wxID_OK)
+        auto dialog = std::make_shared<CSettingsDialog>(m_config);
+        if (dialog->ShowModal() == wxID_OK)
         {
             if (m_config->Pier != m_pierLabel->GetLabel())
                 Populate();
