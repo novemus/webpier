@@ -6,14 +6,25 @@
 #include <backend/client.h>
 #include <plexus/plexus.h>
 #include <boost/property_tree/json_parser.hpp>
-#include <boost/process.hpp>
 #include <boost/scope_exit.hpp>
-#ifdef WIN32
-#include <boost/process/windows.hpp>
-#endif
 #include <wx/stdpaths.h>
 #include <wx/timer.h>
 #include <filesystem>
+
+#include <boost/version.hpp>
+#if BOOST_VERSION >= 108800
+    #include <boost/process/v1/child.hpp>
+    #ifdef WIN32
+        #include <boost/process/v1/windows.hpp>
+    #endif
+    #define boost_process boost::process::v1
+#else
+    #include <boost/process.hpp>
+    #ifdef WIN32
+        #include <boost/process/windows.hpp>
+    #endif
+    #define boost_process boost::process
+#endif
 
 namespace WebPier
 {
@@ -63,9 +74,9 @@ namespace WebPier
             }
 
 #ifdef WIN32
-            static boost::process::child s_server(webpier::get_module_path(webpier::slipway_module).string(), home, boost::process::windows::hide);
+            static boost_process::child s_server(webpier::get_module_path(webpier::slipway_module).string(), home, boost_process::windows::hide);
 #else
-            static boost::process::child s_server(webpier::get_module_path(webpier::slipway_module).string(), home);
+            static boost_process::child s_server(webpier::get_module_path(webpier::slipway_module).string(), home);
 #endif
             if (!s_server.running())
             {

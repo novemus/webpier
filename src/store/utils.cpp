@@ -11,15 +11,30 @@
 #include <openssl/pem.h>
 #include <openssl/rand.h>
 #include <openssl/err.h>
-#include <boost/process.hpp>
 #include <boost/program_options.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-#ifdef WIN32
-    #include <windows.h>
-    #include <boost/process/windows.hpp>
-#elif __APPLE__
+#include <boost/version.hpp>
+#if BOOST_VERSION >= 108800
+    #include <boost/process/v1/child.hpp>
+    #include <boost/process/v1/pipe.hpp>
+    #include <boost/process/v1/io.hpp>
+    #ifdef WIN32
+        #include <windows.h>
+        #include <boost/process/v1/windows.hpp>
+    #endif
+    #define boost_process boost::process::v1
+#else
+    #include <boost/process.hpp>
+    #ifdef WIN32
+        #include <windows.h>
+        #include <boost/process/windows.hpp>
+    #endif
+    #define boost_process boost::process
+#endif
+
+#ifdef __APPLE__
     #include <sysdir.h>
 #endif
 
@@ -346,8 +361,8 @@ namespace webpier
 #ifndef WIN32
         std::string record = "@reboot " + exec.string() + " " + args;
 
-        boost::process::ipstream is;
-        boost::process::child read("crontab -l", boost::process::std_out > is);
+        boost_process::ipstream is;
+        boost_process::child read("crontab -l", boost_process::std_out > is);
         read.wait();
 
         std::string line;
@@ -361,7 +376,7 @@ namespace webpier
         return seen;
 #else
         std::string id = std::to_string(std::hash<std::string>()(exec.string() + args));
-        boost::process::child proc("schtasks /Query /TN \"\\WebPier\\Task #" + id + "\" /HRESULT", boost::process::windows::hide);
+        boost_process::child proc("schtasks /Query /TN \"\\WebPier\\Task #" + id + "\" /HRESULT", boost_process::windows::hide);
         proc.wait();
 
         return proc.exit_code() == ERROR_SUCCESS;
@@ -373,10 +388,10 @@ namespace webpier
 #ifndef WIN32
         std::string record = "@reboot " + exec.string() + " " + args;
 
-        boost::process::ipstream is;
-        boost::process::opstream os;
+        boost_process::ipstream is;
+        boost_process::opstream os;
 
-        boost::process::child read("crontab -l", boost::process::std_out > is);
+        boost_process::child read("crontab -l", boost_process::std_out > is);
         read.wait();
 
         std::string line;
@@ -393,7 +408,7 @@ namespace webpier
         {
             os << record << std::endl;
 
-            boost::process::child write("crontab", boost::process::std_in < os);
+            boost_process::child write("crontab", boost_process::std_in < os);
             os.pipe().close();
             write.wait();
         }
@@ -411,7 +426,7 @@ namespace webpier
         boost::property_tree::xml_writer_settings<std::string> settings('\t', 1, "UTF-16");
         boost::property_tree::write_xml(xmlpath.string(), taskxml, locale, settings);
 
-        boost::process::child proc("schtasks /Create /TN \"\\WebPier\\Task #" + id + "\" /XML \"" + xmlpath.string() + "\" /F /HRESULT", boost::process::windows::hide);
+        boost_process::child proc("schtasks /Create /TN \"\\WebPier\\Task #" + id + "\" /XML \"" + xmlpath.string() + "\" /F /HRESULT", boost_process::windows::hide);
         proc.wait();
 
         if (proc.exit_code() != ERROR_SUCCESS)
@@ -424,10 +439,10 @@ namespace webpier
 #ifndef WIN32
         std::string record = "@reboot " + exec.string() + " " + args;
 
-        boost::process::ipstream is;
-        boost::process::opstream os;
+        boost_process::ipstream is;
+        boost_process::opstream os;
 
-        boost::process::child read("crontab -l", boost::process::std_out > is);
+        boost_process::child read("crontab -l", boost_process::std_out > is);
         read.wait();
 
         std::string line;
@@ -442,13 +457,13 @@ namespace webpier
 
         if (seen)
         {
-            boost::process::child write("crontab", boost::process::std_in < os);
+            boost_process::child write("crontab", boost_process::std_in < os);
             os.pipe().close();
             write.wait();
         }
 #else
         std::string id = std::to_string(std::hash<std::string>()(exec.string() + args));
-        boost::process::child proc("schtasks /Delete /TN \"\\WebPier\\Task #" + id + "\" /F /HRESULT", boost::process::windows::hide);
+        boost_process::child proc("schtasks /Delete /TN \"\\WebPier\\Task #" + id + "\" /F /HRESULT", boost_process::windows::hide);
         proc.wait();
 
         if (proc.exit_code() != ERROR_SUCCESS)
@@ -467,21 +482,21 @@ namespace webpier
 
         std::smatch match;
         if (std::regex_search(url, match, std::regex("^(\\w+://)?\\[([a-zA-Z0-9:]+)\\]:(\\d+).*")))
-            return *resolver.resolve(match[2].str(), match[3].str());
+            return *resolver.resolve(match[2].str(), match[3].str()).begin();
 
         if (std::regex_search(url, match, std::regex("^(\\w+)://\\[([a-zA-Z0-9:]+)\\].*")))
-            return *resolver.resolve(match[2].str(), match[1].str());
+            return *resolver.resolve(match[2].str(), match[1].str()).begin();
 
         if (std::regex_search(url, match, std::regex("^\\[([a-zA-Z0-9:]+)\\].*")))
-            return *resolver.resolve(match[1].str(), service);
+            return *resolver.resolve(match[1].str(), service).begin();
 
         if (std::regex_search(url, match, std::regex("^(\\w+://)?([\\w\\.]+):(\\d+).*")))
-            return *resolver.resolve(match[2].str(), match[3].str());
+            return *resolver.resolve(match[2].str(), match[3].str()).begin();
 
         if (std::regex_search(url, match, std::regex("^(\\w+)://([\\w\\.]+).*")))
-            return *resolver.resolve(match[2].str(), match[1].str());
+            return *resolver.resolve(match[2].str(), match[1].str()).begin();
 
-        return *resolver.resolve(url, service);
+        return *resolver.resolve(url, service).begin();
     }
 
     boost::asio::ip::udp::endpoint make_udp_endpoint(const std::string& url, const std::string& service) noexcept(false)

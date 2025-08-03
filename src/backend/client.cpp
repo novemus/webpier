@@ -50,7 +50,7 @@ namespace slipway
 
                     boost::system::error_code ec;
                     timer.cancel(ec);
-                });
+                }, boost::asio::detached);
 
                 m_io.run();
             }

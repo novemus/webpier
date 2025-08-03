@@ -288,7 +288,7 @@ namespace slipway
                     {
                         if(auto ptr = weak.lock())
                         {
-                            m_io.post([weak, bind, host, peer]()
+                            boost::asio::post(m_io, [weak, bind, host, peer]()
                             {
                                 if(auto ptr = weak.lock())
                                     ptr->connect(bind, host, peer);
@@ -300,7 +300,7 @@ namespace slipway
                     {
                         if(auto ptr = weak.lock())
                         {
-                            m_io.post([weak, error]()
+                            boost::asio::post(m_io, [weak, error]()
                             {
                                 if(auto ptr = weak.lock())
                                     ptr->fallback(error);
@@ -965,7 +965,7 @@ namespace slipway
                         return cleanup();
 
                     handle(std::move(socket));
-                });
+                }, boost::asio::detached);
             }
 
             void accept()

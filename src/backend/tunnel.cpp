@@ -11,7 +11,7 @@ endpoint parse_endpoint(const std::string& str)
 {
     size_t delim = str.find_last_of(':');
     return endpoint(
-        boost::asio::ip::address::from_string(str.substr(0, delim)), 
+        boost::asio::ip::make_address(str.substr(0, delim)), 
         boost::lexical_cast<uint16_t>(str.substr(delim + 1))
     );
 }
@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 
         _inf_ << "starting tunnel for purpose=" << purpose << " service=" << service << " gateway=" << gateway << " faraway=" << faraway << " obscure=" << (obscure != 0);
 
-        boost::asio::io_service io;
+        boost::asio::io_context io;
         auto router = purpose == "import"
                     ? wormhole::create_importer(io, service, gateway, faraway, obscure)
                     : wormhole::create_exporter(io, service, gateway, faraway, obscure);
