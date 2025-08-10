@@ -4,7 +4,7 @@
         {
             "name": "config-base",
             "hidden": true,
-            "binaryDir": "${sourceDir}/build/${presetName}",
+            "binaryDir": "${sourceParentDir}/out/$env{HOSTNAME}/build/${sourceDirName}/${presetName}",
             "cacheVariables": {
                 "WEBPIER_SKIP_TEST_RULES": "OFF",
                 "WEBPIER_SKIP_INSTALL_RULES": "OFF",
@@ -18,7 +18,7 @@
             "cacheVariables": {
                 "BUILD_SHARED_LIBS": "OFF"
             },
-            "installDir": "${sourceParentDir}/install/x64-static"
+            "installDir": "${sourceParentDir}/out/$env{HOSTNAME}/install/x64-static"
         },
         {
             "name": "shared-config-base",
@@ -27,7 +27,7 @@
             "cacheVariables": {
                 "BUILD_SHARED_LIBS": "ON"
             },
-            "installDir": "${sourceParentDir}/install/x64"
+            "installDir": "${sourceParentDir}/out/$env{HOSTNAME}/install/x64"
         },
         {
             "name": "vcpkg-config-base",
@@ -421,7 +421,7 @@
             "configuration": "Release",
             "inherits": "test-base",
             "environment": {
-                "PATH": "${sourceDir}/build/${presetName}/vcpkg_installed/x64-windows/bin;${sourceParentDir}/install/x64/bin"
+                "PATH": "${sourceParentDir}/out/$env{HOSTNAME}/build/${sourceDirName}/${presetName}/vcpkg_installed/x64-windows/bin;${sourceParentDir}/out/$env{HOSTNAME}/install/x64/bin"
             },
             "condition": {
                 "type": "equals",
@@ -437,7 +437,7 @@
             "configuration": "Debug",
             "inherits": "test-base",
             "environment": {
-                "PATH": "${sourceDir}/build/${presetName}/vcpkg_installed/x64-windows/debug/bin;${sourceParentDir}/install/x64/bin"
+                "PATH": "${sourceParentDir}/out/$env{HOSTNAME}/build/${sourceDirName}/${presetName}/vcpkg_installed/x64-windows/debug/bin;${sourceParentDir}/out/$env{HOSTNAME}/install/x64/bin"
             },
             "condition": {
                 "type": "equals",

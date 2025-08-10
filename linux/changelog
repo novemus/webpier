@@ -1,3 +1,11 @@
+webpier (1.0.1-1) unstable; urgency=low
+
+  * Сhecking NAT during STUN configuration.
+  * Сhecking DHT settings during configuration.
+  * Сhecking Email settings during configuration.
+
+ -- Novemus Band <nineletters@mail.ru>  Sun, 10 Aug 2025 09:36:00 +0300
+
 webpier (1.0.0-1) unstable; urgency=low
 
   * The release.
