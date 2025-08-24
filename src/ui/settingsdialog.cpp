@@ -35,7 +35,6 @@ wxString ToString(bool value)
 CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxString& title, const wxPoint& pos, const wxSize& size, long style)
     : wxDialog(nullptr, wxID_ANY, title, pos, size, style)
     , m_config(config)
-    , m_daemon(WebPier::Backend::VerifyAutostart())
 {
     static constexpr const char* FORBIDDEN_PATH_CHARS = "*/\\<>:|? ";
 
@@ -90,8 +89,23 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxStr
     basicSizer->Add( idSizer, 0, wxEXPAND|wxALL, 10 );
 
     m_daemonCtrl = new wxCheckBox( basicPanel, wxID_ANY, _("Run the backend at system startup"), wxDefaultPosition, wxDefaultSize, 0 );
+    if (WebPier::Backend::CouldAutostart())
+    {
+        m_daemon = WebPier::Backend::VerifyAutostart();
+        m_daemonCtrl->SetToolTip( _("The change will take effect after the system is restarted") );
+    }
+    else
+    {
+        m_daemon = false;
+        m_daemonCtrl->Enable(false);
+#ifndef WIN32
+        m_daemonCtrl->SetToolTip(_("This option depends on the 'crontab' tool"));
+#else
+        m_daemonCtrl->SetToolTip(_("This option depends on the 'schtasks' tool"));
+#endif
+    }
     m_daemonCtrl->SetValue(m_daemon);
-    m_daemonCtrl->SetToolTip( _("The change will take effect after the system is restarted") );
+
     basicSizer->Add( m_daemonCtrl, 0, wxALL, 5 );
 
     basicPanel->SetSizer( basicSizer );

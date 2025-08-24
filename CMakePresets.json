@@ -505,6 +505,9 @@
                 "lhs": "${hostSystemName}",
                 "rhs": "Linux"
             },
+            "variables": {
+                "CPACK_DEBIAN_PACKAGE_RELEASE": "1"
+            },
             "generators": [
                 "DEB"
             ],
@@ -530,9 +533,6 @@
             "configurations": [
                 "Release"
             ],
-            "variables": {
-                "CPACK_RPM_PACKAGE_REQUIRES": "wxGTK >= 3.2.2, fmt >= 9.1.0, jsoncpp >= 1.9.5, openssl-libs >= 3.0.15, gnutls >= 3.7.9, nettle >= 3.8.1, libargon2 >= 20171227"
-            },
             "packageName": "webpier",
             "packageDirectory": ".."
         },

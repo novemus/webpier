@@ -517,25 +517,31 @@ namespace WebPier
             return slipway::handle{ val.Pier.ToStdString(), val.Service.ToStdString() };
         }
 
-        void AssignAutostart()
+        void AssignAutostart() noexcept(false)
         {
             webpier::assign_autostart(webpier::get_module_path(webpier::slipway_module), "\"" + g_context->home() + "\" daemon");
         }
 
-        void RevokeAutostart()
+        void RevokeAutostart() noexcept(false)
         {
             webpier::revoke_autostart(webpier::get_module_path(webpier::slipway_module), "\"" + g_context->home() + "\" daemon");
         }
 
-        bool VerifyAutostart()
+        bool VerifyAutostart() noexcept(false)
+        {
+            return webpier::verify_autostart(webpier::get_module_path(webpier::slipway_module), "\"" + g_context->home() + "\" daemon");
+        }
+
+        bool CouldAutostart() noexcept(false)
         {
             try
             {
-                return webpier::verify_autostart(webpier::get_module_path(webpier::slipway_module), "\"" + g_context->home() + "\" daemon");
+                VerifyAutostart();
+                return true;
             }
             catch (const std::exception& ex) 
             {
-                std::cerr << "Can't verify the backend startup status" << std::endl;
+                std::cerr << "Can't verify the backend startup status: " << ex.what() << std::endl;
             }
             return false;
         }

@@ -146,6 +146,7 @@ namespace WebPier
         void AssignAutostart() noexcept(false);
         void RevokeAutostart() noexcept(false);
         bool VerifyAutostart() noexcept(false);
+        bool CouldAutostart() noexcept(false);
     }
 
     namespace Utils

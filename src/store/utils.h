@@ -36,6 +36,7 @@ namespace webpier
     std::string utf8_to_locale(const std::string& str) noexcept(false);
     std::filesystem::path get_module_path(const std::string& module) noexcept(false);
     std::filesystem::path get_absolute_path(const std::string& file) noexcept(false);
+    bool could_autostart() noexcept(false);
     bool verify_autostart(const std::filesystem::path& exec, const std::string& args) noexcept(false);
     void assign_autostart(const std::filesystem::path& exec, const std::string& args) noexcept(false);
     void revoke_autostart(const std::filesystem::path& exec, const std::string& args) noexcept(false);
