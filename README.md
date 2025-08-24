@@ -50,9 +50,11 @@ Your partner must adopt your *offer* too. After that you can manage the services
 
 ## Build
 
-To build the project from the source you will need to provide the following dependencies: [plexus](https://github.com/novemus/plexus), [wormhole](https://github.com/novemus/wormhole), [wxWidgets](https://github.com/wxWidgets/wxWidgets), [openssl](https://github.com/openssl/openssl), [boost](https://github.com/boostorg/boost) libraries and their interface dependencies. For example, `plexus` library also needs the [tubus](https://github.com/novemus/tubus) and [opendht](https://github.com/savoirfairelinux/opendht) library with their own interface dependencies. If that doesn't scare you then try to build the project.
+To build the project from the source you will need to provide the following dependencies: [plexus](https://github.com/novemus/plexus), [wormhole](https://github.com/novemus/wormhole), [wxWidgets](https://github.com/wxWidgets/wxWidgets), [openssl](https://github.com/openssl/openssl), [boost](https://github.com/boostorg/boost) libraries and their interface dependencies. For example, `plexus` library also needs the [tubus](https://github.com/novemus/tubus) and [opendht](https://github.com/savoirfairelinux/opendht) library with their own dependencies. If that doesn't scare you then try to build the project.
 
-The Linux CMake presets assume that the dependencies are installed and accessible via CMAKE_PREFIX_PATH and PKG_CONFIG_PATH variables or located in `install/x64-static` and `install/x64` (depending on the build preset) directories next to the project source folder:
+Note that the `CMakePresets.json` directs the build output to the `out` directory next to the project source folder. The CPack presets are based on the static release build.
+
+The Linux CMake presets assume that the dependencies are installed and accessible via CMAKE_PREFIX_PATH and PKG_CONFIG_PATH variables or located in the default install directory, which is set as `${sourceParentDir}/out/$env{HOSTNAME}/install/x64-static` for the static build and `${sourceParentDir}/out/$env{HOSTNAME}/install/x64` for the shared build.
 
 ```console
 $ git clone https://github.com/novemus/webpier.git
@@ -61,7 +63,7 @@ $ cmake --preset=linux-static-release
 $ cpack --preset=debian-package
 ```
 
-The MacOS and Windows presets are based on the [vcpkg](https://vcpkg.io) tool chain to install and resolve dependencies, except of the [opendht](https://github.com/savoirfairelinux/opendht), [tubus](https://github.com/novemus/tubus), [plexus](https://github.com/novemus/plexus) and [wormhole](https://github.com/novemus/wormhole) libraries. You have to install them yourself, for example to the `install/x64-static` and `install/x64` directory next to the project source folder. The CPack presets are based on the static release build.
+The MacOS and Windows presets are based on the [vcpkg](https://vcpkg.io) tool chain to install and resolve dependencies, except of the [opendht](https://github.com/savoirfairelinux/opendht), [tubus](https://github.com/novemus/tubus), [plexus](https://github.com/novemus/plexus) and [wormhole](https://github.com/novemus/wormhole) libraries. You have to install them yourself, for example to the default install directory, which is set in the corresponding configure preset.
 
 ```console
 $ git clone https://github.com/novemus/webpier.git
