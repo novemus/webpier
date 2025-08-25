@@ -151,7 +151,8 @@
             "inherits": ["shared-config-base", "vcpkg-config-base"],
             "cacheVariables": {
                 "VCPKG_TARGET_TRIPLET": "x64-osx-dynamic",
-                "CMAKE_BUILD_TYPE": "Debug"
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CPACK_PACKAGING_INSTALL_PREFIX": "/Applications"
             },
             "condition": {
                 "type": "equals",
@@ -175,7 +176,8 @@
             "inherits": ["static-config-base", "vcpkg-config-base"],
             "cacheVariables": {
                 "VCPKG_TARGET_TRIPLET": "x64-osx",
-                "CMAKE_BUILD_TYPE": "Debug"
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CPACK_PACKAGING_INSTALL_PREFIX": "/Applications"
             },
             "condition": {
                 "type": "equals",
