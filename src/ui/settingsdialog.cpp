@@ -129,7 +129,7 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxStr
     stunLabel->Wrap(-1);
     stunGridSizer->Add(stunLabel, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxRIGHT | wxLEFT, 5);
 
-    m_stunCtrl = new wxTextCtrl(m_natPanel, wxID_ANY, _("stun.ekiga.net"), wxDefaultPosition, wxDefaultSize, 0);
+    m_stunCtrl = new wxTextCtrl(m_natPanel, wxID_ANY, m_config->StunServer, wxDefaultPosition, wxDefaultSize, 0);
     stunGridSizer->Add(m_stunCtrl, 1, wxTOP | wxRIGHT | wxLEFT | wxEXPAND | wxALIGN_CENTER_VERTICAL, 5);
 
     wxStaticText *punchLabel;
@@ -137,7 +137,7 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxStr
     punchLabel->Wrap(-1);
     stunGridSizer->Add(punchLabel, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT | wxLEFT, 5);
 
-    m_punchCtrl = new wxTextCtrl(m_natPanel, wxID_ANY, _("7"), wxDefaultPosition, wxDefaultSize, 0);
+    m_punchCtrl = new wxTextCtrl(m_natPanel, wxID_ANY, wxString::Format(wxT("%d"), (int)m_config->PunchHops), wxDefaultPosition, wxDefaultSize, 0);
     stunGridSizer->Add(m_punchCtrl, 0, wxALIGN_CENTER_VERTICAL | wxEXPAND | wxRIGHT | wxLEFT, 5);
 
     m_stunTest = new wxButton(m_natPanel, wxID_ANY, _("Test"), wxDefaultPosition, wxDefaultSize, 0);
