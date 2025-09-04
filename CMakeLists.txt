@@ -62,13 +62,13 @@ message("*** plexus Version: ${plexus_VERSION}")
 message("*** plexus Include: ${plexus_INCLUDE_DIRS}")
 message("*** plexus Library: ${plexus_LIBRARY}")
 
-find_package(wormhole 1.2 REQUIRED)
+find_package(wormhole 1.2.4 REQUIRED)
 
 message("*** wormhole Version: ${wormhole_VERSION}")
 message("*** wormhole Include: ${wormhole_INCLUDE_DIRS}")
 message("*** wormhole Library: ${wormhole_LIBRARY}")
 
-find_package(tubus 1.2 REQUIRED DEBUG)
+find_package(tubus 1.2.3 REQUIRED DEBUG)
 
 message("*** tubus Version: ${tubus_VERSION}")
 message("*** tubus Include: ${tubus_INCLUDE_DIRS}")
