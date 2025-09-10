@@ -317,6 +317,8 @@ namespace WebPier
                     }
                 };
 
+                actual.repo = std::filesystem::path(m_origin.repo).parent_path().generic_string() + "/" + webpier::to_hexadecimal(actual.pier.data(), actual.pier.size());
+
                 g_context->set_config(actual);
 
                 bool reboot = actual.pier != m_origin.pier;

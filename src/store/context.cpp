@@ -302,6 +302,27 @@ namespace webpier
                     }
 
                     save_config();
+
+                    if (std::filesystem::exists(m_config.repo))
+                    {
+                        for (auto const& owner : std::filesystem::directory_iterator(m_config.repo))
+                        {
+                            if (!owner.is_directory())
+                                continue;
+
+                            for (auto const& pin : std::filesystem::directory_iterator(owner.path()))
+                            {
+                                if (!pin.is_directory())
+                                    continue;
+
+                                if (!std::filesystem::exists(pin.path() / cert_file_name))
+                                    continue;
+
+                                auto id = owner.path().filename().string() + "/" + pin.path().filename().string();
+                                load_pier_config(id);
+                            }
+                        }
+                    }
                 }
                 else
                 {
