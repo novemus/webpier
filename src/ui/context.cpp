@@ -10,6 +10,7 @@
 #include <wx/stdpaths.h>
 #include <wx/timer.h>
 #include <filesystem>
+#include <optional>
 
 #include <boost/version.hpp>
 #if BOOST_VERSION >= 108800
@@ -657,7 +658,7 @@ namespace WebPier
             }).detach();
         }
 
-        void CheckRendezvous(const plexus::rendezvous& receiver, const plexus::rendezvous& forwarder, const std::function<void(const wxString&)>& callback) noexcept(true)
+        void CheckRendezvous(const plexus::rendezvous& mediator, const std::function<void(const wxString&)>& callback) noexcept(true)
         {
             std::thread([=]()
             {
@@ -669,36 +670,54 @@ namespace WebPier
                     plexus::identity host { config.pier.substr(0, config.pier.find('/')), config.pier.substr(config.pier.find('/') + 1) };
 
                     boost::asio::io_context io;
-                    plexus::receive_advent(io, receiver, "webpier", config.repo, host, host,
-                        [&io, callback](const plexus::identity&, const plexus::identity&)
-                        {
-                            io.stop();
-                            callback(wxEmptyString);
-                        },
-                        [&io, callback](const plexus::identity&, const plexus::identity&, const std::string& error)
-                        {
-                            io.stop();
-                            callback(error);
-                        });
-
-                    plexus::forward_advent(io, forwarder, "webpier", config.repo, host, host,
-                        [](const plexus::identity&, const plexus::identity&)
-                        {
-                        },
-                        [&io, callback](const plexus::identity&, const plexus::identity&, const std::string& error)
-                        {
-                            io.stop();
-                            callback(error);
-                        });
 
                     boost::asio::deadline_timer timer(io);
-
                     timer.expires_from_now(boost::posix_time::seconds(60));
                     timer.async_wait([&](const boost::system::error_code& error)
                     {
                         io.stop();
                         callback("timeout");
                     });
+
+                    std::optional<std::string> receive;
+                    std::optional<std::string> forward;
+
+                    plexus::receive_advent(io, mediator, "webpier", config.repo, host, host,
+                        [&](const plexus::identity&, const plexus::identity&)
+                        {
+                            receive = "";
+                            if (forward)
+                            {
+                                io.stop();
+                                if (forward.value().empty())
+                                    callback(wxEmptyString);
+                            }
+                        },
+                        [&](const plexus::identity&, const plexus::identity&, const std::string& error)
+                        {
+                            receive = error;
+                            io.stop();
+                            callback(error);
+                        });
+
+                    std::promise<std::string> fwd;
+                    plexus::forward_advent(io, mediator, "webpier", config.repo, host, host,
+                        [&](const plexus::identity&, const plexus::identity&)
+                        {
+                            forward = "";
+                            if (receive)
+                            {
+                                io.stop();
+                                if (receive.value().empty())
+                                    callback(wxEmptyString);
+                            }
+                        },
+                        [&](const plexus::identity&, const plexus::identity&, const std::string& error)
+                        {
+                            forward = error;
+                            io.stop();
+                            callback(error);
+                        });
 
                     io.run();
                 }
@@ -713,7 +732,7 @@ namespace WebPier
         {
             try
             {
-                plexus::rendezvous receiver {
+                plexus::rendezvous mediator {
                     plexus::dhtnode {
                         webpier::locale_to_utf8(bootstrap.ToStdString()),
                         port,
@@ -721,17 +740,7 @@ namespace WebPier
                     } 
                 };
 
-                std::srand(std::time(nullptr));
-
-                plexus::rendezvous forwarder {
-                    plexus::dhtnode {
-                        webpier::locale_to_utf8(bootstrap.ToStdString()),
-                        uint16_t(49152u + std::rand() % 16383u),
-                        network
-                    } 
-                };
-
-                CheckRendezvous(receiver, forwarder, callback);
+                CheckRendezvous(mediator, callback);
             }
             catch (const std::exception& ex)
             {
@@ -755,7 +764,7 @@ namespace WebPier
                     } 
                 };
 
-                CheckRendezvous(mediator, mediator, callback);
+                CheckRendezvous(mediator, callback);
             }
             catch (const std::exception& ex)
             {
