@@ -70,7 +70,7 @@ namespace slipway
                             }}
                         : plexus::rendezvous {
                             plexus::dhtnode {
-                                service.rendezvous,
+                                config.dht.bootstrap + "," + service.rendezvous,
                                 config.dht.port,
                                 config.dht.network
                             }}
