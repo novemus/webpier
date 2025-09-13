@@ -99,7 +99,6 @@ namespace WebPier
             s_timer.Start(5000, true);
 
             g_backend = slipway::connect_backend(g_context->home());
-            g_backend->adjust();
         }
     }
 
@@ -318,6 +317,9 @@ namespace WebPier
                     }
                 };
 
+                if (actual == m_origin)
+                    return;
+
                 actual.repo = std::filesystem::path(m_origin.repo).parent_path().generic_string() + "/" + webpier::to_hexadecimal(actual.pier.data(), actual.pier.size());
 
                 g_context->set_config(actual);
@@ -329,6 +331,10 @@ namespace WebPier
                 {
                     WebPier::Backend::Unplug();
                     WebPier::Backend::Engage();
+                }
+                else
+                {
+                    WebPier::Backend::Adjust();
                 }
             }
 
@@ -351,6 +357,11 @@ namespace WebPier
                 EmailX509Ca = m_origin.email.ca;
             }
         };
+
+        void Reload() noexcept(false)
+        {
+            g_context = webpier::open_context(g_context->home());
+        }
 
         wxString Pier() noexcept(false)
         {

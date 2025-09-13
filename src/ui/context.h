@@ -85,6 +85,7 @@ namespace WebPier
             ServiceList Services;
         };
 
+        void Reload() noexcept(false);
         wxString Pier() noexcept(false);
         ConfigPtr GetConfig() noexcept(false);
         ServiceList GetExportServices() noexcept(false);

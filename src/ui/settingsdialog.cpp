@@ -554,6 +554,5 @@ void CSettingsDialog::onOkButtonClick(wxCommandEvent& event)
     m_config->EmailX509Key = m_keyPicker->GetPath();
     m_config->EmailX509Ca = m_caPicker->GetPath();
 
-    m_config->Store();
     event.Skip();
 }

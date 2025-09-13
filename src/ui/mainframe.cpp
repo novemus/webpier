@@ -512,19 +512,24 @@ void CMainFrame::onExitMenuSelection(wxCommandEvent&)
 
 void CMainFrame::onSettingsMenuSelection(wxCommandEvent& event)
 {
-    try
+    auto dialog = std::make_shared<CSettingsDialog>(m_config);
+    if (dialog->ShowModal() == wxID_OK)
     {
-        auto dialog = std::make_shared<CSettingsDialog>(m_config);
-        if (dialog->ShowModal() == wxID_OK)
+        try
         {
+            m_config->Store();
+
             if (m_config->Pier != m_pierLabel->GetLabel())
                 Populate();
         }
-    }
-    catch (const std::exception &ex)
-    {
-        CMessageDialog dialog(this, _("Can't setup the settings. ") + ex.what(), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
-        dialog.ShowModal();
+        catch (const std::exception &ex)
+        {
+            CMessageDialog dialog(this, _("Can't setup the settings. ") + ex.what(), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
+            dialog.ShowModal();
+
+            WebPier::Context::Reload();
+            Populate();
+        }
     }
 }
 
@@ -549,6 +554,9 @@ void CMainFrame::onAddServiceButtonClick(wxCommandEvent& event)
         {
             CMessageDialog dialog(this, _("Can't add the service. ") + ex.what(), wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
             dialog.ShowModal();
+
+            WebPier::Context::Reload();
+            Populate();
         }
     }
 }
@@ -585,6 +593,9 @@ void CMainFrame::onEditServiceButtonClick(wxCommandEvent& event)
 
         CMessageDialog dialog(this, _("Can't change the service. ") + ex.what(), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
         dialog.ShowModal();
+
+        WebPier::Context::Reload();
+        Populate();
     }
 }
 
@@ -704,6 +715,9 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
     {
         CMessageDialog dialog(this, _("Offer uploading failed. ") + ex.what(), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
         dialog.ShowModal();
+
+        WebPier::Context::Reload();
+        Populate();
     }
 }
 
