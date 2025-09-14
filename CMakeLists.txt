@@ -37,10 +37,10 @@ message("*** Boost Include Dirs: ${Boost_INCLUDE_DIRS}")
 message("*** Boost Librariy Dirs: ${Boost_LIBRARY_DIRS}")
 message("*** Boost Libraries: ${Boost_LIBRARIES}")
 
-find_package(wxWidgets COMPONENTS core base propgrid QUIET)
+find_package(wxWidgets COMPONENTS core base propgrid net QUIET)
 
 if (NOT wxWidgets_FOUND)
-    find_package(wxWidgets CONFIG REQUIRED core base propgrid)
+    find_package(wxWidgets CONFIG REQUIRED core base propgrid net)
 endif()
 
 if(wxWidgets_USE_FILE)

@@ -1,10 +1,11 @@
 #include <wx/wx.h>
 #include <wx/taskbar.h>
 #include <wx/notifmsg.h>
-#include <wx/snglinst.h>
 #include <wx/stdpaths.h>
 #include <ui/mainframe.h>
 #include <wx/mstream.h>
+#include <wx/ipc.h>
+#include <wx/log.h>
 
 #ifndef WIN32
 #include <assets/logo.h>
@@ -111,9 +112,39 @@ CMainFrame* CreateMainFrame(wxTaskBarIcon* taskBar = nullptr)
     return frame;
 }
 
-class CTaskBarIcon : public wxTaskBarIcon
+constexpr const char* IPCTaskbarSocket = "taskbar.jack";
+constexpr const char* IPCTaskbarHost = "localhost";
+constexpr const char* IPCTaskbarTopic = "webpier";
+constexpr const char* IPCTaskbarCommand = "raise";
+
+class CTaskBarConnection : public wxConnection
 {
     CMainFrame* m_frame;
+
+public:
+
+    CTaskBarConnection(CMainFrame* frame) : m_frame(frame)
+    {
+    }
+
+protected:
+
+    bool OnExec(const wxString& topic, const wxString& command) override
+    {
+        if (topic == IPCTaskbarTopic && command == IPCTaskbarCommand)
+        {
+            m_frame->Show(true);
+            m_frame->Iconize(false);
+            m_frame->Raise();
+            return true;
+        }
+        return false;
+    }
+};
+
+class CTaskBarIcon : public wxTaskBarIcon, public wxServer
+{
+    CMainFrame* m_frame = nullptr;
 
 public:
 
@@ -125,26 +156,44 @@ public:
 #endif
     {
         this->SetIcon(wxBitmapBundle::FromIconBundle(::GetAppIconBundle()));
-
-        m_frame = CreateMainFrame(this);
-        m_frame->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(CTaskBarIcon::OnFrameClose), NULL, this);
     }
 
     ~CTaskBarIcon() override
     {
-        delete m_frame;
+        if (m_frame)
+            delete m_frame;
+    }
+
+    bool Init()
+    {
+        if (wxServer::Create(WebPier::GetHome() + "/" + IPCTaskbarSocket))
+        {
+            m_frame = CreateMainFrame(this);
+            m_frame->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(CTaskBarIcon::OnFrameClose), NULL, this);
+            return true;
+        }
+        return false;
+    }
+
+    wxConnectionBase* OnAcceptConnection(const wxString& topic)
+    {
+        return new CTaskBarConnection(m_frame);
     }
 
 protected:
 
-    void OnLeftButtonDClick(wxTaskBarIconEvent&)
+    void OnLeftButtonClick(wxTaskBarIconEvent&)
     {
         m_frame->Show(true);
+        m_frame->Iconize(false);
+        m_frame->Raise();
     }
 
     void OnMenuConfigure(wxCommandEvent&)
     {
         m_frame->Show(true);
+        m_frame->Iconize(false);
+        m_frame->Raise();
     }
 
     void OnMenuExit(wxCommandEvent&)
@@ -303,38 +352,37 @@ protected:
 };
 
 wxBEGIN_EVENT_TABLE(CTaskBarIcon, wxTaskBarIcon)
-    EVT_TASKBAR_LEFT_DCLICK(CTaskBarIcon::OnLeftButtonDClick)
+    EVT_TASKBAR_LEFT_UP(CTaskBarIcon::OnLeftButtonClick)
+    EVT_TASKBAR_LEFT_DCLICK(CTaskBarIcon::OnLeftButtonClick)
 wxEND_EVENT_TABLE()
 
 class CWebPierApp : public wxApp
 {
-    wxSingleInstanceChecker* m_checker;
-
 public:
-
     bool OnInit() override
     {
-        wxInitAllImageHandlers();
+#ifdef wxUSE_LOG
+        wxLog::SetActiveTarget(new wxLogStderr());
+#endif
 
-        if (!wxApp::OnInit() || !WebPier::Init())
-            return false;
+        wxClient* client = new wxClient();
+        wxConnectionBase* connect = client->MakeConnection(IPCTaskbarHost, WebPier::GetHome() + "/" + IPCTaskbarSocket, IPCTaskbarTopic);
 
-        m_checker = new wxSingleInstanceChecker(wxApp::GetAppName() + '-' + wxGetUserId(), wxStandardPaths::Get().GetTempDir());
-        if (m_checker->IsAnotherRunning())
+        if (connect && connect->Execute(IPCTaskbarCommand))
         {
-            delete m_checker;
-            m_checker = nullptr;
+            delete connect;
+            delete client;
 
-            return (bool)CreateMainFrame();
+            return false;
         }
 
-        return (bool)new CTaskBarIcon();
-    }
+        delete connect;
+        delete client;
 
-    int OnExit() override
-    {
-        delete m_checker;
-        return wxApp::OnExit();
+        wxInitAllImageHandlers();
+
+        CTaskBarIcon* taskbar = new CTaskBarIcon();
+        return wxApp::OnInit() && WebPier::Init() && taskbar->Init();
     }
 };
 

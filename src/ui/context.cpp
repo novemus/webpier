@@ -37,21 +37,9 @@ namespace WebPier
         std::shared_ptr<webpier::context> g_context;
         std::shared_ptr<slipway::client> g_backend;
 
-        std::string GetHome()
-        {
-            wxString home;
-            if (!wxGetEnv("WEBPIER_HOME", &home))
-                home = wxStandardPaths::Get().GetUserLocalDataDir();
-
-            if (!wxFileName::Exists(home) && !wxFileName::Mkdir(home))
-                throw webpier::usage_error("Wrong home path");
-
-            return home.ToStdString();
-        }
-
         void InitContext()
         {
-            auto home = GetHome();
+            auto home = GetHome().ToStdString();
 
             g_context = webpier::open_context(home);
 
@@ -121,6 +109,18 @@ namespace WebPier
             dialog.ShowModal();
         }
         return false;
+    }
+
+    wxString GetHome()
+    {
+        wxString home;
+        if (!wxGetEnv("WEBPIER_HOME", &home))
+            home = wxStandardPaths::Get().GetUserLocalDataDir();
+
+        if (!wxFileName::Exists(home) && !wxFileName::Mkdir(home))
+            throw webpier::usage_error("Wrong home path");
+
+        return home;
     }
 
     namespace Context

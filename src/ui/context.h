@@ -10,6 +10,7 @@
 namespace WebPier
 {
     bool Init();
+    wxString GetHome();
 
     namespace Context
     {
