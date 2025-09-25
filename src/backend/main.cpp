@@ -9,7 +9,6 @@
 int main(int argc, char* argv[])
 {
     constexpr const char* slipway_lock_file_name = "slipway.lock";
-    constexpr const char* slipway_jack_file_name = "slipway.jack";
 
     try
     {
@@ -34,7 +33,6 @@ int main(int argc, char* argv[])
             return 3;
         }
 
-        std::filesystem::path socket = home / slipway_jack_file_name;
         std::filesystem::path locker = home / slipway_lock_file_name;
 
         if (!std::filesystem::exists(locker))

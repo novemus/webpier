@@ -1006,7 +1006,10 @@ namespace slipway
                 , m_engine(m_io, home)
                 , m_score(steady ? 1 : 0)
             {
-                auto socket = home / slipway_jack_file_name;
+                auto dir = std::filesystem::temp_directory_path() / std::to_string(std::hash<std::string>()(home.string()));
+                std::filesystem::create_directory(dir);
+
+                auto socket = dir / slipway_jack_file_name;
 
                 cleanup(socket.string());
 

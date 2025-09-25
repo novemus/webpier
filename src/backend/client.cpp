@@ -94,7 +94,10 @@ namespace slipway
                 {
                     static constexpr const size_t MAX_ATTEMPTS = 5;
 
-                    auto socket = home / jack_file_name;
+                    auto dir = std::filesystem::temp_directory_path() / std::to_string(std::hash<std::string>()(home.string()));
+                    std::filesystem::create_directory(dir);
+
+                    auto socket = dir / jack_file_name;
 
                     boost::system::error_code ec;
                     for(size_t i = 0; i < MAX_ATTEMPTS; ++i)

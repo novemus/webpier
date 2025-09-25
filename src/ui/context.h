@@ -11,6 +11,7 @@ namespace WebPier
 {
     bool Init();
     wxString GetHome();
+    wxString GetTempAppDir();
 
     namespace Context
     {

@@ -166,7 +166,7 @@ public:
 
     bool Init()
     {
-        if (wxServer::Create(WebPier::GetHome() + "/" + IPCTaskbarSocket))
+        if (wxServer::Create(WebPier::GetTempAppDir() + "/" + IPCTaskbarSocket))
         {
             m_frame = CreateMainFrame(this);
             m_frame->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(CTaskBarIcon::OnFrameClose), NULL, this);
@@ -366,7 +366,7 @@ public:
 #endif
 
         wxClient* client = new wxClient();
-        wxConnectionBase* connect = client->MakeConnection(IPCTaskbarHost, WebPier::GetHome() + "/" + IPCTaskbarSocket, IPCTaskbarTopic);
+        wxConnectionBase* connect = client->MakeConnection(IPCTaskbarHost, WebPier::GetTempAppDir() + "/" + IPCTaskbarSocket, IPCTaskbarTopic);
 
         if (connect && connect->Execute(IPCTaskbarCommand))
         {

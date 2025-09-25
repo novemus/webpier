@@ -118,9 +118,19 @@ namespace WebPier
             home = wxStandardPaths::Get().GetUserLocalDataDir();
 
         if (!wxFileName::Exists(home) && !wxFileName::Mkdir(home))
-            throw webpier::usage_error("Wrong home path");
+            throw webpier::usage_error("Can't make home dir");
 
         return home;
+    }
+
+    wxString GetTempAppDir()
+    {
+        auto dir = wxStandardPaths::Get().GetTempDir() + "/" + std::to_string(std::hash<std::string>()(WebPier::GetHome().ToStdString()));
+
+        if (!wxFileName::Exists(dir) && !wxFileName::Mkdir(dir))
+            throw webpier::usage_error("Can't make temp dir");
+
+        return dir;
     }
 
     namespace Context
