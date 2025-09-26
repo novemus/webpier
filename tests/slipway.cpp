@@ -30,8 +30,11 @@ BOOST_AUTO_TEST_CASE(client)
     BOOST_REQUIRE_NO_THROW(context->set_config(conf));
     BOOST_REQUIRE_NO_THROW(context->add_pier(peer, webpier::load_x509_cert(home / repo / host / "cert.crt")));
 
-    auto server = slipway::create_backend(home.string(), false);
-    auto employ = std::async(std::launch::async, &slipway::server::employ, server);
+    boost::asio::io_context io;
+    auto server = slipway::create_backend(io, home.string(), false);
+    BOOST_REQUIRE_NO_THROW(server->employ());
+
+    auto job = std::async(std::launch::async, [&io] { io.run(); });
 
     webpier::service foo { true, "foo", peer, "127.0.0.1:1234", webpier::default_gateway, webpier::default_dht_bootstrap, true, false };
     webpier::service bar { true, "bar", peer, "127.0.0.1:5678", webpier::default_gateway, webpier::default_dht_bootstrap, true, false };
@@ -92,8 +95,8 @@ BOOST_AUTO_TEST_CASE(client)
     BOOST_REQUIRE_NO_THROW(client.reset());
     BOOST_REQUIRE_NO_THROW(server->cancel());
 
-    BOOST_REQUIRE_EQUAL((int)employ.wait_for(std::chrono::seconds(3)), (int)std::future_status::ready);
-    BOOST_REQUIRE_NO_THROW(employ.get());
+    BOOST_REQUIRE_EQUAL((int)job.wait_for(std::chrono::seconds(3)), (int)std::future_status::ready);
+    BOOST_REQUIRE_NO_THROW(job.get());
 
     BOOST_REQUIRE_NO_THROW(server.reset());
 }

@@ -47,8 +47,12 @@ int main(int argc, char* argv[])
             return 4;
         }
 
-        auto server = slipway::create_backend(home.string(), steady);
+        boost::asio::io_context io;
+
+        auto server = slipway::create_backend(io, home.string(), steady);
         server->employ();
+
+        io.run();
     }
     catch (const std::exception& ex)
     {

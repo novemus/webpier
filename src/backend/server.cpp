@@ -864,6 +864,11 @@ namespace slipway
                 engage();
             }
 
+            void finish() noexcept(false)
+            {
+                unplug();
+            }
+
             void comply(boost::asio::streambuf& request) noexcept(true)
             {
                 slipway::message req, res;
@@ -931,7 +936,7 @@ namespace slipway
 
         class server_impl : public server
         {
-            boost::asio::io_context m_io;
+            boost::asio::io_context& m_io;
             boost::asio::local::stream_protocol::acceptor m_acceptor;
             slipway::engine m_engine;
             size_t m_score;
@@ -1001,8 +1006,9 @@ namespace slipway
 
         public:
 
-            server_impl(const std::filesystem::path& home, bool steady)
-                : m_acceptor(m_io, boost::asio::local::stream_protocol())
+            server_impl(boost::asio::io_context& io, const std::filesystem::path& home, bool steady)
+                : m_io(io)
+                , m_acceptor(m_io, boost::asio::local::stream_protocol())
                 , m_engine(m_io, home)
                 , m_score(steady ? 1 : 0)
             {
@@ -1024,26 +1030,21 @@ namespace slipway
 
             void employ() noexcept(false) override
             {
-                m_io.restart();
                 m_engine.launch();
-    
                 accept();
-    
-                m_io.run();
             }
 
             void cancel() noexcept(true) override
             {
                 boost::system::error_code ec;
                 m_acceptor.cancel(ec);
-
-                m_io.stop();
+                m_engine.finish();
             }
         };
     }
 
-    std::shared_ptr<server> create_backend(const std::string& home, bool steady) noexcept(false)
+    std::shared_ptr<server> create_backend(boost::asio::io_context& io, const std::string& home, bool steady) noexcept(false)
     {
-        return std::make_shared<server_impl>(home, steady);
+        return std::make_shared<server_impl>(io, home, steady);
     }
 }
