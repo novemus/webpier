@@ -723,6 +723,7 @@
         {
             "name": "windows-msi",
             "displayName": "webpier (MSI)",
+            "description": "Windows installer",
             "configurePreset": "windows-static-relwithdebinfo",
             "condition": {
                 "type": "equals",
@@ -736,6 +737,27 @@
                 "RelWithDebInfo"
             ],
             "packageName": "WebPier",
+            "packageDirectory": ".."
+        },
+        {
+            "name": "windows-pdb",
+            "displayName": "webpier (PDB)",
+            "description": "Windows debug symbols",
+            "configurePreset": "windows-static-relwithdebinfo",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            },
+            "generators": [
+                "ZIP"
+            ],
+            "configurations": [
+                "RelWithDebInfo"
+            ],
+            "variables": {
+                "CPACK_COMPONENTS_ALL": "pdb_files"
+            },
             "packageDirectory": ".."
         },
         {
