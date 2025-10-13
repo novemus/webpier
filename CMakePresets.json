@@ -689,8 +689,7 @@
                 "rhs": "Linux"
             },
             "variables": {
-                "CPACK_DEBIAN_PACKAGE_RELEASE": "1",
-                "CPACK_DEBIAN_DEBUGINFO_PACKAGE": "ON"
+                "CPACK_COMPONENTS_ALL": "binary_files;linux_files"
             },
             "generators": [
                 "DEB"
@@ -710,6 +709,9 @@
                 "type": "equals",
                 "lhs": "${hostSystemName}",
                 "rhs": "Linux"
+            },
+            "variables": {
+                "CPACK_COMPONENTS_ALL": "binary_files;linux_files"
             },
             "generators": [
                 "RPM"
@@ -736,6 +738,9 @@
             "configurations": [
                 "RelWithDebInfo"
             ],
+            "variables": {
+                "CPACK_COMPONENTS_ALL": "binary_files;windows_files"
+            },
             "packageName": "WebPier",
             "packageDirectory": ".."
         },
@@ -772,10 +777,35 @@
             "generators": [
                 "productbuild"
             ],
+            "variables": {
+                "CPACK_COMPONENTS_ALL": "binary_files;darwin_files"
+            },
             "configurations": [
                 "RelWithDebInfo"
             ],
             "packageName": "WebPier",
+            "packageDirectory": ".."
+        },
+        {
+            "name": "darwin-dbg",
+            "displayName": "darwin (DBG)",
+            "description": "Darwin debug symbols",
+            "configurePreset": "darwin-static-relwithdebinfo",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            },
+            "generators": [
+                "ZIP"
+            ],
+            "configurations": [
+                "RelWithDebInfo"
+            ],
+            "variables": {
+                "CPACK_PACKAGING_INSTALL_PREFIX": "",
+                "CPACK_COMPONENTS_ALL": "dbg_files"
+            },
             "packageDirectory": ".."
         }
     ],
