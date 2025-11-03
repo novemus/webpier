@@ -6,7 +6,7 @@
 CStartupDialog::CStartupDialog(wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style) :
         wxDialog(parent, id, title, pos, size, style)
 {
-    static constexpr const char* FORBIDDEN_PATH_CHARS = "*/\\<>:|? \t\n\r";
+    static constexpr const char* FORBIDDEN_PATH_CHARS = "*/\\<>:|?\" \t\n\r";
 
     this->SetIcon(::GetAppIconBundle().GetIcon());
     this->SetSizeHints(wxDefaultSize, wxDefaultSize);

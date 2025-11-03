@@ -36,7 +36,7 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxStr
     : wxDialog(nullptr, wxID_ANY, title, pos, size, style)
     , m_config(config)
 {
-    static constexpr const char* FORBIDDEN_PATH_CHARS = "*/\\<>:|? ";
+    static constexpr const char* FORBIDDEN_PATH_CHARS = "*/\\<>:|?\" \t\n\r";
 
     this->SetIcon(::GetAppIconBundle().GetIcon());
     this->SetSizeHints( wxDefaultSize, wxDefaultSize );

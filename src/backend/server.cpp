@@ -838,7 +838,7 @@ namespace slipway
             {
                 std::vector<slipway::report> res;
                 for (auto& item : m_pool)
-                    res.emplace_back(slipway::report{ slipway::health{ item.first, item.second->state() }, item.second->tunnels() });
+                    res.emplace_back(slipway::report{ slipway::health{ item.first, item.second->state(), item.second->message() }, item.second->tunnels() });
                 return res;
             }
 
@@ -846,7 +846,7 @@ namespace slipway
             {
                 auto iter = m_pool.find(id);
                 if (iter != m_pool.end())
-                    return slipway::report { slipway::health { iter->first, iter->second->state() }, iter->second->tunnels() };
+                    return slipway::report { slipway::health { iter->first, iter->second->state(), iter->second->message() }, iter->second->tunnels() };
 
                 throw std::runtime_error("unknown service");
             }
