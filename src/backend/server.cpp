@@ -1,5 +1,6 @@
 #include <backend/server.h>
 #include <backend/message.h>
+#include <backend/ipc.h>
 #include <store/context.h>
 #include <store/utils.h>
 #include <plexus/plexus.h>
@@ -19,10 +20,6 @@
 #include <map>
 #include <set>
 
-#ifdef WIN32
-    #include <windows.h>
-#endif
-
 namespace slipway
 {
     namespace 
@@ -30,7 +27,6 @@ namespace slipway
         constexpr const int default_retry_timeout = 15;
         constexpr const char* webpier_conf_file_name = "webpier.json";
         constexpr const char* webpier_lock_file_name = "webpier.lock";
-        constexpr const char* slipway_jack_file_name = "slipway.jack";
 
         namespace utils
         {
@@ -937,11 +933,11 @@ namespace slipway
         class server_impl : public server
         {
             boost::asio::io_context& m_io;
-            boost::asio::local::stream_protocol::acceptor m_acceptor;
+            slipway::ipc::acceptor m_acceptor;
             slipway::engine m_engine;
             size_t m_score;
 
-            void handle(boost::asio::local::stream_protocol::socket client)
+            void handle(slipway::ipc::socket client)
             {
                 boost::asio::spawn(m_io, [this, socket = std::move(client)](boost::asio::yield_context yield) mutable
                 {
@@ -975,7 +971,7 @@ namespace slipway
 
             void accept()
             {
-                m_acceptor.async_accept([this](boost::system::error_code ec, boost::asio::local::stream_protocol::socket socket)
+                m_acceptor.async_accept([this](boost::system::error_code ec, slipway::ipc::socket socket)
                 {
                     if (ec)
                     {
@@ -995,37 +991,28 @@ namespace slipway
                 });
             }
 
-            void cleanup(const std::string& socket)
-            {
-#ifdef WIN32
-                DeleteFileA(socket.c_str());
-#else
-                ::unlink(socket.c_str());
-#endif
-            }
-
         public:
 
             server_impl(boost::asio::io_context& io, const std::filesystem::path& home, bool steady)
                 : m_io(io)
-                , m_acceptor(m_io, boost::asio::local::stream_protocol())
+                , m_acceptor(m_io, slipway::ipc::protocol())
                 , m_engine(m_io, home)
                 , m_score(steady ? 1 : 0)
             {
-                auto dir = std::filesystem::temp_directory_path() / std::to_string(std::hash<std::string>()(home.string()));
-                std::filesystem::create_directory(dir);
+                auto endpoint = slipway::ipc::make_endpoint(home);
 
-                auto socket = dir / slipway_jack_file_name;
-
-                cleanup(socket.string());
-
-                m_acceptor.bind(boost::asio::local::stream_protocol::endpoint(socket.u8string()));
+#ifndef WIN32
+                ::unlink(endpoint.path().c_str());
+#endif
+                m_acceptor.bind(endpoint);
                 m_acceptor.listen();
             }
 
             ~server_impl()
             {
-                cleanup(webpier::utf8_to_locale(m_acceptor.local_endpoint().path()));
+#ifndef WIN32
+                ::unlink(m_acceptor.local_endpoint().path().c_str());
+#endif
             }
 
             void employ() noexcept(false) override

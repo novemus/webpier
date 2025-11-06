@@ -158,6 +158,8 @@ target_sources(${WEBPIER} PRIVATE
     src/store/utils.cpp
     src/backend/message.h
     src/backend/message.cpp
+    src/backend/ipc.h
+    src/backend/ipc.cpp
     src/backend/client.h
     src/backend/client.cpp
     "$<$<BOOL:${WIN32}>:windows/webpier.rc>"
@@ -168,6 +170,8 @@ target_sources(${SLIPWAY} PRIVATE
     src/backend/message.cpp
     src/backend/server.h
     src/backend/server.cpp
+    src/backend/ipc.h
+    src/backend/ipc.cpp
     src/backend/main.cpp
     src/store/utils.h
     src/store/utils.cpp
@@ -248,7 +252,7 @@ endif()
 
 if(NOT WEBPIER_SKIP_TEST_RULES)
     set(WEBPIER_TEST webpier_ut)
-    add_executable(${WEBPIER_TEST} tests/utils.cpp tests/context.cpp tests/message.cpp tests/slipway.cpp src/store/context.cpp src/backend/message.cpp src/backend/client.cpp src/backend/server.cpp src/store/utils.cpp)
+    add_executable(${WEBPIER_TEST} tests/utils.cpp tests/context.cpp tests/message.cpp tests/slipway.cpp src/store/context.cpp src/backend/message.cpp src/backend/client.cpp src/backend/ipc.cpp src/backend/server.cpp src/store/utils.cpp)
     target_link_libraries(${WEBPIER_TEST} PRIVATE Boost::unit_test_framework Boost::coroutine Boost::filesystem Boost::program_options $<$<VERSION_GREATER_EQUAL:${Boost_VERSION},1.88>:Boost::process> "$<$<BOOL:${MSVC}>:Boost::property_tree>" "$<$<BOOL:${MSVC}>:Crypt32>" plexus::libplexus wormhole::libwormhole opendht fmt::fmt msgpack-cxx PkgConfig::GnuTLS PkgConfig::argon2 PkgConfig::Nettle PkgConfig::Jsoncpp OpenSSL::SSL OpenSSL::Crypto)
 
     target_compile_features(${WEBPIER_TEST} PRIVATE cxx_std_17)

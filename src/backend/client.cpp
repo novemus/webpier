@@ -3,17 +3,16 @@
 #include <boost/asio.hpp>
 #include <boost/asio/spawn.hpp>
 #include <backend/client.h>
+#include <backend/ipc.h>
 
 namespace slipway
 {
     namespace 
     {
-        constexpr const char* jack_file_name = "slipway.jack";
-
         class client_impl : public client
         {
             boost::asio::io_context m_io;
-            boost::asio::local::stream_protocol::socket m_socket;
+            slipway::ipc::socket m_socket;
 
             void execute(const std::function<void(boost::asio::yield_context yield)>& function) noexcept(false)
             {
@@ -69,12 +68,12 @@ namespace slipway
                     boost::asio::async_write(m_socket, buffer, yield[ec]);
 
                     if (ec)
-                        throw pipe_error("Can't write to " + m_socket.remote_endpoint().path() + " due the error \'" + ec.message() + "\'");
+                        throw pipe_error("Can't write to socket due the error \'" + ec.message() + "\'");
 
                     boost::asio::async_read_until(m_socket, buffer, '\n', yield[ec]);
 
                     if (ec)
-                        throw pipe_error("Can't read from " + m_socket.remote_endpoint().path() + " due the error \'" + ec.message() + "\'");
+                        throw pipe_error("Can't read from socket due the error \'" + ec.message() + "\'");
 
                     pull_message(buffer, response);
                 });
@@ -94,16 +93,13 @@ namespace slipway
                 {
                     static constexpr const size_t MAX_ATTEMPTS = 5;
 
-                    auto dir = std::filesystem::temp_directory_path() / std::to_string(std::hash<std::string>()(home.string()));
-                    std::filesystem::create_directory(dir);
-
-                    auto socket = dir / jack_file_name;
+                    auto server = slipway::ipc::make_endpoint(home);
 
                     boost::system::error_code ec;
                     for(size_t i = 0; i < MAX_ATTEMPTS; ++i)
                     {
 #ifdef WIN32
-                        if (ec.value() == WSAECONNREFUSED)
+                        if (ec.value() == ERROR_FILE_NOT_FOUND || ec.value() == ERROR_PIPE_BUSY)
 #else
                         if (ec.value() == boost::system::errc::no_such_file_or_directory || ec.value() == boost::system::errc::connection_refused)
 #endif
@@ -116,9 +112,9 @@ namespace slipway
                                 break;
                         }
  
-                        m_socket.async_connect(socket.u8string(), yield[ec]);
+                        slipway::ipc::connect_server(m_socket, server, ec);
 #ifdef WIN32
-                        if (ec.value() != WSAECONNREFUSED)
+                        if (ec.value() != ERROR_FILE_NOT_FOUND && ec.value() != ERROR_PIPE_BUSY)
 #else
                         if (ec.value() != boost::system::errc::no_such_file_or_directory && ec.value() != boost::system::errc::connection_refused)
 #endif
@@ -128,7 +124,7 @@ namespace slipway
                     }
 
                     if (ec)
-                        throw pipe_error("Can't connect to " + socket.string() + " due the error \'" + ec.message() + "\'");
+                        throw pipe_error("Can't connect to " + server.path() + " due the error \'" + ec.message() + "\'");
                 });
             }
 
