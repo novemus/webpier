@@ -196,14 +196,33 @@ namespace webpier
             throw x509_error(get_openssl_error());
     }
 
-    std::string to_hexadecimal(const void* data, size_t len) noexcept(true)
+    bool is_utf8(const std::string& str) noexcept(true)
     {
-        std::stringstream out;
-        for (size_t i = 0; i < len; ++i)
+        int num;
+
+        for(size_t i = 0; i < str.size(); ++i)
         {
-            out << std::setw(2) << std::setfill('0') << std::hex << (int)((uint8_t*)data)[i];
+            if (str[i] & 0x80 == 0x00)
+                num = 1;
+            else if (str[i] & 0xE0 == 0xC0)
+                num = 2;
+            else if (str[i] & 0xF0 == 0xE0)
+                num = 3;
+            else if (str[i] & 0xF8 == 0xF0)
+                num = 4;
+            else
+                return false;
+
+            ++i;
+
+            for (int j = 1; j < num; ++j, ++i)
+            {
+                if (str[i] & 0xC0 != 0x80)
+                    return false;
+            }
         }
-        return out.str();
+
+        return true;
     }
 
     std::string locale_to_utf8(const std::string& str) noexcept(false)
@@ -244,10 +263,49 @@ namespace webpier
 #endif
     }
 
+    std::wstring locale_to_unicode(const std::string& str) noexcept(false)
+    {
+        if (str.empty())
+            return {};
+#ifdef WIN32
+        int len = ::MultiByteToWideChar(CP_ACP, 0, str.c_str(), (int)str.length(), 0, 0);
+        std::wstring res(len, L'\0');
+        ::MultiByteToWideChar(CP_ACP, 0, str.c_str(), (int)str.length(), res.data(), (int)res.length());
+    
+        return res;
+#else
+        return utf8_to_unicode(str);
+#endif
+    }
+
+    std::wstring utf8_to_unicode(const std::string& str) noexcept(false)
+    {
+        std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+        return converter.from_bytes(str);
+    }
+
+    std::string make_text_hash(const std::string& text) noexcept(true)
+    {
+        std::wstring unicode = is_utf8(text) ? utf8_to_unicode(text) : locale_to_unicode(text);
+
+        static constexpr uint64_t FNV_PRIME = 1099511628211ull;
+        static constexpr uint64_t FNV_OFFSET_BASIS = 14695981039346656037ull;
+
+        uint64_t hash = FNV_OFFSET_BASIS;
+
+        for (wchar_t symbol : unicode)
+        {
+            hash ^= static_cast<uint64_t>(symbol);
+            hash *= FNV_PRIME;
+        }
+
+        return webpier::hexify(hash);
+    }
+
     std::string hexify(uint64_t value) noexcept(true)
     {
         std::stringstream ss;
-        ss << "0x" << std::setfill('0') << std::setw(sizeof(uint64_t) * 2) << std::hex << value;
+        ss << std::uppercase << std::setfill('0') << std::setw(sizeof(uint64_t) * 2) << std::hex << value;
         return ss.str();
     }
 
@@ -356,10 +414,36 @@ namespace webpier
 #endif
     }
 
+#ifdef WIN32
+
+    std::string fetch_task(const std::filesystem::path& exec, const std::string& args) noexcept(false)
+    {
+        std::string name;
+
+        boost_process::ipstream is;
+        boost_process::child read("schtasks /NH /FO CSV /V | findstr " + exec.string() + " " + args, boost_process::windows::hide, boost_process::std_out > is);
+        read.wait();
+
+        std::string line;
+        while (std::getline(is, line))
+        {
+            std::smatch match;
+            if (std::regex_match(line, match, std::regex("^\\\"[^,]*\\\",\\\"(\\\\WebPier\\\\Task #[^,]*)\\\",.*$")))
+            {
+                name = match[1].str();
+                break;
+            }
+        }
+
+        return name;
+    }
+
+#endif
+
     bool verify_autostart(const std::filesystem::path& exec, const std::string& args) noexcept(false)
     {
 #ifndef WIN32
-        std::string record = "@reboot " + exec.string() + " " + args;
+        std::string record = "@reboot " + std::regex_replace(exec.string(), std::regex(" "), "\\ ") + args;
 
         boost_process::ipstream is;
         boost_process::child read("crontab -l", boost_process::std_out > is);
@@ -375,18 +459,14 @@ namespace webpier
 
         return seen;
 #else
-        std::string id = std::to_string(std::hash<std::string>()(exec.string() + args));
-        boost_process::child proc("schtasks /Query /TN \"\\WebPier\\Task #" + id + "\" /HRESULT", boost_process::windows::hide);
-        proc.wait();
-
-        return proc.exit_code() == ERROR_SUCCESS;
+        return webpier::fetch_task(exec, args) != std::string();
 #endif
     }
 
     void assign_autostart(const std::filesystem::path& exec, const std::string& args) noexcept(false)
     {
 #ifndef WIN32
-        std::string record = "@reboot " + exec.string() + " " + args;
+        std::string record = "@reboot " + std::regex_replace(exec.string(), std::regex(" "), "\\ ") + args;
 
         boost_process::ipstream is;
         boost_process::opstream os;
@@ -419,7 +499,7 @@ namespace webpier
         taskxml.put("Task.Actions.Exec.Command", exec.string());
         taskxml.put("Task.Actions.Exec.Arguments", args);
 
-        std::string id = std::to_string(std::hash<std::string>()(exec.string() + args));
+        std::string id = webpier::make_text_hash(exec.string() + args);
         std::filesystem::path xmlpath = std::filesystem::temp_directory_path() / (id + ".xml");
 
         std::locale locale(std::locale::classic(), new std::codecvt_utf16<wchar_t, 0x10ffff, (std::codecvt_mode)(std::generate_header | std::little_endian)>);
@@ -437,7 +517,7 @@ namespace webpier
     void revoke_autostart(const std::filesystem::path& exec, const std::string& args) noexcept(false)
     {
 #ifndef WIN32
-        std::string record = "@reboot " + exec.string() + " " + args;
+        std::string record = "@reboot " + std::regex_replace(exec.string(), std::regex(" "), "\\ ") + args;
 
         boost_process::ipstream is;
         boost_process::opstream os;
@@ -462,8 +542,11 @@ namespace webpier
             write.wait();
         }
 #else
-        std::string id = std::to_string(std::hash<std::string>()(exec.string() + args));
-        boost_process::child proc("schtasks /Delete /TN \"\\WebPier\\Task #" + id + "\" /F /HRESULT", boost_process::windows::hide);
+        std::string name = webpier::fetch_task(exec, args);
+        if (name.empty())
+            return;
+
+        boost_process::child proc("schtasks /Delete /TN \"" + name + "\" /F /HRESULT", boost_process::windows::hide);
         proc.wait();
 
         if (proc.exit_code() != ERROR_SUCCESS)

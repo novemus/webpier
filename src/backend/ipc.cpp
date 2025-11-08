@@ -1,10 +1,12 @@
 #include <backend/ipc.h>
+#include <store/utils.h>
 
 namespace slipway { namespace ipc {
 #ifdef WIN32
+
     slipway::ipc::endpoint make_endpoint(const std::filesystem::path& home) noexcept(true)
     {
-        auto base = std::filesystem::path("\\\\.\\pipe") / std::to_string(std::hash<std::string>()(home.string()));
+        auto base = std::filesystem::path("\\\\.\\pipe") / webpier::make_text_hash(home.string());
         return slipway::ipc::endpoint(base.string() + slipway_socket_ext);
     }
 
@@ -22,10 +24,12 @@ namespace slipway { namespace ipc {
         }
         ec.assign(GetLastError(), boost::system::system_category());
     }
+
 #else
+
     slipway::ipc::endpoint make_endpoint(const std::filesystem::path& home) noexcept(true)
     {
-        auto base = std::filesystem::temp_directory_path() / std::to_string(std::hash<std::string>()(home.string()));
+        auto base = std::filesystem::temp_directory_path() / webpier::make_text_hash(home.string());
         return slipway::ipc::endpoint(base.string() + slipway_socket_ext);
     }
 
@@ -34,6 +38,6 @@ namespace slipway { namespace ipc {
         ec.clear();
         socket.connect(server.path(), ec);
     }
-#endif
 
+#endif
 }}

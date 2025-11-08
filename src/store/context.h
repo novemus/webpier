@@ -5,6 +5,7 @@
 #include <memory>
 #include <stdexcept>
 #include <cstdint>
+#include <filesystem>
 
 namespace webpier
 {
@@ -118,7 +119,7 @@ namespace webpier
         virtual ~context() {}
 
         virtual std::string pier() const noexcept(true) = 0;
-        virtual std::string home() const noexcept(true) = 0;
+        virtual std::filesystem::path home() const noexcept(true) = 0;
 
         virtual void get_config(config& info) const noexcept(true) = 0;
         virtual void set_config(const config& info) noexcept(false) = 0;
@@ -140,5 +141,5 @@ namespace webpier
         virtual std::string get_fingerprint(const std::string& pier) const noexcept(false) = 0;
     };
 
-    std::shared_ptr<context> open_context(const std::string& home) noexcept(false);
+    std::shared_ptr<context> open_context(const std::filesystem::path& home) noexcept(false);
 }

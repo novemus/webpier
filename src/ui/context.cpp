@@ -52,7 +52,7 @@ namespace WebPier
                 if (dialog.ShowModal() == wxID_OK)
                 {
                     config.pier = dialog.GetIdentity().ToStdString();
-                    config.repo = home + "/" + webpier::to_hexadecimal(config.pier.data(), config.pier.size());
+                    config.repo = home + "/" + webpier::make_text_hash(config.pier);
                     config.log.folder = home + "/journal";
                 }
 
@@ -99,7 +99,7 @@ namespace WebPier
 
             InitContext();
 
-            std::cout << "The WebPier is launched for " + g_context->pier() << " at " << g_context->home() << std::endl;
+            std::cout << "The WebPier is launched for " + g_context->pier() << " at " << g_context->home().string() << std::endl;
 
             return true;
         }
@@ -125,7 +125,7 @@ namespace WebPier
 
     wxString GetTempAppDir()
     {
-        auto dir = wxStandardPaths::Get().GetTempDir() + "/" + std::to_string(std::hash<std::string>()(WebPier::GetHome().ToStdString()));
+        auto dir = wxStandardPaths::Get().GetTempDir() + "/" + webpier::make_text_hash(WebPier::GetHome().ToStdString());
 
         if (!wxFileName::Exists(dir) && !wxFileName::Mkdir(dir))
             throw webpier::usage_error("Can't make temp dir");
@@ -330,7 +330,7 @@ namespace WebPier
                 if (actual == m_origin)
                     return;
 
-                actual.repo = std::filesystem::path(m_origin.repo).parent_path().generic_string() + "/" + webpier::to_hexadecimal(actual.pier.data(), actual.pier.size());
+                actual.repo = std::filesystem::path(m_origin.repo).parent_path().generic_string() + "/" + webpier::make_text_hash(actual.pier);
 
                 g_context->set_config(actual);
 
@@ -543,17 +543,17 @@ namespace WebPier
 
         void AssignAutostart() noexcept(false)
         {
-            webpier::assign_autostart(webpier::get_module_path(webpier::slipway_module), "\"" + g_context->home() + "\" daemon");
+            webpier::assign_autostart(webpier::get_module_path(webpier::slipway_module), "\"" + g_context->home().string() + "\" daemon");
         }
 
         void RevokeAutostart() noexcept(false)
         {
-            webpier::revoke_autostart(webpier::get_module_path(webpier::slipway_module), "\"" + g_context->home() + "\" daemon");
+            webpier::revoke_autostart(webpier::get_module_path(webpier::slipway_module), "\"" + g_context->home().string() + "\" daemon");
         }
 
         bool VerifyAutostart() noexcept(false)
         {
-            return webpier::verify_autostart(webpier::get_module_path(webpier::slipway_module), "\"" + g_context->home() + "\" daemon");
+            return webpier::verify_autostart(webpier::get_module_path(webpier::slipway_module), "\"" + g_context->home().string() + "\" daemon");
         }
 
         bool CouldAutostart() noexcept(false)

@@ -180,7 +180,7 @@ namespace slipway
         };
     }
 
-    std::shared_ptr<client> connect_backend(const std::string& home) noexcept(false)
+    std::shared_ptr<client> connect_backend(const std::filesystem::path& home) noexcept(false)
     {
         return std::make_shared<client_impl>(home);
     }

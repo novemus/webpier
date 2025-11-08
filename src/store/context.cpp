@@ -259,9 +259,9 @@ namespace webpier
                 return m_config.pier;
             }
 
-            std::string home() const noexcept(true) override
+            std::filesystem::path home() const noexcept(true) override
             {
-                return m_guard.home().string();
+                return m_guard.home();
             }
 
             void get_config(config& info) const noexcept(true) override
@@ -473,7 +473,7 @@ namespace webpier
         };
     }
 
-    std::shared_ptr<context> open_context(const std::string& home) noexcept(false)
+    std::shared_ptr<context> open_context(const std::filesystem::path& home) noexcept(false)
     {
         return std::make_shared<context_impl>(home);
     }

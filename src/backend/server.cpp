@@ -1030,7 +1030,7 @@ namespace slipway
         };
     }
 
-    std::shared_ptr<server> create_backend(boost::asio::io_context& io, const std::string& home, bool steady) noexcept(false)
+    std::shared_ptr<server> create_backend(boost::asio::io_context& io, const std::filesystem::path& home, bool steady) noexcept(false)
     {
         return std::make_shared<server_impl>(io, home, steady);
     }

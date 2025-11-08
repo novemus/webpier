@@ -3,6 +3,7 @@
 #include <backend/message.h>
 #include <string>
 #include <memory>
+#include <filesystem>
 
 namespace slipway
 {
@@ -32,5 +33,5 @@ namespace slipway
     };
 
     // home - path to the webpier context directory
-    std::shared_ptr<client> connect_backend(const std::string& home) noexcept(false);
+    std::shared_ptr<client> connect_backend(const std::filesystem::path& home) noexcept(false);
 }

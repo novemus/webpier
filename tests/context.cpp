@@ -11,8 +11,8 @@ BOOST_AUTO_TEST_CASE(context)
     std::string peer = "peer@mail.box/test";
 
     auto dest = std::filesystem::current_path() / boost::filesystem::unique_path().string();
-    auto hrep = dest / webpier::to_hexadecimal(host.data(), host.size());
-    auto prep = dest / webpier::to_hexadecimal(peer.data(), peer.size());
+    auto hrep = dest / webpier::make_text_hash(host);
+    auto prep = dest / webpier::make_text_hash(peer);
 
     BOOST_REQUIRE_NO_THROW(std::filesystem::create_directory(dest));
 

@@ -14,7 +14,7 @@ BOOST_AUTO_TEST_CASE(client)
     std::string peer = "peer@mail.box/test";
 
     auto home = std::filesystem::current_path() / boost::filesystem::unique_path().string();
-    auto repo = home / webpier::to_hexadecimal(host.data(), host.size());
+    auto repo = home / webpier::make_text_hash(host);
 
     BOOST_SCOPE_EXIT(&home)
     {
@@ -38,7 +38,7 @@ BOOST_AUTO_TEST_CASE(client)
 
     webpier::service foo { true, "foo", peer, "127.0.0.1:1234", webpier::default_gateway, webpier::default_dht_bootstrap, true, false };
     webpier::service bar { true, "bar", peer, "127.0.0.1:5678", webpier::default_gateway, webpier::default_dht_bootstrap, true, false };
-    
+
     slipway::handle foo_handle { host, "foo" };
     slipway::health foo_asleep { foo_handle, slipway::health::asleep };
     slipway::health foo_active { foo_handle, slipway::health::lonely };
