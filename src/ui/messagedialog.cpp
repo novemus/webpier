@@ -10,7 +10,7 @@ CMessageDialog::CMessageDialog( wxWindow* parent, const wxString& message, long 
 	wxBoxSizer* mainSizer;
 	mainSizer = new wxBoxSizer( wxVERTICAL );
 
-    auto kind = style & wxICON_WARNING ? wxART_WARNING : style & wxICON_ERROR ? wxART_ERROR : style & wxICON_QUESTION ? wxART_QUESTION : wxART_INFORMATION;
+    auto kind = style & wxICON_ERROR ? wxART_ERROR : style & wxICON_WARNING ? wxART_WARNING : style & wxICON_QUESTION ? wxART_QUESTION : wxART_INFORMATION;
 	m_bitmap = new wxStaticBitmap( this, wxID_ANY, wxArtProvider::GetBitmap( wxASCII_STR(kind), wxASCII_STR(wxART_MESSAGE_BOX) ), wxDefaultPosition, wxDefaultSize, 0 );
 	mainSizer->Add( m_bitmap, 0, wxALL|wxALIGN_CENTER_HORIZONTAL, 5 );
 

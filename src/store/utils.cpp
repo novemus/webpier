@@ -443,7 +443,7 @@ namespace webpier
     bool verify_autostart(const std::filesystem::path& exec, const std::string& args) noexcept(false)
     {
 #ifndef WIN32
-        std::string record = "@reboot " + std::regex_replace(exec.string(), std::regex(" "), "\\ ") + args;
+        std::string record = "@reboot " + std::regex_replace(exec.string(), std::regex(" "), "\\ ") + " " + args;
 
         boost_process::ipstream is;
         boost_process::child read("crontab -l", boost_process::std_out > is);
@@ -466,7 +466,7 @@ namespace webpier
     void assign_autostart(const std::filesystem::path& exec, const std::string& args) noexcept(false)
     {
 #ifndef WIN32
-        std::string record = "@reboot " + std::regex_replace(exec.string(), std::regex(" "), "\\ ") + args;
+        std::string record = "@reboot " + std::regex_replace(exec.string(), std::regex(" "), "\\ ") + " " + args;
 
         boost_process::ipstream is;
         boost_process::opstream os;
@@ -517,7 +517,7 @@ namespace webpier
     void revoke_autostart(const std::filesystem::path& exec, const std::string& args) noexcept(false)
     {
 #ifndef WIN32
-        std::string record = "@reboot " + std::regex_replace(exec.string(), std::regex(" "), "\\ ") + args;
+        std::string record = "@reboot " + std::regex_replace(exec.string(), std::regex(" "), "\\ ") + " " + args;
 
         boost_process::ipstream is;
         boost_process::opstream os;

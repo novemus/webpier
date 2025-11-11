@@ -515,8 +515,9 @@ void CSettingsDialog::onOkButtonClick(wxCommandEvent& event)
     auto pier = m_ownerCtrl->GetValue() + '/' + m_pierCtrl->GetValue();
     if (!m_config->Pier.IsEmpty() && pier != m_config->Pier)
     {
-        CMessageDialog dialog(this, _("You have changed your WebPier identity. This will cause the context to switch. The current services will become unavailable. To switch the context back you must restore the old identity."), wxDEFAULT_DIALOG_STYLE|wxICON_WARNING);
-        dialog.ShowModal();
+        CMessageDialog dialog(this, _("You have changed your WebPier identity. This will cause the context to switch. The current services will become unavailable. Continue?"), wxDEFAULT_DIALOG_STYLE|wxICON_WARNING|wxICON_QUESTION);
+        if (dialog.ShowModal() == wxID_NO)
+            return;
     }
 
     if (m_daemon != m_daemonCtrl->GetValue())
