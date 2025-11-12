@@ -421,14 +421,13 @@ namespace webpier
         std::string name;
 
         boost_process::ipstream is;
-        boost_process::child read("schtasks /NH /FO CSV /V | findstr " + exec.string() + " " + args, boost_process::windows::hide, boost_process::std_out > is);
-        read.wait();
+        boost_process::child read("schtasks /NH /FO CSV /V | findstr \"" + exec.string() + " " + std::regex_replace(args, std::regex("\""), "\\\"") + "\"", boost_process::windows::hide, boost_process::std_out > is);
 
         std::string line;
-        while (std::getline(is, line))
+        while (is && std::getline(is, line))
         {
             std::smatch match;
-            if (std::regex_match(line, match, std::regex("^\\\"[^,]*\\\",\\\"(\\\\WebPier\\\\Task #[^,]*)\\\",.*$")))
+            if (std::regex_match(line, match, std::regex("^\"[^,]*\",\"(\\\\WebPier\\\\Task #[^,]*)\",.*", std::regex_constants::extended)))
             {
                 name = match[1].str();
                 break;
