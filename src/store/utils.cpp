@@ -418,23 +418,23 @@ namespace webpier
 
     std::string fetch_task(const std::filesystem::path& exec, const std::string& args) noexcept(false)
     {
-        std::string name;
+        std::string name = "\\WebPier\\Task #" + webpier::make_text_hash(exec.string() + args);
 
-        boost_process::ipstream is;
-        boost_process::child read("schtasks /NH /FO CSV /V | findstr \"" + exec.string() + " " + std::regex_replace(args, std::regex("\""), "\\\"") + "\"", boost_process::windows::hide, boost_process::std_out > is);
+        boost_process::child proc("schtasks /Query /TN \"" + name + "\" /HRESULT", boost_process::windows::hide);
+        proc.wait();
 
-        std::string line;
-        while (is && std::getline(is, line))
-        {
-            std::smatch match;
-            if (std::regex_match(line, match, std::regex("^\"[^,]*\",\"(\\\\WebPier\\\\Task #[^,]*)\",.*", std::regex_constants::extended)))
-            {
-                name = match[1].str();
-                break;
-            }
-        }
+        if (proc.exit_code() == ERROR_SUCCESS)
+            return name;
 
-        return name;
+        name = "\\WebPier\\Task #" + std::to_string(std::hash<std::string>()(exec.string() + args));
+
+        boost_process::child proc("schtasks /Query /TN \"" + name + "\" /HRESULT", boost_process::windows::hide);
+        proc.wait();
+
+        if (proc.exit_code() == ERROR_SUCCESS)
+            return name;
+
+        return "";
     }
 
 #endif
