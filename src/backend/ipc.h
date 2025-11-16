@@ -14,6 +14,8 @@ constexpr const char* slipway_socket_ext = ".slipway";
 #include <boost/asio/windows/stream_handle.hpp>
 #include <boost/system/error_code.hpp>
 #include <windows.h>
+#include <aclapi.h>
+#include <sddl.h>
 
 namespace slipway { namespace ipc {
 
@@ -150,6 +152,22 @@ public:
 
     void async_accept(std::function<void(const boost::system::error_code&, slipway::ipc::socket)>&& handler) noexcept(true)
     {
+        PSECURITY_DESCRIPTOR sd = NULL;
+        SECURITY_ATTRIBUTES sa;
+
+        LPCSTR sddl = "D:(A;;GA;;;WD)S:(ML;;NW;;;LW)";
+
+        if (!ConvertStringSecurityDescriptorToSecurityDescriptorA(sddl, SDDL_REVISION_1, &sd, NULL))
+        {
+            m_overlapped.complete(boost::system::error_code(GetLastError(), boost::system::system_category()), 0);
+            return;
+        }
+
+        ZeroMemory(&sa, sizeof(sa));
+        sa.nLength = sizeof(sa);
+        sa.lpSecurityDescriptor = sd;
+        sa.bInheritHandle = FALSE;
+
         auto pipe = CreateNamedPipeA(
             m_endpoint.path().c_str(),
             PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
@@ -158,7 +176,7 @@ public:
             512,
             512,
             0,
-            nullptr
+            &sa
         );
 
         slipway::ipc::socket stream(m_io);

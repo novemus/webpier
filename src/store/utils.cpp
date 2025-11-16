@@ -420,18 +420,18 @@ namespace webpier
     {
         std::string name = "\\WebPier\\Task #" + webpier::make_text_hash(exec.string() + args);
 
-        boost_process::child proc("schtasks /Query /TN \"" + name + "\" /HRESULT", boost_process::windows::hide);
-        proc.wait();
+        boost_process::child proc1("schtasks /Query /TN \"" + name + "\" /HRESULT", boost_process::windows::hide);
+        proc1.wait();
 
-        if (proc.exit_code() == ERROR_SUCCESS)
+        if (proc1.exit_code() == ERROR_SUCCESS)
             return name;
 
         name = "\\WebPier\\Task #" + std::to_string(std::hash<std::string>()(exec.string() + args));
 
-        boost_process::child proc("schtasks /Query /TN \"" + name + "\" /HRESULT", boost_process::windows::hide);
-        proc.wait();
+        boost_process::child proc2("schtasks /Query /TN \"" + name + "\" /HRESULT", boost_process::windows::hide);
+        proc2.wait();
 
-        if (proc.exit_code() == ERROR_SUCCESS)
+        if (proc2.exit_code() == ERROR_SUCCESS)
             return name;
 
         return "";
