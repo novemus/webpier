@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Fragment>
+    <CustomAction Id="CleanupAllTasks"
+                  Directory="INSTALL_ROOT"
+                  ExeCommand="&quot;[SystemFolder]WindowsPowerShell\v1.0\powershell.exe&quot; -ExecutionPolicy Bypass -File &quot;[INSTALL_ROOT]scripts\cleanup.ps1&quot;"
+                  Execute="deferred"
+                  Return="ignore"
+                  Impersonate="no" />
+    <CustomAction Id="CleanupBadTasks"
+                  Directory="INSTALL_ROOT"
+                  ExeCommand="&quot;[SystemFolder]WindowsPowerShell\v1.0\powershell.exe&quot; -ExecutionPolicy Bypass -File &quot;[INSTALL_ROOT]scripts\cleanup.ps1&quot; -SlipwayModule &quot;[INSTALL_ROOT]@CMAKE_INSTALL_BINDIR@\$<TARGET_FILE_NAME:@SLIPWAY@>&quot;"
+                  Execute="deferred"
+                  Return="ignore"
+                  Impersonate="no" />
+  </Fragment>
+</Wix>

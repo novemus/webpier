@@ -22,4 +22,14 @@
 	<CPackWiXFragment Id="CM_FP_binary_files.bin.webpier.exe">
 		<fire:FirewallException xmlns:fire="http://schemas.microsoft.com/wix/FirewallExtension" Id="FWX3" Name="webpier.exe (WebPier)" Scope="any" />
 	</CPackWiXFragment>
+	<CPackWiXFragment Id="#PRODUCT">
+		<InstallExecuteSequence>
+			<Custom Action="CleanupAllTasks" Before="RemoveFiles">
+				Installed AND REMOVE AND NOT UPGRADINGPRODUCTCODE AND NOT REINSTALL
+			</Custom>
+			<Custom Action="CleanupBadTasks" After="InstallFiles">
+				(Installed AND REINSTALL) OR WIX_UPGRADE_DETECTED OR PATCH
+			</Custom>
+    	</InstallExecuteSequence>
+	</CPackWiXFragment>
 </CPackWiXPatch>

@@ -245,6 +245,7 @@ if(NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMAKE_SKIP_INSTALL_RULES)
             DESTINATION ${CMAKE_INSTALL_BINDIR}
             OPTIONAL)
         install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/windows/task.xml DESTINATION ${CMAKE_INSTALL_DATADIR} COMPONENT windows_files)
+        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/windows/cleanup.ps1 DESTINATION scripts COMPONENT windows_files)
     endif()
 endif()
 
@@ -328,6 +329,7 @@ if(NOT WEBPIER_SKIP_PACKAGE_RULES AND NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMA
         endif()
     elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Windows")
         configure_and_generate("${CMAKE_CURRENT_SOURCE_DIR}/windows/modules.xml.in" "${CMAKE_CURRENT_BINARY_DIR}/modules.xml")
+        configure_and_generate("${CMAKE_CURRENT_SOURCE_DIR}/windows/postinstall.xml.in" "${CMAKE_CURRENT_BINARY_DIR}/postinstall.xml")
 
         if (CMAKE_BUILD_TYPE MATCHES "Debug" OR CMAKE_BUILD_TYPE MATCHES "RelWithDebInfo")
             if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -346,8 +348,9 @@ if(NOT WEBPIER_SKIP_PACKAGE_RULES AND NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMA
 
         set(CPACK_WIX_UPGRADE_GUID "FC2671A8-8282-4170-B58F-9FE385A18EAC")
         set(CPACK_WIX_PRODUCT_ICON "${CMAKE_CURRENT_SOURCE_DIR}/assets/webpier.ico")
-        set(CPACK_WIX_EXTENSIONS "WixFirewallExtension")
+        set(CPACK_WIX_EXTRA_SOURCES "${CMAKE_CURRENT_BINARY_DIR}/postinstall.xml")
         set(CPACK_WIX_PATCH_FILE "${CMAKE_CURRENT_BINARY_DIR}/modules.xml")
+        set(CPACK_WIX_EXTENSIONS "WixUtilExtension;WixFirewallExtension")
         set(CPACK_WIX_UI_REF "WixUI_InstallDir")
         set(CPACK_COMPONENT_BINARY_FILES_HIDDEN ON)
         set(CPACK_COMPONENT_WINDOWS_FILES_HIDDEN ON)
