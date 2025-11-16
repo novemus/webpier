@@ -19,6 +19,8 @@ constexpr const char* slipway_socket_ext = ".slipway";
 
 namespace slipway { namespace ipc {
 
+DWORD fill_security_attributes(SECURITY_ATTRIBUTES* sa);
+
 class endpoint
 {
     std::string m_path;
@@ -130,7 +132,18 @@ public:
 
     slipway::ipc::socket accept(boost::system::error_code& ec) const noexcept(true)
     {
-        auto pipe = CreateNamedPipeA(
+        slipway::ipc::socket stream(m_io);
+
+        SECURITY_ATTRIBUTES sa;
+        DWORD error = fill_security_attributes(&sa);
+
+        if (error != ERROR_SUCCESS)
+        {
+            ec.assign(error, boost::system::system_category());
+            return std::move(stream);
+        }
+
+        HANDLE pipe = CreateNamedPipeA(
             m_endpoint.path().c_str(),
             PIPE_ACCESS_DUPLEX,
             PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
@@ -138,10 +151,9 @@ public:
             512,
             512,
             0,
-            nullptr
+            &sa
         );
 
-        slipway::ipc::socket stream(m_io);
         stream.assign(pipe);
 
         if (pipe == INVALID_HANDLE_VALUE || !ConnectNamedPipe(pipe, NULL))
@@ -152,23 +164,16 @@ public:
 
     void async_accept(std::function<void(const boost::system::error_code&, slipway::ipc::socket)>&& handler) noexcept(true)
     {
-        PSECURITY_DESCRIPTOR sd = NULL;
         SECURITY_ATTRIBUTES sa;
+        DWORD error = fill_security_attributes(&sa);
 
-        LPCSTR sddl = "D:(A;;GA;;;WD)S:(ML;;NW;;;LW)";
-
-        if (!ConvertStringSecurityDescriptorToSecurityDescriptorA(sddl, SDDL_REVISION_1, &sd, NULL))
+        if (error != ERROR_SUCCESS)
         {
-            m_overlapped.complete(boost::system::error_code(GetLastError(), boost::system::system_category()), 0);
+            m_overlapped.complete(boost::system::error_code(error, boost::system::system_category()), 0);
             return;
         }
 
-        ZeroMemory(&sa, sizeof(sa));
-        sa.nLength = sizeof(sa);
-        sa.lpSecurityDescriptor = sd;
-        sa.bInheritHandle = FALSE;
-
-        auto pipe = CreateNamedPipeA(
+        HANDLE pipe = CreateNamedPipeA(
             m_endpoint.path().c_str(),
             PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
             PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
@@ -199,7 +204,7 @@ public:
         } 
         else
         {
-            DWORD error = GetLastError();
+            error = GetLastError();
             if (error == ERROR_IO_PENDING)
             {
                 m_overlapped.release(); 
