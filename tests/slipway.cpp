@@ -31,7 +31,7 @@ BOOST_AUTO_TEST_CASE(client)
     BOOST_REQUIRE_NO_THROW(context->add_pier(peer, webpier::load_x509_cert(home / repo / host / "cert.crt")));
 
     boost::asio::io_context io;
-    auto server = slipway::create_backend(io, home.string(), false);
+    auto server = slipway::create_backend(io, home.string());
     BOOST_REQUIRE_NO_THROW(server->employ());
 
     auto job = std::async(std::launch::async, [&io] { io.run(); });

@@ -932,6 +932,7 @@ namespace slipway
 
         class server_impl : public server
         {
+            std::filesystem::path m_home;
             boost::asio::io_context& m_io;
             slipway::ipc::acceptor m_acceptor;
             slipway::engine m_engine;
@@ -950,7 +951,10 @@ namespace slipway
                             _wrn_ << ec.message();
 
                         if (--m_score == 0)
-                            m_io.stop();
+                        {
+                            if (!webpier::verify_autostart(m_home))
+                                m_io.stop();
+                        }
 
                         ec = socket.close(ec);
                     };
@@ -993,11 +997,12 @@ namespace slipway
 
         public:
 
-            server_impl(boost::asio::io_context& io, const std::filesystem::path& home, bool steady)
-                : m_io(io)
+            server_impl(boost::asio::io_context& io, const std::filesystem::path& home)
+                : m_home(home)
+                , m_io(io)
                 , m_acceptor(m_io, slipway::ipc::protocol())
                 , m_engine(m_io, home)
-                , m_score(steady ? 1 : 0)
+                , m_score(0)
             {
                 auto endpoint = slipway::ipc::make_endpoint(home);
 
@@ -1030,8 +1035,8 @@ namespace slipway
         };
     }
 
-    std::shared_ptr<server> create_backend(boost::asio::io_context& io, const std::filesystem::path& home, bool steady) noexcept(false)
+    std::shared_ptr<server> create_backend(boost::asio::io_context& io, const std::filesystem::path& home) noexcept(false)
     {
-        return std::make_shared<server_impl>(io, home, steady);
+        return std::make_shared<server_impl>(io, home);
     }
 }

@@ -92,7 +92,6 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxStr
     if (WebPier::Backend::CouldAutostart())
     {
         m_daemon = WebPier::Backend::VerifyAutostart();
-        m_daemonCtrl->SetToolTip( _("The change will take effect after the system is restarted") );
     }
     else
     {

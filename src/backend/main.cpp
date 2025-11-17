@@ -24,8 +24,6 @@ int main(int argc, char* argv[])
             return 2;
         }
 
-        bool steady = argc == 3 && std::strcmp(argv[2], "daemon") == 0;
-
         std::filesystem::path home = std::filesystem::path(argv[1]);
         if (!std::filesystem::exists(home))
         {
@@ -49,7 +47,7 @@ int main(int argc, char* argv[])
 
         boost::asio::io_context io;
 
-        auto server = slipway::create_backend(io, home.string(), steady);
+        auto server = slipway::create_backend(io, home.string());
         server->employ();
 
         io.run();

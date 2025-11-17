@@ -63,9 +63,9 @@ namespace WebPier
             }
 
 #ifdef WIN32
-            static boost_process::child s_server(webpier::get_module_path(webpier::slipway_module).string(), home, boost_process::windows::hide);
+            static boost_process::child s_server(webpier::get_module_path(webpier::slipway_module).string(), g_context->home().string(), boost_process::windows::hide);
 #else
-            static boost_process::child s_server(webpier::get_module_path(webpier::slipway_module).string(), home);
+            static boost_process::child s_server(webpier::get_module_path(webpier::slipway_module).string(), g_context->home().string());
 #endif
             if (!s_server.running())
             {
@@ -543,17 +543,17 @@ namespace WebPier
 
         void AssignAutostart() noexcept(false)
         {
-            webpier::assign_autostart(webpier::get_module_path(webpier::slipway_module), "\"" + g_context->home().string() + "\" daemon");
+            webpier::assign_autostart(g_context->home());
         }
 
         void RevokeAutostart() noexcept(false)
         {
-            webpier::revoke_autostart(webpier::get_module_path(webpier::slipway_module), "\"" + g_context->home().string() + "\" daemon");
+            webpier::revoke_autostart(g_context->home());
         }
 
         bool VerifyAutostart() noexcept(false)
         {
-            return webpier::verify_autostart(webpier::get_module_path(webpier::slipway_module), "\"" + g_context->home().string() + "\" daemon");
+            return webpier::verify_autostart(g_context->home());
         }
 
         bool CouldAutostart() noexcept(false)

@@ -19,5 +19,5 @@ namespace slipway
     // home - path to the webpier context directory
     // steady - pass true to force the endless server running, otherwise the server
     // will run at least for one client session until the last session is destroyed
-    std::shared_ptr<server> create_backend(boost::asio::io_context& io, const std::filesystem::path& home, bool steady) noexcept(false);
+    std::shared_ptr<server> create_backend(boost::asio::io_context& io, const std::filesystem::path& home) noexcept(false);
 }

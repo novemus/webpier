@@ -416,9 +416,9 @@ namespace webpier
 
 #ifdef WIN32
 
-    std::string fetch_task(const std::filesystem::path& exec, const std::string& args) noexcept(false)
+    std::string fetch_task(const std::filesystem::path& exec, const std::filesystem::path& home) noexcept(false)
     {
-        std::string name = "\\WebPier\\Task #" + webpier::make_text_hash(exec.string() + args);
+        std::string name = "\\WebPier\\Task #" + webpier::make_text_hash(exec.string() + home.string());
 
         boost_process::child proc1("schtasks /Query /TN \"" + name + "\" /HRESULT", boost_process::windows::hide);
         proc1.wait();
@@ -426,7 +426,8 @@ namespace webpier
         if (proc1.exit_code() == ERROR_SUCCESS)
             return name;
 
-        name = "\\WebPier\\Task #" + std::to_string(std::hash<std::string>()(exec.string() + args));
+        // backward compatibility for old version of task name
+        name = "\\WebPier\\Task #" + std::to_string(std::hash<std::string>()(exec.string() + "\"" + home.string() + "\" daemon"));
 
         boost_process::child proc2("schtasks /Query /TN \"" + name + "\" /HRESULT", boost_process::windows::hide);
         proc2.wait();
@@ -439,39 +440,45 @@ namespace webpier
 
 #endif
 
-    bool verify_autostart(const std::filesystem::path& exec, const std::string& args) noexcept(false)
+    bool verify_autostart(const std::filesystem::path& home) noexcept(false)
     {
+        auto exec = webpier::get_module_path(webpier::slipway_module);
 #ifndef WIN32
-        std::string record = "@reboot " + std::regex_replace(exec.string(), std::regex(" "), "\\ ") + " " + args;
-
         boost_process::ipstream is;
         boost_process::child read("crontab -l", boost_process::std_out > is);
         read.wait();
+
+        std::regex pattern("^@reboot \"?" + exec.string() + "\"?\\s+\"?" + home.string() + "\"?(\\s+daemon)?$");
 
         std::string line;
         bool seen = false;
         while (std::getline(is, line))
         {
-            if (line == record)
+            std::smatch match;
+            if (std::regex_match(line, match, pattern))
+            {
                 seen = true;
+                break;
+            }
         }
 
         return seen;
 #else
-        return webpier::fetch_task(exec, args) != std::string();
+        return webpier::fetch_task(exec, home) != std::string();
 #endif
     }
 
-    void assign_autostart(const std::filesystem::path& exec, const std::string& args) noexcept(false)
+    void assign_autostart(const std::filesystem::path& home) noexcept(false)
     {
+        auto exec = webpier::get_module_path(webpier::slipway_module);
 #ifndef WIN32
-        std::string record = "@reboot " + std::regex_replace(exec.string(), std::regex(" "), "\\ ") + " " + args;
-
         boost_process::ipstream is;
         boost_process::opstream os;
 
         boost_process::child read("crontab -l", boost_process::std_out > is);
         read.wait();
+
+        std::regex pattern("^@reboot \"?" + exec.string() + "\"?\\s+\"?" + home.string() + "\"?(\\s+daemon)?$");
 
         std::string line;
         bool seen = false;
@@ -479,13 +486,17 @@ namespace webpier
         {
             os << line << std::endl;
 
-            if (line == record)
+            std::smatch match;
+            if (std::regex_match(line, match, pattern))
+            {
                 seen = true;
+                break;
+            }
         }
 
         if (!seen)
         {
-            os << record << std::endl;
+            os << "@reboot \"" << exec.string() << "\" \"" << home.string() << "\"" << std::endl;
 
             boost_process::child write("crontab", boost_process::std_in < os);
             os.pipe().close();
@@ -496,9 +507,9 @@ namespace webpier
         boost::property_tree::read_xml(get_module_path(webpier::taskxml_config).string(), taskxml);
         taskxml.put("Task.RegistrationInfo.Date", webpier::make_timestamp("%Y-%m-%dT%H:%M:%S"));
         taskxml.put("Task.Actions.Exec.Command", exec.string());
-        taskxml.put("Task.Actions.Exec.Arguments", args);
+        taskxml.put("Task.Actions.Exec.Arguments", home.string());
 
-        std::string id = webpier::make_text_hash(exec.string() + args);
+        std::string id = webpier::make_text_hash(exec.string() + home.string());
         std::filesystem::path xmlpath = std::filesystem::temp_directory_path() / (id + ".xml");
 
         std::locale locale(std::locale::classic(), new std::codecvt_utf16<wchar_t, 0x10ffff, (std::codecvt_mode)(std::generate_header | std::little_endian)>);
@@ -513,25 +524,27 @@ namespace webpier
 #endif
     }
 
-    void revoke_autostart(const std::filesystem::path& exec, const std::string& args) noexcept(false)
+    void revoke_autostart(const std::filesystem::path& home) noexcept(false)
     {
+        auto exec = webpier::get_module_path(webpier::slipway_module);
 #ifndef WIN32
-        std::string record = "@reboot " + std::regex_replace(exec.string(), std::regex(" "), "\\ ") + " " + args;
-
         boost_process::ipstream is;
         boost_process::opstream os;
 
         boost_process::child read("crontab -l", boost_process::std_out > is);
         read.wait();
 
+        std::regex pattern("^@reboot \"?" + exec.string() + "\"?\\s+\"?" + home.string() + "\"?(\\s+daemon)?$");
+
         std::string line;
         bool seen = false;
         while (std::getline(is, line))
         {
-            if (line != record)
-                os << line << std::endl;
-            else
+            std::smatch match;
+            if (std::regex_match(line, match, pattern))
                 seen = true;
+            else
+                os << line << std::endl;
         }
 
         if (seen)
@@ -541,7 +554,7 @@ namespace webpier
             write.wait();
         }
 #else
-        std::string name = webpier::fetch_task(exec, args);
+        std::string name = webpier::fetch_task(exec, home);
         if (name.empty())
             return;
 
