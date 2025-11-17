@@ -315,10 +315,6 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxStr
     this->Connect( wxEVT_IDLE, wxIdleEventHandler( CSettingsDialog::onIdle ) );
     m_okBtn->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CSettingsDialog::onOkButtonClick ), NULL, this );
 
-#ifdef WIN32
-    m_daemonCtrl->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( CSettingsDialog::onDaemonCheckBoxClick ), NULL, this );
-#endif
-
     m_stunCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( CSettingsDialog::onStunChange ), NULL, this );
     m_stunTest->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CSettingsDialog::onStunTestClick ), NULL, this );
     m_dhtBootCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( CSettingsDialog::onDhtChange ), NULL, this );
@@ -484,20 +480,6 @@ void CSettingsDialog::onEmailTestClick(wxCommandEvent& event)
     m_emailGauge->Show();
     m_emailGauge->Pulse();
     m_emailTest->Disable();
-}
-
-void CSettingsDialog::onDaemonCheckBoxClick(wxCommandEvent& event)
-{
-#ifdef WIN32
-    if (!IsUserAnAdmin())
-    {
-        CMessageDialog dialog(this, _("Run the WebPier with administrator privileges to change this option."), wxDEFAULT_DIALOG_STYLE|wxICON_WARNING);
-        dialog.ShowModal();
-        m_daemonCtrl->SetValue(m_daemon);
-        return;
-    }
-#endif
-    event.Skip();
 }
 
 void CSettingsDialog::onOkButtonClick(wxCommandEvent& event)

@@ -420,19 +420,19 @@ namespace webpier
     {
         std::string name = "\\WebPier\\Task #" + webpier::make_text_hash(exec.string() + home.string());
 
-        boost_process::child proc1("schtasks /Query /TN \"" + name + "\" /HRESULT", boost_process::windows::hide);
-        proc1.wait();
+        boost_process::child query("schtasks /Query /TN \"" + name + "\" /HRESULT", boost_process::windows::hide);
+        query.wait();
 
-        if (proc1.exit_code() == ERROR_SUCCESS)
+        if (query.exit_code() == ERROR_SUCCESS)
             return name;
 
-        // backward compatibility for old version of task name
+        // backward compatibility
         name = "\\WebPier\\Task #" + std::to_string(std::hash<std::string>()(exec.string() + "\"" + home.string() + "\" daemon"));
 
-        boost_process::child proc2("schtasks /Query /TN \"" + name + "\" /HRESULT", boost_process::windows::hide);
-        proc2.wait();
+        boost_process::child extra("schtasks /Query /TN \"" + name + "\" /HRESULT", boost_process::windows::hide);
+        extra.wait();
 
-        if (proc2.exit_code() == ERROR_SUCCESS)
+        if (extra.exit_code() == ERROR_SUCCESS)
             return name;
 
         return "";
@@ -448,7 +448,7 @@ namespace webpier
         boost_process::child read("crontab -l", boost_process::std_out > is);
         read.wait();
 
-        std::regex pattern("^@reboot \"?" + exec.string() + "\"?\\s+\"?" + home.string() + "\"?(\\s+daemon)?$");
+        std::regex pattern("^@reboot\\s+\"?" + exec.string() + "\"?\\s+\"?" + home.string() + "\"?(\\s+daemon)?$");
 
         std::string line;
         bool seen = false;
@@ -478,7 +478,7 @@ namespace webpier
         boost_process::child read("crontab -l", boost_process::std_out > is);
         read.wait();
 
-        std::regex pattern("^@reboot \"?" + exec.string() + "\"?\\s+\"?" + home.string() + "\"?(\\s+daemon)?$");
+        std::regex pattern("^@reboot\\s+\"?" + exec.string() + "\"?\\s+\"?" + home.string() + "\"?(\\s+daemon)?$");
 
         std::string line;
         bool seen = false;
@@ -516,7 +516,7 @@ namespace webpier
         boost::property_tree::xml_writer_settings<std::string> settings('\t', 1, "UTF-16");
         boost::property_tree::write_xml(xmlpath.string(), taskxml, locale, settings);
 
-        boost_process::child proc("schtasks /Create /TN \"\\WebPier\\Task #" + id + "\" /XML \"" + xmlpath.string() + "\" /F /HRESULT", boost_process::windows::hide);
+        boost_process::child proc("powershell -Command Start-Process schtasks -ArgumentList '/Create /TN \\\"\\WebPier\\Task #" + id + "\\\" /XML \\\"" + xmlpath.string() + "\\\" /F' -Verb RunAs", boost_process::windows::hide);
         proc.wait();
 
         if (proc.exit_code() != ERROR_SUCCESS)
@@ -534,7 +534,7 @@ namespace webpier
         boost_process::child read("crontab -l", boost_process::std_out > is);
         read.wait();
 
-        std::regex pattern("^@reboot \"?" + exec.string() + "\"?\\s+\"?" + home.string() + "\"?(\\s+daemon)?$");
+        std::regex pattern("^@reboot\\s+\"?" + exec.string() + "\"?\\s+\"?" + home.string() + "\"?(\\s+daemon)?$");
 
         std::string line;
         bool seen = false;
@@ -558,7 +558,7 @@ namespace webpier
         if (name.empty())
             return;
 
-        boost_process::child proc("schtasks /Delete /TN \"" + name + "\" /F /HRESULT", boost_process::windows::hide);
+        boost_process::child proc("powershell -Command Start-Process schtasks -ArgumentList '/Delete /TN \\\"" + name + "\\\" /F' -Verb RunAs", boost_process::windows::hide);
         proc.wait();
 
         if (proc.exit_code() != ERROR_SUCCESS)

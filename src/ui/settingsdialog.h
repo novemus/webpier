@@ -59,7 +59,6 @@ class CSettingsDialog : public wxDialog, public std::enable_shared_from_this<CSe
     bool m_daemon;
 
     void onOkButtonClick(wxCommandEvent& event);
-    void onDaemonCheckBoxClick(wxCommandEvent& event);
     void onStunTestClick(wxCommandEvent& event);
     void onDhtTestClick(wxCommandEvent& event);
     void onEmailTestClick(wxCommandEvent& event);
