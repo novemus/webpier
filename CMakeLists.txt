@@ -357,34 +357,36 @@ if(NOT WEBPIER_SKIP_PACKAGE_RULES AND NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMA
 
         set_property(INSTALL "${CMAKE_INSTALL_BINDIR}/$<TARGET_FILE_NAME:${WEBPIER}>" PROPERTY CPACK_START_MENU_SHORTCUTS "WebPier")
     elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin")
-
-        set(CMAKE_OBJCOPY "objcopy")
-        set(CMAKE_STRIP "strip")
-
         if (CMAKE_BUILD_TYPE MATCHES "Debug" OR CMAKE_BUILD_TYPE MATCHES "RelWithDebInfo")
-            add_custom_command(TARGET ${WEBPIER} POST_BUILD
-                COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:${WEBPIER}> $<TARGET_FILE:${WEBPIER}>.debug
-                COMMAND ${CMAKE_STRIP} --strip-debug $<TARGET_FILE:${WEBPIER}>
-                COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE_NAME:${WEBPIER}>.debug $<TARGET_FILE:${WEBPIER}>
+            find_program(DSYMUTIL_EXE dsymutil)
+            find_program(STRIP_EXE strip)
+
+            add_custom_command(
+                TARGET ${WEBPIER}
+                POST_BUILD
+                COMMAND ${DSYMUTIL_EXE} $<TARGET_FILE:${WEBPIER}>
+                COMMAND ${STRIP_EXE} -S $<TARGET_FILE:${WEBPIER}>
                 )
 
-            add_custom_command(TARGET ${SLIPWAY} POST_BUILD
-                COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:${SLIPWAY}> $<TARGET_FILE:${SLIPWAY}>.debug
-                COMMAND ${CMAKE_STRIP} --strip-debug $<TARGET_FILE:${SLIPWAY}>
-                COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE_NAME:${SLIPWAY}>.debug $<TARGET_FILE:${SLIPWAY}>
+            add_custom_command(
+                TARGET ${SLIPWAY}
+                POST_BUILD
+                COMMAND ${DSYMUTIL_EXE} $<TARGET_FILE:${SLIPWAY}>
+                COMMAND ${STRIP_EXE} -S $<TARGET_FILE:${SLIPWAY}>
                 )
 
-            add_custom_command(TARGET ${CARRIER} POST_BUILD
-                COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:${CARRIER}> $<TARGET_FILE:${CARRIER}>.debug
-                COMMAND ${CMAKE_STRIP} --strip-debug $<TARGET_FILE:${CARRIER}>
-                COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE_NAME:${CARRIER}>.debug $<TARGET_FILE:${CARRIER}>
+            add_custom_command(
+                TARGET ${CARRIER}
+                POST_BUILD
+                COMMAND ${DSYMUTIL_EXE} $<TARGET_FILE:${CARRIER}>
+                COMMAND ${STRIP_EXE} -S $<TARGET_FILE:${CARRIER}>
                 )
 
-            install(FILES $<TARGET_FILE:${WEBPIER}>.debug DESTINATION webpier-dbgsym/${PROJECT_VERSION}-${CPACK_PACKAGE_RELEASE} COMPONENT dbg_files)
-            install(FILES $<TARGET_FILE:${SLIPWAY}>.debug DESTINATION webpier-dbgsym/${PROJECT_VERSION}-${CPACK_PACKAGE_RELEASE} COMPONENT dbg_files)
-            install(FILES $<TARGET_FILE:${CARRIER}>.debug DESTINATION webpier-dbgsym/${PROJECT_VERSION}-${CPACK_PACKAGE_RELEASE} COMPONENT dbg_files)
+            install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${WEBPIER}.dSYM" DESTINATION "dSYMs" COMPONENT dbg_files)
+            install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${SLIPWAY}.dSYM" DESTINATION "dSYMs" COMPONENT dbg_files)
+            install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${CARRIER}.dSYM" DESTINATION "dSYMs" COMPONENT dbg_files)
 
-            set(CPACK_ARCHIVE_FILE_NAME "${PROJECT_NAME}-dbgsym_${PROJECT_VERSION}-${CPACK_PACKAGE_RELEASE}_${CMAKE_HOST_SYSTEM_NAME}")
+            set(CPACK_ARCHIVE_FILE_NAME "${PROJECT_NAME}-dSYM_${PROJECT_VERSION}-${CPACK_PACKAGE_RELEASE}_${CMAKE_HOST_SYSTEM_NAME}")
             set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
         endif()
 
