@@ -87,7 +87,8 @@ namespace slipway { namespace ipc {
 
     slipway::ipc::endpoint make_endpoint(const std::filesystem::path& home) noexcept(true)
     {
-        auto base = std::filesystem::temp_directory_path() / webpier::make_text_hash(home.string());
+        auto temp = std::filesystem::exists("/tmp") ? std::filesystem::path("/tmp") : std::filesystem::temp_directory_path();
+        auto base = temp / webpier::make_text_hash(home.string());
         return slipway::ipc::endpoint(base.string() + slipway_socket_ext);
     }
 
