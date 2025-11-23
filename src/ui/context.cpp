@@ -175,28 +175,35 @@ namespace WebPier
                     Obscure
                 };
 
-                if (Local)
-                {
-                    if (!m_origin.name.empty())
-                        g_context->del_export_service(m_origin.name);
-                    g_context->add_export_service(actual);
-                }
-                else
-                {
-                    if (!m_origin.name.empty() && !m_origin.pier.empty())
-                        g_context->del_import_service(m_origin.pier, m_origin.name);
-                    g_context->add_import_service(actual);
-                }
-                m_origin = actual;
-
-                WebPier::Backend::Handle handle{Local ? Context::Pier() : Pier, Name};
                 try
                 {
+                    if (Local)
+                    {
+                        if (!m_origin.name.empty())
+                            g_context->del_export_service(m_origin.name);
+                        g_context->add_export_service(actual);
+                    }
+                    else
+                    {
+                        if (!m_origin.name.empty() && !m_origin.pier.empty())
+                            g_context->del_import_service(m_origin.pier, m_origin.name);
+                        g_context->add_import_service(actual);
+                    }
+
+                    if (m_origin.name != actual.name)
+                    {
+                        WebPier::Backend::Handle handle{Local ? Context::Pier() : Pier, m_origin.name};
+                        WebPier::Backend::Adjust(handle);
+                    }
+
+                    m_origin = actual;
+
+                    WebPier::Backend::Handle handle{Local ? Context::Pier() : Pier, Name};
                     WebPier::Backend::Adjust(handle);
                 }
                 catch(const std::exception& ex)
                 {
-                    std::cerr << "Can't adjust service " << handle.Pier << ":" << handle.Service << std::endl;
+                    std::cerr << "Can't adjust service " << Name << std::endl;
                 }
             }
 
