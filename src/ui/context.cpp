@@ -337,11 +337,13 @@ namespace WebPier
                 if (actual == m_origin)
                     return;
 
-                actual.repo = std::filesystem::path(m_origin.repo).parent_path().generic_string() + "/" + webpier::make_text_hash(actual.pier);
+                bool reboot = actual.pier != m_origin.pier;
+
+                if (reboot)
+                    actual.repo = std::filesystem::path(m_origin.repo).parent_path().generic_string() + "/" + webpier::make_text_hash(actual.pier);
 
                 g_context->set_config(actual);
 
-                bool reboot = actual.pier != m_origin.pier;
                 m_origin = actual;
 
                 if (reboot)
