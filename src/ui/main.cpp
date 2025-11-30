@@ -4,6 +4,7 @@
 #include <wx/stdpaths.h>
 #include <ui/mainframe.h>
 #include <wx/mstream.h>
+#include <wx/cmdline.h>
 #include <wx/ipc.h>
 #include <wx/log.h>
 
@@ -102,46 +103,6 @@ const wxBitmap& GetDeleteBtnImage()
     return s_image;
 }
 
-CMainFrame* CreateMainFrame(wxTaskBarIcon* taskBar = nullptr)
-{
-    CMainFrame* frame = new CMainFrame(taskBar);
-
-    frame->Populate();
-    frame->Show(true);
-
-    return frame;
-}
-
-constexpr const char* IPCTaskbarSocket = "taskbar.jack";
-constexpr const char* IPCTaskbarHost = "localhost";
-constexpr const char* IPCTaskbarTopic = "webpier";
-constexpr const char* IPCTaskbarCommand = "raise";
-
-class CTaskBarConnection : public wxConnection
-{
-    CMainFrame* m_frame;
-
-public:
-
-    CTaskBarConnection(CMainFrame* frame) : m_frame(frame)
-    {
-    }
-
-protected:
-
-    bool OnExec(const wxString& topic, const wxString& command) override
-    {
-        if (topic == IPCTaskbarTopic && command == IPCTaskbarCommand)
-        {
-            m_frame->Show(true);
-            m_frame->Iconize(false);
-            m_frame->Raise();
-            return true;
-        }
-        return false;
-    }
-};
-
 class CTaskBarIcon : public wxTaskBarIcon, public wxServer
 {
     CMainFrame* m_frame = nullptr;
@@ -156,6 +117,11 @@ public:
 #endif
     {
         this->SetIcon(wxBitmapBundle::FromIconBundle(::GetAppIconBundle()));
+
+        m_frame = new CMainFrame(this);
+        m_frame->Populate();
+        m_frame->Show(false);
+        m_frame->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(CTaskBarIcon::OnFrameClose), NULL, this);
     }
 
     ~CTaskBarIcon() override
@@ -164,36 +130,23 @@ public:
             delete m_frame;
     }
 
-    bool Init()
+    void Raise()
     {
-        if (wxServer::Create(WebPier::GetTempAppDir() + "/" + IPCTaskbarSocket))
-        {
-            m_frame = CreateMainFrame(this);
-            m_frame->Connect(wxEVT_CLOSE_WINDOW, wxCloseEventHandler(CTaskBarIcon::OnFrameClose), NULL, this);
-            return true;
-        }
-        return false;
-    }
-
-    wxConnectionBase* OnAcceptConnection(const wxString& topic)
-    {
-        return new CTaskBarConnection(m_frame);
+        m_frame->Show(true);
+        m_frame->Iconize(false);
+        m_frame->Raise();
     }
 
 protected:
 
     void OnLeftButtonClick(wxTaskBarIconEvent&)
     {
-        m_frame->Show(true);
-        m_frame->Iconize(false);
-        m_frame->Raise();
+        Raise();
     }
 
     void OnMenuConfigure(wxCommandEvent&)
     {
-        m_frame->Show(true);
-        m_frame->Iconize(false);
-        m_frame->Raise();
+        Raise();
     }
 
     void OnMenuExit(wxCommandEvent&)
@@ -356,33 +309,111 @@ wxBEGIN_EVENT_TABLE(CTaskBarIcon, wxTaskBarIcon)
     EVT_TASKBAR_LEFT_DCLICK(CTaskBarIcon::OnLeftButtonClick)
 wxEND_EVENT_TABLE()
 
-class CWebPierApp : public wxApp
+class CTaskBarConnection : public wxConnection
 {
+    CTaskBarIcon* m_taskbar = nullptr;
+
 public:
+
+    CTaskBarConnection(CTaskBarIcon* taskbar) : m_taskbar(taskbar)
+    {
+    }
+
+protected:
+
+    bool OnExec(const wxString& topic, const wxString& command) override
+    {
+        if (topic == "webpier" && command == "raise")
+        {
+            m_taskbar->Raise();
+            return true;
+        }
+        return false;
+    }
+};
+
+class CWebPierApp : public wxApp, public wxServer
+{
+    bool m_tray;
+    wxString m_home;
+    CTaskBarIcon* m_taskbar = nullptr;
+
+protected:
+
+    wxConnectionBase* OnAcceptConnection(const wxString& topic) override
+    {
+        return new CTaskBarConnection(m_taskbar);
+    }
+
+public:
+
+    void OnInitCmdLine(wxCmdLineParser& parser) override
+    {
+        static const wxCmdLineEntryDesc s_cmdLineDesc[] =
+        {
+            { wxCMD_LINE_PARAM, NULL, NULL, "context directory", wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL },
+            { wxCMD_LINE_SWITCH, "t", "tray", "start app in tray" },
+            { wxCMD_LINE_NONE }
+        };
+
+        parser.SetDesc(s_cmdLineDesc);
+        parser.SetSwitchChars(wxT("-"));
+    }
+
+    bool OnCmdLineParsed(wxCmdLineParser& parser) override
+    {
+        m_tray = parser.Found(wxT("t"));
+
+        if (!wxGetEnv("WEBPIER_HOME", &m_home))
+            m_home = wxStandardPaths::Get().GetUserLocalDataDir();
+
+        for (size_t i = 0; i < parser.GetParamCount(); ++i)
+        {
+            m_home = parser.GetParam(i);
+            break;
+        }
+        return true;
+    }
+
     bool OnInit() override
     {
 #ifdef wxUSE_LOG
         wxLog::SetActiveTarget(new wxLogStderr());
 #endif
-
-        wxClient* client = new wxClient();
-        wxConnectionBase* connect = client->MakeConnection(IPCTaskbarHost, WebPier::GetTempAppDir() + "/" + IPCTaskbarSocket, IPCTaskbarTopic);
-
-        if (connect && connect->Execute(IPCTaskbarCommand))
+        if (wxApp::OnInit())
         {
+            wxString socket = wxStandardPaths::Get().GetTempDir() + "/" + WebPier::Utils::MakeTextHash(m_home) + ".webpier";
+
+            wxClient* client = new wxClient();
+            wxConnectionBase* connect = client->MakeConnection("localhost", socket, "webpier");
+
+            if (connect)
+            {
+                if (!m_tray)
+                    connect->Execute("raise");
+
+                delete connect;
+                delete client;
+
+                return false;
+            }
+
             delete connect;
             delete client;
 
-            return false;
+            wxInitAllImageHandlers();
+
+            if (wxServer::Create(socket) && WebPier::Init(m_home))
+            {
+                m_taskbar = new CTaskBarIcon();
+
+                if (!m_tray)
+                    m_taskbar->Raise();
+
+                return true;
+            }
         }
-
-        delete connect;
-        delete client;
-
-        wxInitAllImageHandlers();
-
-        CTaskBarIcon* taskbar = new CTaskBarIcon();
-        return wxApp::OnInit() && WebPier::Init() && taskbar->Init();
+        return false;
     }
 };
 

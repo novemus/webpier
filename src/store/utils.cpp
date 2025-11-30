@@ -225,7 +225,7 @@ namespace webpier
         return true;
     }
 
-    std::string locale_to_utf8(const std::string& str) noexcept(false)
+    std::string locale_to_utf8(const std::string& str) noexcept(true)
     {
         if (str.empty())
             return str;
@@ -244,7 +244,7 @@ namespace webpier
 #endif
     }
 
-    std::string utf8_to_locale(const std::string& str) noexcept(false)
+    std::string utf8_to_locale(const std::string& str) noexcept(true)
     {
         if (str.empty())
             return str;
@@ -263,7 +263,7 @@ namespace webpier
 #endif
     }
 
-    std::wstring locale_to_unicode(const std::string& str) noexcept(false)
+    std::wstring locale_to_unicode(const std::string& str) noexcept(true)
     {
         if (str.empty())
             return {};
@@ -278,7 +278,7 @@ namespace webpier
 #endif
     }
 
-    std::wstring utf8_to_unicode(const std::string& str) noexcept(false)
+    std::wstring utf8_to_unicode(const std::string& str) noexcept(true)
     {
         std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
         return converter.from_bytes(str);

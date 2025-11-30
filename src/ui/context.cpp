@@ -37,10 +37,8 @@ namespace WebPier
         std::shared_ptr<webpier::context> g_context;
         std::shared_ptr<slipway::client> g_backend;
 
-        void InitContext()
+        void InitContext(const std::string& home)
         {
-            auto home = GetHome().ToStdString();
-
             g_context = webpier::open_context(home);
 
             webpier::config config;
@@ -90,14 +88,17 @@ namespace WebPier
         }
     }
 
-    bool Init()
+    bool Init(const wxString& home)
     {
         try
         {
             if (webpier::get_module_path(webpier::webpier_module) != webpier::get_absolute_path(wxStandardPaths::Get().GetExecutablePath().ToStdString()))
                 throw std::runtime_error(_("Wrong module path"));
 
-            InitContext();
+            if (!wxFileName::Exists(home) && !wxFileName::Mkdir(home))
+                throw webpier::usage_error("Can't make home dir");
+
+            InitContext(home.ToStdString());
 
             std::cout << "The WebPier is launched for " + g_context->pier() << " at " << g_context->home().string() << std::endl;
 
@@ -109,28 +110,6 @@ namespace WebPier
             dialog.ShowModal();
         }
         return false;
-    }
-
-    wxString GetHome()
-    {
-        wxString home;
-        if (!wxGetEnv("WEBPIER_HOME", &home))
-            home = wxStandardPaths::Get().GetUserLocalDataDir();
-
-        if (!wxFileName::Exists(home) && !wxFileName::Mkdir(home))
-            throw webpier::usage_error("Can't make home dir");
-
-        return home;
-    }
-
-    wxString GetTempAppDir()
-    {
-        auto dir = wxStandardPaths::Get().GetTempDir() + "/" + webpier::make_text_hash(WebPier::GetHome().ToStdString());
-
-        if (!wxFileName::Exists(dir) && !wxFileName::Mkdir(dir))
-            throw webpier::usage_error("Can't make temp dir");
-
-        return dir;
     }
 
     namespace Context
@@ -650,6 +629,11 @@ namespace WebPier
 
     namespace Utils
     {
+        wxString MakeTextHash(const wxString& text) noexcept(true)
+        {
+            return webpier::make_text_hash(text.ToStdString());
+        }
+
         void ExploreNat(const wxString& bind, const wxString& stun, const std::function<void(const NatState&)>& callback) noexcept(true)
         {
             std::thread([=]()
