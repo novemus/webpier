@@ -28,5 +28,7 @@
     <string>@CMAKE_PROJECT_VERSION@</string>
     <key>CFBundleVersion</key>
     <string>@CMAKE_PROJECT_VERSION@</string>
+    <key>LSUIElement</key>
+    <true/>
   </dict>
 </plist>
