@@ -99,7 +99,7 @@
             <property name="permission">none</property>
             <property name="shortcut"></property>
             <property name="unchecked_bitmap"></property>
-            <event name="OnMenuSelection">onSettingsMenuSelection</event>
+            <event name="OnMenuSelection">OnSettingsMenuSelection</event>
           </object>
           <object class="separator" expanded="false">
             <property name="name">firstSep</property>
@@ -117,7 +117,7 @@
             <property name="permission">none</property>
             <property name="shortcut"></property>
             <property name="unchecked_bitmap"></property>
-            <event name="OnMenuSelection">onImportMenuSelection</event>
+            <event name="OnMenuSelection">OnImportMenuSelection</event>
           </object>
           <object class="wxMenuItem" expanded="false">
             <property name="bitmap"></property>
@@ -131,7 +131,7 @@
             <property name="permission">none</property>
             <property name="shortcut"></property>
             <property name="unchecked_bitmap"></property>
-            <event name="OnMenuSelection">onExportMenuSelection</event>
+            <event name="OnMenuSelection">OnExportMenuSelection</event>
           </object>
           <object class="separator" expanded="false">
             <property name="name">secondSep</property>
@@ -168,7 +168,7 @@
             <property name="permission">none</property>
             <property name="shortcut"></property>
             <property name="unchecked_bitmap"></property>
-            <event name="OnMenuSelection">onAboutMenuSelection</event>
+            <event name="OnMenuSelection">OnAboutMenuSelection</event>
           </object>
         </object>
       </object>

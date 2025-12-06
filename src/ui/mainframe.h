@@ -52,11 +52,10 @@ protected:
     WebPier::Context::ServicePtr findService(const WebPier::Backend::Handle& handle) const;
     void notify(const WebPier::Backend::Health& curr, const WebPier::Backend::Health& next);
 
-    void onSettingsMenuSelection(wxCommandEvent& event);
-    void onImportMenuSelection(wxCommandEvent& event);
-    void onExportMenuSelection(wxCommandEvent& event);
+
+
     void onExitMenuSelection(wxCommandEvent& event);
-    void onAboutMenuSelection(wxCommandEvent& event);
+
     void onImportRadioClick(wxCommandEvent& event);
     void onExportRadioClick(wxCommandEvent& event);
     void onAddServiceButtonClick(wxCommandEvent& event);
@@ -74,4 +73,8 @@ public:
     void Populate();
     void RefreshStatus();
     void RefreshStatus(const WebPier::Backend::Handle& handle);
+    void OnSettingsMenuSelection(wxCommandEvent& event);
+    void OnImportMenuSelection(wxCommandEvent& event);
+    void OnExportMenuSelection(wxCommandEvent& event);
+    void OnAboutMenuSelection(wxCommandEvent& event);
 };

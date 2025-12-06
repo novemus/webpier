@@ -174,13 +174,16 @@ protected:
     wxMenu* CreatePopupMenu() wxOVERRIDE
     {
         wxMenu* menu = new wxMenu();
-        menu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CTaskBarIcon::OnMenuConfigure ), this, menu->Append(wxID_ANY, _("&Configure..."))->GetId());
+        menu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(CMainFrame::OnSettingsMenuSelection), m_frame, menu->Append(wxID_ANY, _("&Settings..."))->GetId());
+        menu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(CTaskBarIcon::OnMenuConfigure), this, menu->Append(wxID_ANY, _("&Configure..."))->GetId());
+        menu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(CMainFrame::OnImportMenuSelection), m_frame, menu->Append(wxID_ANY, _("&Upload an offer..."))->GetId());
+        menu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(CMainFrame::OnExportMenuSelection), m_frame, menu->Append(wxID_ANY, _("&Create an offer..."))->GetId());
 
         menu->AppendSeparator();
 
         wxMenu* imports = new wxMenu();
         wxMenu* exports = new wxMenu();
-        
+
         bool isPassive = true;
 
         try
@@ -289,6 +292,9 @@ protected:
             unplug->Enable(false);
 
         menu->AppendSeparator();
+
+        wxMenuItem* about = menu->Append(wxID_ANY, _("&About..."));
+        menu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(CMainFrame::OnAboutMenuSelection), m_frame, about->GetId());
 
 #ifdef __WXOSX__
         if (OSXIsStatusItem())

@@ -207,11 +207,11 @@ CMainFrame::CMainFrame(wxTaskBarIcon* taskBar) : wxFrame(nullptr, wxID_ANY, wxT(
 
     this->Centre( wxBOTH );
 
-    fileMenu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CMainFrame::onSettingsMenuSelection ), this, settingsItem->GetId());
-    fileMenu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CMainFrame::onImportMenuSelection ), this, m_importItem->GetId());
-    fileMenu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CMainFrame::onExportMenuSelection ), this, m_exportItem->GetId());
+    fileMenu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CMainFrame::OnSettingsMenuSelection ), this, settingsItem->GetId());
+    fileMenu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CMainFrame::OnImportMenuSelection ), this, m_importItem->GetId());
+    fileMenu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CMainFrame::OnExportMenuSelection ), this, m_exportItem->GetId());
     fileMenu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CMainFrame::onExitMenuSelection ), this, exitItem->GetId());
-    helpMenu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CMainFrame::onAboutMenuSelection ), this, aboutItem->GetId());
+    helpMenu->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CMainFrame::OnAboutMenuSelection ), this, aboutItem->GetId());
     m_importBtn->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( CMainFrame::onImportRadioClick ), NULL, this );
     m_exportBtn->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( CMainFrame::onExportRadioClick ), NULL, this );
     m_addBtn->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CMainFrame::onAddServiceButtonClick ), NULL, this );
@@ -490,7 +490,7 @@ void CMainFrame::Populate()
     }
     catch(const std::exception& ex)
     {
-        CMessageDialog dialog(this, _("Can't populate the service list. ") + ex.what(), wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
+        CMessageDialog dialog(nullptr, _("Can't populate the service list. ") + ex.what(), wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
         dialog.ShowModal();
 
         m_importItem->Enable(false);
@@ -510,7 +510,7 @@ void CMainFrame::onExitMenuSelection(wxCommandEvent&)
     ProcessWindowEvent(event);
 }
 
-void CMainFrame::onSettingsMenuSelection(wxCommandEvent& event)
+void CMainFrame::OnSettingsMenuSelection(wxCommandEvent& event)
 {
     auto dialog = std::make_shared<CSettingsDialog>(m_config);
     if (dialog->ShowModal() == wxID_OK)
@@ -524,7 +524,7 @@ void CMainFrame::onSettingsMenuSelection(wxCommandEvent& event)
         }
         catch (const std::exception &ex)
         {
-            CMessageDialog dialog(this, _("Can't setup the settings. ") + ex.what(), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
+            CMessageDialog dialog(nullptr, _("Can't setup the settings. ") + ex.what(), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
             dialog.ShowModal();
 
             WebPier::Context::Reload();
@@ -537,7 +537,7 @@ void CMainFrame::onAddServiceButtonClick(wxCommandEvent& event)
 {
     WebPier::Context::ServicePtr service = m_exportBtn->GetValue() ? WebPier::Context::CreateExportService() : WebPier::Context::CreateImportService();
 
-    CServiceDialog dialog(m_config, service, this);
+    CServiceDialog dialog(m_config, service, nullptr);
     if (dialog.ShowModal() == wxID_OK)
     {
         try
@@ -552,7 +552,7 @@ void CMainFrame::onAddServiceButtonClick(wxCommandEvent& event)
         }
         catch(const std::exception& ex)
         {
-            CMessageDialog dialog(this, _("Can't add the service. ") + ex.what(), wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
+            CMessageDialog dialog(nullptr, _("Can't add the service. ") + ex.what(), wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
             dialog.ShowModal();
 
             WebPier::Context::Reload();
@@ -575,7 +575,7 @@ void CMainFrame::onEditServiceButtonClick(wxCommandEvent& event)
         if (!service)
             throw std::runtime_error(_("The service item is not found"));
 
-        CServiceDialog dialog(m_config, service, this);
+        CServiceDialog dialog(m_config, service, nullptr);
         if (dialog.ShowModal() == wxID_OK && service->IsDirty())
         {
             service->Store();
@@ -591,7 +591,7 @@ void CMainFrame::onEditServiceButtonClick(wxCommandEvent& event)
         if (service)
             service->Revert();
 
-        CMessageDialog dialog(this, _("Can't change the service. ") + ex.what(), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
+        CMessageDialog dialog(nullptr, _("Can't change the service. ") + ex.what(), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
         dialog.ShowModal();
 
         WebPier::Context::Reload();
@@ -599,11 +599,11 @@ void CMainFrame::onEditServiceButtonClick(wxCommandEvent& event)
     }
 }
 
-void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
+void CMainFrame::OnImportMenuSelection(wxCommandEvent& event)
 {
     try
     {
-        wxFileDialog fileDialog(this, _("Open offer"), wxStandardPaths::Get().GetUserDir(wxStandardPathsBase::Dir_Downloads), "", "*.*", wxFD_OPEN|wxFD_FILE_MUST_EXIST);
+        wxFileDialog fileDialog(nullptr, _("Open offer"), wxStandardPaths::Get().GetUserDir(wxStandardPathsBase::Dir_Downloads), "", "*.*", wxFD_OPEN|wxFD_FILE_MUST_EXIST);
 
         if (fileDialog.ShowModal() == wxID_CANCEL)
             return;
@@ -613,7 +613,7 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
 
         if (m_config->Pier == offer.Pier)
         {
-            CMessageDialog dialog(this, _("The pier name is the same as the local pier"), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
+            CMessageDialog dialog(nullptr, _("The pier name is the same as the local pier"), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
             dialog.ShowModal();
             return;
         }
@@ -624,7 +624,7 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
         {
             if (offer.Certificate != WebPier::Context::GetCertificate(offer.Pier))
             {
-                CMessageDialog dialog(this, _("Such pier is already exists, but has a different certificate. Do you want to replace existing pier and its services?"), wxDEFAULT_DIALOG_STYLE | wxICON_QUESTION);
+                CMessageDialog dialog(nullptr, _("Such pier is already exists, but has a different certificate. Do you want to replace existing pier and its services?"), wxDEFAULT_DIALOG_STYLE | wxICON_QUESTION);
                 if (dialog.ShowModal() != wxID_YES)
                     return;
 
@@ -638,7 +638,7 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
                 item.second->DelPier(offer.Pier);
         }
 
-        CExchangeDialog dialog(offer.Pier, offer.Services, m_export, this);
+        CExchangeDialog dialog(offer.Pier, offer.Services, m_export);
         if (dialog.ShowModal() != wxID_OK)
             return;
 
@@ -680,7 +680,7 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
                 {
                     if (!WebPier::Context::IsEqual(curr, next))
                     {
-                        CMessageDialog dialog(this, wxString::Format(_("The service '%s' is already imported from '%s', but differs from the new one. Do you want to replace it?"), next->Name, next->Pier), wxDEFAULT_DIALOG_STYLE | wxICON_QUESTION);
+                        CMessageDialog dialog(nullptr, wxString::Format(_("The service '%s' is already imported from '%s', but differs from the new one. Do you want to replace it?"), next->Name, next->Pier), wxDEFAULT_DIALOG_STYLE | wxICON_QUESTION);
                         if (dialog.ShowModal() == wxID_YES)
                             next->Store();
                     }
@@ -704,7 +704,7 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
 
         if (dialog.NeedExportReply())
         {
-            wxFileDialog fileDialog(this, _("Save the offer"), wxStandardPaths::Get().GetUserDir(wxStandardPathsBase::Dir_Desktop), "", "*.*", wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
+            wxFileDialog fileDialog(nullptr, _("Save the offer"), wxStandardPaths::Get().GetUserDir(wxStandardPathsBase::Dir_Desktop), "", "*.*", wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
             if (fileDialog.ShowModal() == wxID_CANCEL)
                 return;
 
@@ -713,7 +713,7 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
     }
     catch (const std::exception& ex)
     {
-        CMessageDialog dialog(this, _("Offer uploading failed. ") + ex.what(), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
+        CMessageDialog dialog(nullptr, _("Offer uploading failed. ") + ex.what(), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
         dialog.ShowModal();
 
         WebPier::Context::Reload();
@@ -721,15 +721,15 @@ void CMainFrame::onImportMenuSelection(wxCommandEvent& event)
     }
 }
 
-void CMainFrame::onExportMenuSelection(wxCommandEvent& event)
+void CMainFrame::OnExportMenuSelection(wxCommandEvent& event)
 {
     try
     {
-        CExchangeDialog dialog(m_config->Pier, m_export, this);
+        CExchangeDialog dialog(m_config->Pier, m_export);
         if (dialog.ShowModal() != wxID_OK)
             return;
 
-        wxFileDialog fileDialog(this, _("Save offer"), wxStandardPaths::Get().GetUserDir(wxStandardPathsBase::Dir_Desktop), "webpier.offer", "*.*", wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
+        wxFileDialog fileDialog(nullptr, _("Save offer"), wxStandardPaths::Get().GetUserDir(wxStandardPathsBase::Dir_Desktop), "webpier.offer", "*.*", wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
         if (fileDialog.ShowModal() == wxID_CANCEL)
             return;
 
@@ -740,7 +740,7 @@ void CMainFrame::onExportMenuSelection(wxCommandEvent& event)
         for (auto& item : m_export)
             item.second->Revert();
 
-        CMessageDialog dialog(this, _("Couldn't create the offer. ") + ex.what(), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
+        CMessageDialog dialog(nullptr, _("Couldn't create the offer. ") + ex.what(), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
         dialog.ShowModal();
     }
 }
@@ -757,7 +757,7 @@ void CMainFrame::onDeleteServiceButtonClick(wxCommandEvent& event)
             throw std::runtime_error(_("The service item is not found"));
 
         auto service = iter->second;
-        CMessageDialog dialog(this, _("Do you want to remove ") + (service->Local ? WebPier::Context::Pier() : service->Pier) + ":" + service->Name + _(" service"), wxDEFAULT_DIALOG_STYLE | wxICON_QUESTION);
+        CMessageDialog dialog(nullptr, _("Do you want to remove ") + (service->Local ? WebPier::Context::Pier() : service->Pier) + ":" + service->Name + _(" service"), wxDEFAULT_DIALOG_STYLE | wxICON_QUESTION);
         if (dialog.ShowModal() == wxID_YES)
         {
             service->Purge();
@@ -768,14 +768,14 @@ void CMainFrame::onDeleteServiceButtonClick(wxCommandEvent& event)
     }
     catch (const std::exception& ex)
     {
-        CMessageDialog dialog(this, _("Can't remove the service. ") + ex.what(), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
+        CMessageDialog dialog(nullptr, _("Can't remove the service. ") + ex.what(), wxDEFAULT_DIALOG_STYLE | wxICON_ERROR);
         dialog.ShowModal();
     }
 }
 
-void CMainFrame::onAboutMenuSelection(wxCommandEvent& event)
+void CMainFrame::OnAboutMenuSelection(wxCommandEvent& event)
 {
-    CAboutDialog dialog(this);
+    CAboutDialog dialog(nullptr);
     dialog.ShowModal();
 }
 

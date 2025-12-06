@@ -99,8 +99,8 @@ class CExchangeDialog : public wxDialog
 
 public:
 
-    CExchangeDialog(const wxString& pier, const WebPier::Context::ServiceList& forImport, const WebPier::Context::ServiceList& forExport, wxWindow* parent);
-    CExchangeDialog(const wxString& pier, const WebPier::Context::ServiceList& forExport, wxWindow* parent);
+    CExchangeDialog(const wxString& pier, const WebPier::Context::ServiceList& forImport, const WebPier::Context::ServiceList& forExport, wxWindow* parent = nullptr);
+    CExchangeDialog(const wxString& pier, const WebPier::Context::ServiceList& forExport, wxWindow* parent = nullptr);
 
     ~CExchangeDialog();
 
