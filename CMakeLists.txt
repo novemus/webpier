@@ -134,6 +134,13 @@ if(NOT WIN32)
     convert_to_cpp_array(${CMAKE_CURRENT_SOURCE_DIR}/assets/delete.png ${CMAKE_CURRENT_BINARY_DIR}/assets/delete.h delete_btn_png)
 endif()
 
+if(APPLE)
+    enable_language(OBJC)
+    enable_language(OBJCXX)
+    set_source_files_properties(src/ui/mac.mm PROPERTIES LANGUAGE OBJCXX)
+    target_compile_definitions(${WEBPIER} PRIVATE wxOSX_USE_COCOA)
+endif()
+
 target_sources(${WEBPIER} PRIVATE
     src/ui/main.cpp
     src/ui/mainframe.h
@@ -163,6 +170,7 @@ target_sources(${WEBPIER} PRIVATE
     src/backend/client.h
     src/backend/client.cpp
     "$<$<BOOL:${WIN32}>:windows/webpier.rc>"
+    "$<$<BOOL:${APPLE}>:src/ui/mac.mm>"
     )
 
 target_sources(${SLIPWAY} PRIVATE
@@ -183,7 +191,7 @@ target_sources(${CARRIER} PRIVATE
     src/backend/tunnel.cpp
     )
 
-target_link_libraries(${WEBPIER} PRIVATE ${wxWidgets_LIBRARIES} Boost::coroutine Boost::filesystem Boost::program_options "$<$<BOOL:${MSVC}>:Boost::property_tree>" "$<$<BOOL:${MSVC}>:Crypt32>" plexus::libplexus OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(${WEBPIER} PRIVATE ${wxWidgets_LIBRARIES} "$<$<BOOL:${APPLE}>:-framework Cocoa>" Boost::coroutine Boost::filesystem Boost::program_options "$<$<BOOL:${MSVC}>:Boost::property_tree>" "$<$<BOOL:${MSVC}>:Crypt32>" plexus::libplexus OpenSSL::SSL OpenSSL::Crypto)
 target_link_libraries(${CARRIER} PRIVATE Boost::filesystem Boost::program_options "$<$<BOOL:${MSVC}>:Crypt32>" wormhole::libwormhole tubus::libtubus OpenSSL::SSL OpenSSL::Crypto)
 target_link_libraries(${SLIPWAY} PRIVATE Boost::coroutine Boost::filesystem Boost::program_options $<$<VERSION_GREATER_EQUAL:${Boost_VERSION},1.88>:Boost::process> "$<$<BOOL:${MSVC}>:Boost::property_tree>" "$<$<BOOL:${MSVC}>:Crypt32>" plexus::libplexus wormhole::libwormhole tubus::libtubus opendht fmt::fmt msgpack-cxx PkgConfig::GnuTLS PkgConfig::argon2 PkgConfig::Nettle PkgConfig::Jsoncpp OpenSSL::SSL OpenSSL::Crypto)
 

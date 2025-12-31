@@ -19,6 +19,10 @@
 #include <assets/delete.h>
 #endif
 
+#if defined(__WXOSX__) && wxOSX_USE_COCOA
+extern "C" void DisableDockIcon();
+#endif
+
 const wxIconBundle& GetAppIconBundle()
 {
 #ifdef WIN32
@@ -383,6 +387,9 @@ public:
 
     bool OnInit() override
     {
+#if defined(__WXOSX__) && wxOSX_USE_COCOA
+        DisableDockIcon();
+#endif
 #ifdef wxUSE_LOG
         wxLog::SetActiveTarget(new wxLogStderr());
 #endif
