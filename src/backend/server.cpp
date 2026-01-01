@@ -13,6 +13,9 @@
 #include <boost/process/v2/process.hpp>
 #include <boost/process/v2/environment.hpp>
 #include <boost/process/v2/execute.hpp>
+#ifdef WIN32
+    #include <boost/process/v2/windows/show_window.hpp>
+#endif
 #include <boost/algorithm/string.hpp>
 #include <filesystem>
 #include <iostream>
@@ -187,8 +190,11 @@ namespace slipway
                         "--obscure=" + std::to_string(m_service.obscure ? host.puzzle ^ peer.puzzle : 0),
                         "--journal=" + (m_config.log.folder.empty() ? "" : m_config.log.folder + "/carrier.%p.log"),
                         "--logging=" + std::to_string(m_config.log.level)
+#ifdef WIN32
+                    }, boost::process::v2::windows::show_window_hide);
+#else
                     });
-
+#endif
                     int pid = proc.id();
  
                     m_service.local
