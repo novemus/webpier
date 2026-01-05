@@ -235,9 +235,9 @@ if(NOT WEBPIER_SKIP_INSTALL_RULES AND NOT CMAKE_SKIP_INSTALL_RULES)
 
     include(GNUInstallDirs)
 
-    install(TARGETS ${WEBPIER} RUNTIME DESTINATION "$<IF:$<BOOL:${APPLE}>,WebPier.app/Contents/Resources/Modules,${CMAKE_INSTALL_BINDIR}>" COMPONENT binary_files)
-    install(TARGETS ${SLIPWAY} RUNTIME DESTINATION "$<IF:$<BOOL:${APPLE}>,WebPier.app/Contents/Resources/Modules,${CMAKE_INSTALL_BINDIR}>" COMPONENT binary_files)
-    install(TARGETS ${CARRIER} RUNTIME DESTINATION "$<IF:$<BOOL:${APPLE}>,WebPier.app/Contents/Resources/Modules,${CMAKE_INSTALL_BINDIR}>" COMPONENT binary_files)
+    install(TARGETS ${WEBPIER} RUNTIME DESTINATION "$<IF:$<BOOL:${APPLE}>,WebPier.app/Contents/Resources/Modules,$<IF:$<BOOL:${MSVC}>,${CMAKE_INSTALL_BINDIR},share/webpier>>" COMPONENT binary_files)
+    install(TARGETS ${SLIPWAY} RUNTIME DESTINATION "$<IF:$<BOOL:${APPLE}>,WebPier.app/Contents/Resources/Modules,$<IF:$<BOOL:${MSVC}>,${CMAKE_INSTALL_BINDIR},share/webpier>>" COMPONENT binary_files)
+    install(TARGETS ${CARRIER} RUNTIME DESTINATION "$<IF:$<BOOL:${APPLE}>,WebPier.app/Contents/Resources/Modules,$<IF:$<BOOL:${MSVC}>,${CMAKE_INSTALL_BINDIR},share/webpier>>" COMPONENT binary_files)
 
     if(WIN32)
         install(FILES "$<TARGET_PDB_FILE:${WEBPIER}>" COMPONENT pdb_files
