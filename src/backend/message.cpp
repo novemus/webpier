@@ -131,11 +131,18 @@ namespace slipway
                 break;
         }
 
+        std::ostringstream ss;
+        boost::property_tree::write_json(ss, doc, false);
+
+        std::string data = ss.str();
+
+        if (data.empty() || data.back() != '\n') {
+            data += '\n';
+        }
+
         std::ostream stream(&buffer);
-        boost::property_tree::write_json(stream, doc, false);
-#if defined(WIN32) || defined(__APPLE__)
-        stream << '\n';
-#endif
+        stream << data;
+        stream.flush();
     }
 
     void pull_message(std::streambuf& buffer, slipway::message& msg) noexcept(false)
