@@ -1,3 +1,6 @@
+* Wed Jan 14 2026 Novemus Band <nineletters@mail.ru> - 1.0.3-1
+- Minor fixes and improvements.
+
 * Wed Nov 12 2025 Novemus Band <nineletters@mail.ru> - 1.0.2-1
 - Using a named pipe for IPC in Windows.
 - Building debug packages.

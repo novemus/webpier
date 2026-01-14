@@ -9,8 +9,8 @@
                 "WEBPIER_SKIP_INSTALL_RULES": "OFF",
                 "WEBPIER_SKIP_PACKAGE_RULES": "OFF"
             },
-            "binaryDir": "${sourceParentDir}/out/$env{TARGET_OS}/$env{TARGET_ARCH}/build/${sourceDirName}/${presetName}",
-            "installDir": "${sourceParentDir}/out/$env{TARGET_OS}/$env{TARGET_ARCH}/install"
+            "binaryDir": "${sourceDir}/out/$env{TARGET_OS}/$env{TARGET_ARCH}/build/${presetName}",
+            "installDir": "${sourceDir}/out/$env{TARGET_OS}/$env{TARGET_ARCH}/install"
         },
         {
             "name": "relwithdebinfo-base",
