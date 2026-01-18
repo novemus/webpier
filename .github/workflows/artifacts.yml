@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ master ]
 
+env:
+  PACKAGE_RELEASE: ${{ vars.PACKAGE_RELEASE || "1" }}
+  MAINTAINER: "Novemus Band <nineletters@mail.ru>"
+  HOMEPAGE: "https://github.com/novemus/webpier"
+
 jobs:
   ubuntu:
     name: Ubuntu packages
@@ -13,8 +18,10 @@ jobs:
     env:
       TARGET_OS: ubuntu
       TARGET_ARCH: x64
-      MAINTAINER: "Novemus Band <nineletters@mail.ru>"
-      HOMEPAGE: "https://github.com/novemus/plexus"
+      REPO_HOST: ${{ secrets.DEB_REPO_HOST }}
+      REPO_PORT: ${{ secrets.DEB_REPO_PORT }}
+      REPO_URL: "https://${{ secrets.DEB_REPO_HOST }}:${{ secrets.DEB_REPO_PORT }}/${{ secrets.DEB_REPO_PATH }}"
+      REPO_GPG_URL: "https://${{ secrets.DEB_REPO_HOST }}:${{ secrets.DEB_REPO_PORT }}/${{ secrets.DEB_GPG_PATH }}"
       DEPENDENCIES: "libssl-dev libboost-system-dev libboost-program-options-dev libboost-coroutine-dev libboost-filesystem-dev libboost-test-dev libopendht-dev libtubus-dev libwormhole-dev libplexus-dev libwxgtk3.2-dev"
 
     steps:
@@ -22,12 +29,18 @@ jobs:
 
       - name: Install dependencies
         run: |
+          echo | openssl s_client -connect ${{ env.REPO_HOST }}:${{ env.REPO_PORT }} -servername ${{ env.REPO_HOST }} 2>/dev/null | openssl x509 > vendor.crt
+          sudo cp vendor.crt /usr/local/share/ca-certificates/
+          sudo update-ca-certificates
+          rm vendor.crt
+          wget -qO- ${{ env.REPO_GPG_URL }} | sudo gpg --dearmor -o /usr/share/keyrings/vendor.gpg
+          echo "deb [signed-by=/usr/share/keyrings/vendor.gpg] ${{ env.REPO_URL }} $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/vendor.list
           sudo apt-get update
           sudo apt-get install -y ${{ env.DEPENDENCIES }}
 
       - name: Build static
         run: |
-          cmake --preset static-relwithdebinfo
+          cmake --preset static-relwithdebinfo -DCPACK_PACKAGE_RELEASE=${{ env.PACKAGE_RELEASE }}
           cmake --build --preset static-relwithdebinfo --target all
           ctest --preset static-relwithdebinfo
 
@@ -37,20 +50,6 @@ jobs:
             -DCPACK_DEBIAN_PACKAGE_MAINTAINER="${{ env.MAINTAINER }}" \
             -DCPACK_DEBIAN_PACKAGE_HOMEPAGE="${{ env.HOMEPAGE }}"
 
-      - name: Rename packages
-        run: |
-          rev=$(git rev-parse --short HEAD)
-
-          cd out/${{ env.TARGET_OS }}/${{ env.TARGET_ARCH }}/build
-
-          for file in *.deb; do
-            mv "$file" "${file%-1_amd64.deb}-${rev}_amd64.deb"
-          done
-
-          for file in *.ddeb; do
-            mv "$file" "${file%-1_amd64.ddeb}-${rev}_amd64.ddeb"
-          done
-
       - name: Upload packages
         uses: actions/upload-artifact@v4
         with:
@@ -58,6 +57,42 @@ jobs:
           path: |
             out/${{ env.TARGET_OS }}/${{ env.TARGET_ARCH }}/build/*.deb
             out/${{ env.TARGET_OS }}/${{ env.TARGET_ARCH }}/build/*.ddeb
+          retention-days: 7
+  
+  fedora:
+    name: Fedora packages
+    runs-on: ubuntu-latest
+    container: fedora:42
+    env:
+      TARGET_OS: fedora-42
+      TARGET_ARCH: x64
+      DEPENDENCIES: "clang clang-tools-extra cmake git rpmdevtools boost-devel boost-static gnutls-devel asio-devel openssl-devel cppunit-devel fmt-devel nettle-devel libargon2-devel jsoncpp-devel msgpack-devel libtubus-devel libwormhole-devel libopendht-devel wxGTK-devel"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          dnf -y --setopt=tsflags=nodocs install ${{ env.DEPENDENCIES }}
+
+      - name: Build static
+        run: |
+          cmake --preset static-relwithdebinfo -DCPACK_PACKAGE_RELEASE=${{ env.PACKAGE_RELEASE }}
+          cmake --build --preset static-relwithdebinfo --target all
+          ctest --preset static-relwithdebinfo
+
+      - name: Build packages
+        run: |
+          cpack --preset linux-package \
+            -DCPACK_RPM_PACKAGE_VENDOR="${{ env.MAINTAINER }}" \
+            -DCPACK_RPM_PACKAGE_URL="${{ env.HOMEPAGE }}"
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: fedora-packages
+          path: |
+            out/${{ env.TARGET_OS }}/${{ env.TARGET_ARCH }}/build/*.rpm
           retention-days: 7
 
   windows:
@@ -74,6 +109,7 @@ jobs:
       - name: Build static
         run: |
           cmake --preset static-relwithdebinfo \
+            -DCPACK_PACKAGE_RELEASE=${{ env.PACKAGE_RELEASE }} \
             -DVCPKG_TARGET_TRIPLET=x64-windows-static \
             -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}"
           cmake --build --preset static-relwithdebinfo --target all
@@ -82,22 +118,6 @@ jobs:
       - name: Build packages
         run: |
           cpack --preset windows-msi && cpack --preset windows-pdb
-
-      - name: Rename packages
-        shell: powershell
-        run: |
-          $rev = $(git rev-parse --short HEAD).Trim()
-          cd "out\$env:TARGET_OS\$env:TARGET_ARCH\build"
-          Get-ChildItem "*.zip" | ForEach-Object {
-            $baseName = $_.BaseName -replace 'win64$', "_g${rev}-win64"
-            $newPath = "${baseName}$($_.Extension)"
-            Move-Item $_.FullName $newPath
-          }
-          Get-ChildItem "*.msi" | ForEach-Object {
-            $baseName = $_.BaseName -replace 'win64$', "_g${rev}-win64"
-            $newPath = "${baseName}$($_.Extension)"
-            Move-Item $_.FullName $newPath
-          }
 
       - name: Upload packages
         uses: actions/upload-artifact@v4
@@ -114,8 +134,6 @@ jobs:
     env:
       TARGET_OS: macos
       TARGET_ARCH: x64
-      MAINTAINER: "Novemus Band <nineletters@mail.ru>"
-      HOMEPAGE: "https://github.com/novemus/plexus"
       VCPKG_ROOT: ${{ github.workspace }}/vcpkg
       CMAKE_TOOLCHAIN_FILE: ${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
       VCPKG_FORCE_SYSTEM_BINARIES: 1
@@ -131,6 +149,7 @@ jobs:
       - name: Build static
         run: |
           cmake --preset static-relwithdebinfo \
+            -DCPACK_PACKAGE_RELEASE=${{ env.PACKAGE_RELEASE }} \
             -DVCPKG_TARGET_TRIPLET=x64-osx \
             -DCMAKE_TOOLCHAIN_FILE="$CMAKE_TOOLCHAIN_FILE"
           cmake --build --preset static-relwithdebinfo --target all
@@ -142,20 +161,6 @@ jobs:
               -DCPACK_PACKAGE_VENDOR="${{ env.MAINTAINER }}" \
               -DCPACK_PACKAGE_URL="${{ env.HOMEPAGE }}"
           cpack --preset darwin-dbg
-
-      - name: Rename packages
-        run: |
-          rev=$(git rev-parse --short HEAD)
-
-          cd out/${{ env.TARGET_OS }}/${{ env.TARGET_ARCH }}/build
-          
-          for file in *.pkg; do
-            mv "$file" "${file%-Darwin.pkg}-${rev}-Darwin.pkg"
-          done
-
-          for file in *.zip; do
-            mv "$file" "${file%-Darwin.zip}-${rev}-Darwin.zip"
-          done
 
       - name: Upload archive
         uses: actions/upload-artifact@v4
