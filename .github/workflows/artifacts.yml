@@ -34,16 +34,16 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ${{ env.DEPENDENCIES }}
+          apt-get update
+          apt-get install -y ${{ env.DEPENDENCIES }}
           curl -sL -o /tmp/libtubus.deb ${{ env.TUBUS_LIB_PACKAGE }} && apt-get install -y /tmp/libtubus.deb
           curl -sL -o /tmp/libtubus-dev.deb ${{ env.TUBUS_DEV_PACKAGE }} && apt-get install -y /tmp/libtubus-dev.deb
           curl -sL -o /tmp/libwormhole.deb ${{ env.WORMHOLE_LIB_PACKAGE }} && apt-get install -y /tmp/libwormhole.deb
           curl -sL -o /tmp/libwormhole-dev.deb ${{ env.WORMHOLE_DEV_PACKAGE }} && apt-get install -y /tmp/libwormhole-dev.deb
-          curl -sL -o /tmp/libplexus.deb ${{ env.PLEXUS_LIB_PACKAGE }} && apt-get install -y /tmp/libplexus.deb
-          curl -sL -o /tmp/libplexus-dev.deb ${{ env.PLEXUS_DEV_PACKAGE }} && apt-get install -y /tmp/libplexus-dev.deb
           curl -sL -o /tmp/libopendht.deb ${{ env.OPENDHT_LIB_PACKAGE }} && apt-get install -y /tmp/libopendht.deb
           curl -sL -o /tmp/libopendht-dev.deb ${{ env.OPENDHT_DEV_PACKAGE }} && apt-get install -y /tmp/libopendht-dev.deb
+          curl -sL -o /tmp/libplexus.deb ${{ env.PLEXUS_LIB_PACKAGE }} && apt-get install -y /tmp/libplexus.deb
+          curl -sL -o /tmp/libplexus-dev.deb ${{ env.PLEXUS_DEV_PACKAGE }} && apt-get install -y /tmp/libplexus-dev.deb
 
       - name: Build static
         run: |
@@ -94,10 +94,10 @@ jobs:
           curl -sL -o /tmp/libtubus-devel.rpm ${{ env.TUBUS_DEV_PACKAGE }} && dnf -y install /tmp/libtubus-devel.rpm
           curl -sL -o /tmp/libwormhole.rpm ${{ env.WORMHOLE_LIB_PACKAGE }} && dnf -y install /tmp/libwormhole.rpm
           curl -sL -o /tmp/libwormhole-devel.rpm ${{ env.WORMHOLE_DEV_PACKAGE }} && dnf -y install /tmp/libwormhole-devel.rpm
-          curl -sL -o /tmp/libplexus.rpm ${{ env.PLEXUS_LIB_PACKAGE }} && dnf -y install /tmp/libplexus.rpm
-          curl -sL -o /tmp/libplexus-devel.rpm ${{ env.PLEXUS_DEV_PACKAGE }} && dnf -y install /tmp/libplexus-devel.rpm
           curl -sL -o /tmp/libopendht.rpm ${{ env.OPENDHT_LIB_PACKAGE }} && dnf -y install /tmp/libopendht.rpm
           curl -sL -o /tmp/libopendht-devel.rpm ${{ env.OPENDHT_DEV_PACKAGE }} && dnf -y install /tmp/libopendht-devel.rpm
+          curl -sL -o /tmp/libplexus.rpm ${{ env.PLEXUS_LIB_PACKAGE }} && dnf -y install /tmp/libplexus.rpm
+          curl -sL -o /tmp/libplexus-devel.rpm ${{ env.PLEXUS_DEV_PACKAGE }} && dnf -y install /tmp/libplexus-devel.rpm
 
       - name: Build static
         run: |
@@ -153,10 +153,10 @@ jobs:
           Expand-Archive -Path C:\tmp\tubus.zip -DestinationPath "${{ github.workspace }}\out\${{ env.TARGET_OS }}\${{ env.TARGET_ARCH }}\install"
           Invoke-WebRequest -Uri ${{ env.WORMHOLE_ARCHIVE }} -OutFile C:\tmp\wormhole.zip
           Expand-Archive -Path C:\tmp\wormhole.zip -DestinationPath "${{ github.workspace }}\out\${{ env.TARGET_OS }}\${{ env.TARGET_ARCH }}\install"
-          Invoke-WebRequest -Uri ${{ env.PLEXUS_ARCHIVE }} -OutFile C:\tmp\plexus.zip
-          Expand-Archive -Path C:\tmp\plexus.zip -DestinationPath "${{ github.workspace }}\out\${{ env.TARGET_OS }}\${{ env.TARGET_ARCH }}\install"
           Invoke-WebRequest -Uri ${{ env.OPENDHT_ARCHIVE }} -OutFile C:\tmp\opendht.zip
           Expand-Archive -Path C:\tmp\opendht.zip -DestinationPath "${{ github.workspace }}\out\${{ env.TARGET_OS }}\${{ env.TARGET_ARCH }}\install"
+          Invoke-WebRequest -Uri ${{ env.PLEXUS_ARCHIVE }} -OutFile C:\tmp\plexus.zip
+          Expand-Archive -Path C:\tmp\plexus.zip -DestinationPath "${{ github.workspace }}\out\${{ env.TARGET_OS }}\${{ env.TARGET_ARCH }}\install"
 
       - name: Build static
         shell: pwsh
@@ -165,7 +165,7 @@ jobs:
             -DCPACK_PACKAGE_RELEASE=${{ env.PACKAGE_RELEASE }} `
             -DVCPKG_TARGET_TRIPLET=${{ env.TARGET_ARCH }}-windows-static `
             -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_TOOLCHAIN_FILE }}"
-          cmake --build --preset static-relwithdebinfo --target all
+          cmake --build --preset static-relwithdebinfo --target ALL_BUILD
           ctest --preset static-relwithdebinfo
 
       - name: Build packages
@@ -186,10 +186,9 @@ jobs:
     runs-on: macos-latest
     env:
       TARGET_OS: macos
-      TARGET_ARCH: x64
+      TARGET_ARCH: arm64
       VCPKG_ROOT: ${{ github.workspace }}/vcpkg
       VCPKG_TOOLCHAIN_FILE: ${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
-      VCPKG_FORCE_SYSTEM_BINARIES: 1
       TUBUS_ARCHIVE: ${{ vars.TUBUS_DARWIN_ARCHIVE }}
       WORMHOLE_ARCHIVE: ${{ vars.WORMHOLE_DARWIN_ARCHIVE }}
       PLEXUS_ARCHIVE: ${{ vars.PLEXUS_DARWIN_ARCHIVE }}
@@ -202,6 +201,7 @@ jobs:
         run: |
           git clone https://github.com/Microsoft/vcpkg.git $VCPKG_ROOT
           $VCPKG_ROOT/bootstrap-vcpkg.sh
+          brew install autoconf automake libtool
 
       - name: Cache vcpkg dependencies
         uses: actions/cache@v4
@@ -220,10 +220,10 @@ jobs:
             && unzip /tmp/tubus.zip -d "${{ github.workspace }}/out/${{ env.TARGET_OS }}/${{ env.TARGET_ARCH }}/install"
           curl -sL -o /tmp/wormhole.zip ${{ env.WORMHOLE_ARCHIVE }} \
             && unzip /tmp/wormhole.zip -d "${{ github.workspace }}/out/${{ env.TARGET_OS }}/${{ env.TARGET_ARCH }}/install"
-          curl -sL -o /tmp/plexus.zip ${{ env.PLEXUS_ARCHIVE }} \
-            && unzip /tmp/plexus.zip -d "${{ github.workspace }}/out/${{ env.TARGET_OS }}/${{ env.TARGET_ARCH }}/install"
           curl -sL -o /tmp/opendht.zip ${{ env.OPENDHT_ARCHIVE }} \
             && unzip /tmp/opendht.zip -d "${{ github.workspace }}/out/${{ env.TARGET_OS }}/${{ env.TARGET_ARCH }}/install"
+          curl -sL -o /tmp/plexus.zip ${{ env.PLEXUS_ARCHIVE }} \
+            && unzip /tmp/plexus.zip -d "${{ github.workspace }}/out/${{ env.TARGET_OS }}/${{ env.TARGET_ARCH }}/install"
 
       - name: Build static
         run: |
