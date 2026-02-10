@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.0.4 (Fef 10, 2026)
+
+- Link with libtubus 1.2.5
+- Link with libwormhole 1.2.6
+- Link with libplexus 3.2.2
+
 ## 1.0.3 (Jan 14, 2026)
 
 - Minor fixes and improvements.
