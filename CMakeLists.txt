@@ -4,7 +4,7 @@ message("***** webpier ***** ")
 
 cmake_minimum_required(VERSION 3.21)
 
-project(webpier VERSION 1.0.4 DESCRIPTION "The program for forwarding TCP applications via NAT" LANGUAGES CXX)
+project(webpier VERSION 1.0.5 DESCRIPTION "The program for forwarding TCP applications via NAT" LANGUAGES CXX)
 
 option(WEBPIER_SKIP_TEST_RULES "Don't generate test rules" ON)
 option(WEBPIER_SKIP_INSTALL_RULES "Don't generate install rules" OFF)
@@ -56,7 +56,7 @@ message("*** OpenSSL Version: ${OPENSSL_VERSION}")
 message("*** OpenSSL Include: ${OPENSSL_INCLUDE_DIR}")
 message("*** OpenSSL Libraries: ${OPENSSL_LIBRARIES}")
 
-find_package(plexus 3.2.2 REQUIRED)
+find_package(plexus 3.2.3 REQUIRED)
 
 message("*** plexus Version: ${plexus_VERSION}")
 message("*** plexus Include: ${plexus_INCLUDE_DIRS}")

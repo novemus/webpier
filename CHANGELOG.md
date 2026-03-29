@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.0.5 (Mar 29, 2026)
+
+- Link with libplexus 3.2.3
+
 ## 1.0.4 (Fef 10, 2026)
 
 - Link with libtubus 1.2.5
