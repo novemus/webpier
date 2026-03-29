@@ -29,6 +29,7 @@
         "nettle",
         "argon2",
         "jsoncpp",
+        "libwebp",
         "wxwidgets"
     ]
 }

@@ -50,6 +50,10 @@ endif()
 message("*** wxWidgets Includes: ${wxWidgets_INCLUDE_DIRS}")
 message("*** wxWidgets Libraries: ${wxWidgets_LIBRARIES}")
 
+if(MSVC)
+    find_package(WebP CONFIG REQUIRED)
+endif()
+
 find_package(OpenSSL REQUIRED)
 
 message("*** OpenSSL Version: ${OPENSSL_VERSION}")
@@ -191,7 +195,7 @@ target_sources(${CARRIER} PRIVATE
     src/backend/tunnel.cpp
     )
 
-target_link_libraries(${WEBPIER} PRIVATE ${wxWidgets_LIBRARIES} "$<$<BOOL:${APPLE}>:-framework Cocoa>" Boost::coroutine Boost::filesystem Boost::program_options "$<$<BOOL:${MSVC}>:Boost::property_tree>" "$<$<BOOL:${MSVC}>:Crypt32>" plexus::libplexus OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(${WEBPIER} PRIVATE ${wxWidgets_LIBRARIES} "$<$<BOOL:${MSVC}>:WebP::webp>" "$<$<BOOL:${MSVC}>:WebP::webpdemux>" "$<$<BOOL:${APPLE}>:-framework Cocoa>" Boost::coroutine Boost::filesystem Boost::program_options "$<$<BOOL:${MSVC}>:Boost::property_tree>" "$<$<BOOL:${MSVC}>:Crypt32>" plexus::libplexus OpenSSL::SSL OpenSSL::Crypto)
 target_link_libraries(${CARRIER} PRIVATE Boost::filesystem Boost::program_options "$<$<BOOL:${MSVC}>:Crypt32>" wormhole::libwormhole tubus::libtubus OpenSSL::SSL OpenSSL::Crypto)
 target_link_libraries(${SLIPWAY} PRIVATE $<$<VERSION_GREATER_EQUAL:${Boost_VERSION},1.86.0>:Boost::process> Boost::coroutine Boost::filesystem Boost::program_options $<$<VERSION_GREATER_EQUAL:${Boost_VERSION},1.88>:Boost::process> "$<$<BOOL:${MSVC}>:Boost::property_tree>" "$<$<BOOL:${MSVC}>:Crypt32>" plexus::libplexus wormhole::libwormhole tubus::libtubus opendht fmt::fmt msgpack-cxx PkgConfig::GnuTLS PkgConfig::argon2 PkgConfig::Nettle PkgConfig::Jsoncpp OpenSSL::SSL OpenSSL::Crypto)
 
