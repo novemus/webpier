@@ -44,23 +44,27 @@ class acceptor
 {
     boost::asio::io_context& m_io;
     slipway::ipc::endpoint m_endpoint;
+    HANDLE m_pipe;
     boost::asio::windows::overlapped_ptr m_overlapped;
 
 public:
 
     explicit acceptor(boost::asio::io_context& io)
         : m_io(io)
+        , m_pipe(INVALID_HANDLE_VALUE)
     {
     }
 
     acceptor(boost::asio::io_context& io, const slipway::ipc::protocol&)
         : m_io(io)
+        , m_pipe(INVALID_HANDLE_VALUE)
     {
     }
 
     acceptor(boost::asio::io_context& io, const slipway::ipc::endpoint& ep)
         : m_io(io)
         , m_endpoint(ep)
+        , m_pipe(INVALID_HANDLE_VALUE)
     {
     }
 
@@ -104,12 +108,13 @@ public:
 
     void cancel() noexcept(true)
     {
-        m_overlapped.reset();
+        if (m_pipe != INVALID_HANDLE_VALUE)
+            CancelIoEx(m_pipe, m_overlapped.get());
     }
 
     void cancel(boost::system::error_code& ec) noexcept(true)
     {
-        m_overlapped.reset();
+        cancel();
     }
 
     void listen() noexcept(true)
@@ -120,7 +125,7 @@ public:
     {
     }
 
-    slipway::ipc::socket accept() const noexcept(false)
+    slipway::ipc::socket accept() noexcept(false)
     {
         boost::system::error_code ec;
         boost::asio::windows::stream_handle stream = accept(ec);
@@ -130,7 +135,7 @@ public:
         return std::move(stream);
     }
 
-    slipway::ipc::socket accept(boost::system::error_code& ec) const noexcept(true)
+    slipway::ipc::socket accept(boost::system::error_code& ec) noexcept(true)
     {
         slipway::ipc::socket stream(m_io);
 
@@ -143,7 +148,7 @@ public:
             return std::move(stream);
         }
 
-        HANDLE pipe = CreateNamedPipeA(
+        m_pipe = CreateNamedPipeA(
             m_endpoint.path().c_str(),
             PIPE_ACCESS_DUPLEX,
             PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
@@ -154,9 +159,9 @@ public:
             &sa
         );
 
-        stream.assign(pipe);
+        stream.assign(m_pipe);
 
-        if (pipe == INVALID_HANDLE_VALUE || !ConnectNamedPipe(pipe, NULL))
+        if (m_pipe == INVALID_HANDLE_VALUE || !ConnectNamedPipe(m_pipe, NULL))
             ec.assign(GetLastError(), boost::system::system_category());
 
         return std::move(stream);
@@ -173,7 +178,7 @@ public:
             return;
         }
 
-        HANDLE pipe = CreateNamedPipeA(
+        m_pipe = CreateNamedPipeA(
             m_endpoint.path().c_str(),
             PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
             PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
@@ -185,20 +190,20 @@ public:
         );
 
         slipway::ipc::socket stream(m_io);
-        stream.assign(pipe);
+        stream.assign(m_pipe);
 
         m_overlapped.reset(m_io, [socket = std::move(stream), handler](const boost::system::error_code& ec, size_t) mutable
         {
             handler(ec, std::move(socket));
         });
 
-        if (pipe == INVALID_HANDLE_VALUE)
+        if (m_pipe == INVALID_HANDLE_VALUE)
         {
             m_overlapped.complete(boost::system::error_code(GetLastError(), boost::system::system_category()), 0);
             return;
         }
 
-        if (ConnectNamedPipe(pipe, m_overlapped.get()))
+        if (ConnectNamedPipe(m_pipe, m_overlapped.get()))
         {
             m_overlapped.complete(boost::system::error_code(), 0);
         } 
