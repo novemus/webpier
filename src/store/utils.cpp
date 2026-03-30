@@ -202,13 +202,13 @@ namespace webpier
 
         for(size_t i = 0; i < str.size(); ++i)
         {
-            if (str[i] & 0x80 == 0x00)
+            if ((str[i] & 0x80) == 0x00)
                 num = 1;
-            else if (str[i] & 0xE0 == 0xC0)
+            else if ((str[i] & 0xE0) == 0xC0)
                 num = 2;
-            else if (str[i] & 0xF0 == 0xE0)
+            else if ((str[i] & 0xF0) == 0xE0)
                 num = 3;
-            else if (str[i] & 0xF8 == 0xF0)
+            else if ((str[i] & 0xF8) == 0xF0)
                 num = 4;
             else
                 return false;
@@ -217,7 +217,7 @@ namespace webpier
 
             for (int j = 1; j < num; ++j, ++i)
             {
-                if (str[i] & 0xC0 != 0x80)
+                if ((str[i] & 0xC0) != 0x80)
                     return false;
             }
         }
