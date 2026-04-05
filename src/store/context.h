@@ -6,11 +6,15 @@
 #include <stdexcept>
 #include <cstdint>
 #include <filesystem>
+#include <plexus/plexus.h>
+#include <wormhole/logger.h>
+#include <wormhole/wormhole.h>
 
 namespace webpier
 {
-    constexpr const char* default_stun_server = "stun.ekiga.net";
-    constexpr const char* default_dht_bootstrap = "bootstrap.jami.net:4222";
+    constexpr const char* default_udp_stun_server = "stun.ekiga.net";
+    constexpr const char* default_tcp_stun_server = "stunserver2025.stunprotocol.org";
+    constexpr const char* default_dht_bootstrap = "bootstrap.jami.net";
     constexpr const char* default_gateway = "0.0.0.0:0";
     constexpr const uint16_t default_dht_port = 0;
 
@@ -20,19 +24,8 @@ namespace webpier
 
     struct journal
     {
-        enum severity
-        {
-            none,
-            fatal,
-            error,
-            warning,
-            info,
-            debug,
-            trace
-        };
-
         std::string folder;
-        severity level = debug;
+        wormhole::log::severity level = wormhole::log::debug;
 
         bool operator==(const journal& other)
         {
@@ -42,12 +35,13 @@ namespace webpier
 
     struct puncher
     {
-        std::string stun = default_stun_server;
+        std::string udp_stun = default_udp_stun_server;
+        std::string tcp_stun = default_tcp_stun_server;
         uint8_t hops = 7;
 
         bool operator==(const puncher& other)
         {
-            return stun == other.stun && hops == other.hops;
+            return udp_stun == other.udp_stun && tcp_stun == other.tcp_stun && hops == other.hops;
         }
     };
 
@@ -104,13 +98,15 @@ namespace webpier
         std::string address;
         std::string gateway = default_gateway;
         std::string rendezvous = default_dht_bootstrap;
+        wormhole::protocol proto = wormhole::protocol::udp;
+        wormhole::schema role = wormhole::schema::either;
         bool autostart = false;
         bool obscure = true;
 
         bool operator==(const service& other)
         {
-            return local == other.local && name == other.name && pier == other.pier && address == other.address
-                 && gateway == other.gateway && rendezvous == other.rendezvous && autostart == other.autostart && obscure == other.obscure;
+            return local == other.local && name == other.name && pier == other.pier && address == other.address && gateway == other.gateway
+                && rendezvous == other.rendezvous && proto == other.proto && role == other.role && autostart == other.autostart && obscure == other.obscure;
         }
     };
 

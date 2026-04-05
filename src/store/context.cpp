@@ -102,9 +102,10 @@ namespace webpier
                         m_config.pier = utf8_to_locale(doc.get<std::string>("pier"));
                         m_config.repo = utf8_to_locale(doc.get<std::string>("repo"));
                         m_config.log.folder = utf8_to_locale(doc.get<std::string>("log.folder", ""));
-                        m_config.log.level = journal::severity(doc.get<int>("log.level", journal::info));
+                        m_config.log.level = static_cast<wormhole::log::severity>(doc.get<int>("log.level", wormhole::log::info));
                         m_config.nat.hops = doc.get<uint8_t>("nat.hops", 7);
-                        m_config.nat.stun = utf8_to_locale(doc.get<std::string>("nat.stun", default_stun_server));
+                        m_config.nat.udp_stun = utf8_to_locale(doc.get<std::string>("nat.udp.stun", doc.get<std::string>("nat.stun", default_udp_stun_server)));
+                        m_config.nat.tcp_stun = utf8_to_locale(doc.get<std::string>("nat.tcp.stun", doc.get<std::string>("nat.stun", default_tcp_stun_server)));
                         m_config.nat.hops = doc.get<uint8_t>("nat.hops", 7);
                         m_config.dht.bootstrap = utf8_to_locale(doc.get<std::string>("dht.bootstrap", default_dht_bootstrap));
                         m_config.dht.port = doc.get<uint16_t>("dht.port", default_dht_port);
@@ -134,7 +135,8 @@ namespace webpier
                     doc.put("repo", locale_to_utf8(m_config.repo));
                     doc.put("log.folder", locale_to_utf8(m_config.log.folder));
                     doc.put("log.level", m_config.log.level);
-                    doc.put("nat.stun", locale_to_utf8(m_config.nat.stun));
+                    doc.put("nat.udp.stun", locale_to_utf8(m_config.nat.udp_stun));
+                    doc.put("nat.tcp.stun", locale_to_utf8(m_config.nat.tcp_stun));
                     doc.put("nat.hops", m_config.nat.hops);
                     doc.put("dht.bootstrap", locale_to_utf8(m_config.dht.bootstrap));
                     doc.put("dht.port", m_config.dht.port);
@@ -175,6 +177,8 @@ namespace webpier
                             unit.address = utf8_to_locale(item.second.get<std::string>("address", ""));
                             unit.gateway = utf8_to_locale(item.second.get<std::string>("gateway", default_gateway));
                             unit.rendezvous = utf8_to_locale(item.second.get<std::string>("rendezvous", ""));
+                            unit.proto = wormhole::protocol(item.second.get<int>("proto", wormhole::protocol::udp));
+                            unit.role = wormhole::schema(item.second.get<int>("role", unit.local ? wormhole::schema::server : wormhole::schema::client));
                             unit.autostart = item.second.get<bool>("autostart", false);
                             unit.obscure = item.second.get<bool>("obscure", true);
                             services.emplace(unit.name, unit);
@@ -203,9 +207,11 @@ namespace webpier
                         item.put("pier", locale_to_utf8(unit.second.pier));
                         item.put("address", locale_to_utf8(unit.second.address));
                         item.put("gateway", locale_to_utf8(unit.second.gateway));
+                        item.put("rendezvous", locale_to_utf8(unit.second.rendezvous));
+                        item.put("proto", unit.second.proto);
+                        item.put("role", unit.second.role);
                         item.put("autostart", unit.second.autostart);
                         item.put("obscure", unit.second.obscure);
-                        item.put("rendezvous", locale_to_utf8(unit.second.rendezvous));
                         array.push_back(std::make_pair("", item));
                     }
 

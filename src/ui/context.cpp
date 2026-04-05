@@ -18,13 +18,13 @@
     #ifdef WIN32
         #include <boost/process/v1/windows.hpp>
     #endif
-    #define boost_process boost::process::v1
+    namespace bp = boost::process::v1;
 #else
     #include <boost/process.hpp>
     #ifdef WIN32
         #include <boost/process/windows.hpp>
     #endif
-    #define boost_process boost::process
+    namespace bp = boost::process;
 #endif
 
 namespace WebPier
@@ -61,9 +61,9 @@ namespace WebPier
             }
 
 #ifdef WIN32
-            static boost_process::child s_server(webpier::get_module_path(webpier::slipway_module).string(), g_context->home().string(), boost_process::windows::hide);
+            static bp::child s_server(webpier::get_module_path(webpier::slipway_module).string(), g_context->home().string(), bp::windows::hide);
 #else
-            static boost_process::child s_server(webpier::get_module_path(webpier::slipway_module).string(), g_context->home().string());
+            static bp::child s_server(webpier::get_module_path(webpier::slipway_module).string(), g_context->home().string());
 #endif
             if (!s_server.running())
             {
@@ -122,6 +122,8 @@ namespace WebPier
                 && lhs->Address == rhs->Address
                 && lhs->Gateway == rhs->Gateway
                 && lhs->Rendezvous == rhs->Rendezvous
+                && lhs->Proto == rhs->Proto
+                && lhs->Role == rhs->Role
                 && lhs->Autostart == rhs->Autostart
                 && lhs->Obscure == rhs->Obscure;
         }
@@ -150,6 +152,8 @@ namespace WebPier
                     Address.ToStdString(),
                     Gateway.ToStdString(),
                     Rendezvous.ToStdString(),
+                    static_cast<wormhole::protocol>(Proto),
+                    static_cast<wormhole::schema>(Role),
                     Autostart,
                     Obscure
                 };
@@ -220,6 +224,8 @@ namespace WebPier
                 Address = m_origin.address;
                 Gateway = m_origin.gateway;
                 Rendezvous = m_origin.rendezvous;
+                Proto = static_cast<Service::Protocol>(m_origin.proto);
+                Role = static_cast<Service::Schema>(m_origin.role);
                 Autostart = m_origin.autostart;
                 Obscure = m_origin.obscure;
             }
@@ -267,6 +273,8 @@ namespace WebPier
                     || Address.ToStdString() != m_origin.address
                     || Gateway.ToStdString() != m_origin.gateway
                     || Rendezvous.ToStdString() != m_origin.rendezvous
+                    || Proto != static_cast<Protocol>(m_origin.proto)
+                    || Role != static_cast<Schema>(m_origin.role)
                     || Autostart != m_origin.autostart
                     || Obscure != m_origin.obscure;
             }
@@ -299,8 +307,8 @@ namespace WebPier
                 webpier::config actual {
                     Pier.ToStdString(),
                     Repo.ToStdString(),
-                    { LogFolder.ToStdString(), webpier::journal::severity(LogLevel) },
-                    { StunServer.ToStdString(), PunchHops },
+                    { LogFolder.ToStdString(), static_cast<wormhole::log::severity>(LogLevel) },
+                    { UdpStunServer.ToStdString(), TcpStunServer.ToStdString(), PunchHops },
                     { DhtBootstrap.ToStdString(), DhtPort },
                     { 
                         SmtpServer.ToStdString(),
@@ -341,8 +349,9 @@ namespace WebPier
                 Pier = m_origin.pier;
                 Repo = m_origin.repo;
                 LogFolder = m_origin.log.folder;
-                LogLevel = Logging(m_origin.log.level);
-                StunServer = m_origin.nat.stun;
+                LogLevel = static_cast<Logging>(m_origin.log.level);
+                UdpStunServer = m_origin.nat.udp_stun;
+                TcpStunServer = m_origin.nat.tcp_stun;
                 PunchHops = m_origin.nat.hops;
                 DhtBootstrap = m_origin.dht.bootstrap;
                 DhtPort = m_origin.dht.port;
@@ -475,6 +484,8 @@ namespace WebPier
                 item.put("name", webpier::locale_to_utf8(pair.second->Name.ToStdString()));
                 item.put("obscure", pair.second->Obscure);
                 item.put("rendezvous", webpier::locale_to_utf8(pair.second->Rendezvous.ToStdString()));
+                item.put("proto", pair.second->Proto);
+                item.put("role", pair.second->Role);
                 array.push_back(std::make_pair("", item));
             }
             doc.put_child("services", array);
@@ -498,6 +509,8 @@ namespace WebPier
                 service->Pier = offer.Pier;
                 service->Obscure = item.second.get<bool>("obscure");
                 service->Rendezvous = webpier::utf8_to_locale(item.second.get<std::string>("rendezvous", ""));
+                service->Proto = Service::Protocol(item.second.get<int>("proto", Service::Protocol::UDP));
+                service->Role = Service::Schema(item.second.get<int>("role", Service::Schema::Server));
                 offer.Services[wxUIntPtr(service.get())] = service;
             }
         }
@@ -520,7 +533,7 @@ namespace WebPier
 
             for (const auto& item : val.tunnels)
                 ret.Tunnels.push_back(Report::Tunnel { item.pier, item.pid });
-            
+
             return ret;
         }
 
@@ -634,7 +647,7 @@ namespace WebPier
             return webpier::make_text_hash(text.ToStdString());
         }
 
-        void ExploreNat(const wxString& bind, const wxString& stun, const std::function<void(const NatState&)>& callback) noexcept(true)
+        void ExploreNat(bool udp, const wxString& bind, const wxString& stun, const std::function<void(const NatState&)>& callback) noexcept(true)
         {
             std::thread([=]()
             {
@@ -643,20 +656,22 @@ namespace WebPier
                     boost::asio::io_context io;
 
                     plexus::explore_network(io,
-                        webpier::make_udp_endpoint(webpier::locale_to_utf8(bind.ToStdString()), webpier::stun_client_default_port),
-                        webpier::make_udp_endpoint(webpier::locale_to_utf8(stun.ToStdString()), webpier::stun_server_default_port), 
-                        [callback](const plexus::traverse& res)
+                        udp ? webpier::resolve_udp_endpoint(webpier::locale_to_utf8(bind.ToStdString()), webpier::stun_client_default_port) : wormhole::endpoint {},
+                        udp ? wormhole::endpoint {} : webpier::resolve_tcp_endpoint(webpier::locale_to_utf8(bind.ToStdString()), webpier::stun_client_default_port),
+                        udp ? webpier::resolve_udp_endpoint(webpier::locale_to_utf8(stun.ToStdString()), webpier::stun_server_default_port) : wormhole::endpoint {},
+                        udp ? wormhole::endpoint {} : webpier::resolve_tcp_endpoint(webpier::locale_to_utf8(stun.ToStdString()), webpier::stun_server_default_port),
+                        [udp, callback](const plexus::traverse& pass)
                         {
                             callback(NatState {
                                 wxEmptyString,
-                                res.traits.nat,
-                                res.traits.hairpin,
-                                res.traits.random_port,
-                                res.traits.variable_address,
-                                static_cast<NatState::Binding>(res.traits.mapping),
-                                static_cast<NatState::Binding>(res.traits.filtering),
-                                wxString(webpier::utf8_to_locale(res.inner_endpoint.address().to_string() + ":" + std::to_string(res.inner_endpoint.port()))),
-                                wxString(webpier::utf8_to_locale(res.outer_endpoint.address().to_string() + ":" + std::to_string(res.outer_endpoint.port())))
+                                udp ? pass.udp.force.nat : pass.tcp.force.nat,
+                                udp ? pass.udp.force.hairpin : pass.tcp.force.hairpin,
+                                udp ? pass.udp.force.random_port : pass.tcp.force.random_port,
+                                udp ? pass.udp.force.variable_address : pass.tcp.force.variable_address,
+                                static_cast<NatState::Binding>(udp ? pass.udp.force.mapping : pass.tcp.force.mapping),
+                                static_cast<NatState::Binding>(udp ? pass.udp.force.filtering : pass.tcp.force.filtering),
+                                wxString(webpier::utf8_to_locale(wormhole::endpoint::to_string(udp ? pass.udp.inner : pass.tcp.inner))),
+                                wxString(webpier::utf8_to_locale(wormhole::endpoint::to_string(udp ? pass.udp.outer : pass.tcp.outer)))
                             });
                         },
                         [callback](const std::string& error)
@@ -681,7 +696,7 @@ namespace WebPier
                     webpier::config config;
                     g_context->get_config(config);
 
-                    plexus::identity host { config.pier.substr(0, config.pier.find('/')), config.pier.substr(config.pier.find('/') + 1) };
+                    plexus::identity host = plexus::identity::from_string(config.pier);
 
                     boost::asio::io_context io;
 
@@ -768,8 +783,8 @@ namespace WebPier
             {
                 plexus::rendezvous mediator {
                     plexus::emailer { 
-                        webpier::make_tcp_endpoint(webpier::locale_to_utf8(smtp.ToStdString()), webpier::smtp_server_default_port),
-                        webpier::make_tcp_endpoint(webpier::locale_to_utf8(imap.ToStdString()), webpier::imap_server_default_port),
+                        webpier::resolve_tcp_endpoint(webpier::locale_to_utf8(smtp.ToStdString()), webpier::smtp_server_default_port),
+                        webpier::resolve_tcp_endpoint(webpier::locale_to_utf8(imap.ToStdString()), webpier::imap_server_default_port),
                         webpier::locale_to_utf8(login.ToStdString()),
                         webpier::locale_to_utf8(password.ToStdString()),
                         webpier::locale_to_utf8(cert.ToStdString()),

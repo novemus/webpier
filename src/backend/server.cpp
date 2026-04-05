@@ -5,23 +5,43 @@
 #include <store/utils.h>
 #include <plexus/plexus.h>
 #include <wormhole/logger.h>
+#include <wormhole/wormhole.h>
 #include <boost/asio.hpp>
 #include <boost/asio/spawn.hpp>
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
 #include <boost/property_tree/json_parser.hpp>
-#include <boost/process/v2/process.hpp>
-#include <boost/process/v2/environment.hpp>
-#include <boost/process/v2/execute.hpp>
-#ifdef WIN32
-    #include <boost/process/v2/windows/show_window.hpp>
-#endif
 #include <boost/algorithm/string.hpp>
 #include <filesystem>
 #include <iostream>
 #include <memory>
 #include <map>
 #include <set>
+
+#include <boost/version.hpp>
+
+#if BOOST_VERSION >= 108800
+    #include <boost/process/v1/child.hpp>
+    #ifdef WIN32
+        #include <boost/process/v1/windows.hpp>
+        #include <boost/process/v1/env.hpp>
+        #include <boost/process/v1/args.hpp>
+    #else
+        #include <spawn.h>
+        #include <boost/process/v1/extend.hpp>
+    #endif
+    namespace bp = boost::process::v1;
+#else
+    #include <boost/process.hpp>
+    #ifdef WIN32
+        #include <boost/process/windows.hpp>
+        creation_flags.hpp
+    #else
+        #include <spawn.h>
+        #include <boost/process/extend.hpp>
+    #endif
+    namespace bp = boost::process;
+#endif
 
 namespace slipway
 {
@@ -53,14 +73,17 @@ namespace slipway
                 return plexus::options {
                     service.name,
                     config.repo,
-                    webpier::make_udp_endpoint(config.nat.stun, webpier::stun_server_default_port),
-                    webpier::make_udp_endpoint(service.gateway, webpier::stun_client_default_port),
+                    service.proto <= wormhole::protocol::udp ? webpier::resolve_udp_endpoint(service.gateway, webpier::stun_client_default_port) : wormhole::endpoint {},
+                    service.proto != wormhole::protocol::udp ? webpier::resolve_tcp_endpoint(service.gateway, webpier::stun_client_default_port) : wormhole::endpoint {},
+                    webpier::resolve_udp_endpoint(config.nat.udp_stun, webpier::stun_server_default_port),
+                    webpier::resolve_tcp_endpoint(config.nat.tcp_stun, webpier::stun_server_default_port),
                     config.nat.hops,
+                    wormhole::criteria { service.proto, service.role },
                     service.rendezvous.empty()
                         ? plexus::rendezvous {
                             plexus::emailer {
-                                webpier::make_tcp_endpoint(config.email.smtp, webpier::smtp_server_default_port),
-                                webpier::make_tcp_endpoint(config.email.imap, webpier::imap_server_default_port),
+                                webpier::resolve_tcp_endpoint(config.email.smtp, webpier::smtp_server_default_port),
+                                webpier::resolve_tcp_endpoint(config.email.imap, webpier::imap_server_default_port),
                                 config.email.login,
                                 config.email.password,
                                 config.email.cert,
@@ -76,26 +99,6 @@ namespace slipway
                     };
             }
 
-            plexus::identity make_identity(const std::string& pier) noexcept(true)
-            {
-                static constexpr const char SLASH = '/';
-                size_t pos = pier.find(SLASH);
-
-                return pos != std::string::npos
-                    ? plexus::identity { pier.substr(0, pos), pier.substr(pos + 1) } 
-                    : plexus::identity { pier, "" };
-            }
-
-            std::string stringify(const plexus::identity& id) noexcept(true)
-            {
-                return id.owner + "/" + id.pin;
-            }
-
-            std::string stringify(const boost::asio::ip::udp::endpoint& ep) noexcept(true)
-            {
-                return ep.address().to_string() + ":" + std::to_string(ep.port());
-            }
-
             std::string make_log_path(const std::string& folder) noexcept(true)
             {
                 if (folder.empty())
@@ -109,6 +112,7 @@ namespace slipway
         {
             class connector : public std::enable_shared_from_this<connector>
             {
+                using pid_ptr = std::shared_ptr<bp::detail::posix::pid_t>;
                 using weak_ptr = std::weak_ptr<connector>;
                 using signal_ptr = std::shared_ptr<boost::asio::cancellation_signal>;
 
@@ -158,8 +162,8 @@ namespace slipway
 
                         m_thread = std::make_unique<std::thread>([this]()
                         {
-                            auto host = utils::make_identity(m_data.config.pier);
-                            auto peer = utils::make_identity(m_data.service.pier);
+                            auto host = plexus::identity::from_string(m_data.config.pier);
+                            auto peer = plexus::identity::from_string(m_data.service.pier);
 
                             try
                             {
@@ -179,51 +183,52 @@ namespace slipway
                     }
                 };
 
-                void connect(const boost::asio::ip::udp::endpoint& bind, const plexus::reference& host, const plexus::reference& peer)
+                void connect(const plexus::identity& host, const plexus::identity& peer, const plexus::contract& term)
                 {
-                    boost::process::v2::process proc(m_io, webpier::get_module_path(webpier::carrier_module).string(), 
-                    {
+                    bp::environment env = boost::this_process::environment();
+                    env["WORMHOLE_SECRET"] = std::to_string(term.secret);
+                    env["WORMHOLE_CERT"] = webpier::make_path(m_config.repo, host.owner, host.pin, "cert.crt");
+                    env["WORMHOLE_KEY"] = webpier::make_path(m_config.repo, host.owner, host.pin, "private.key");
+                    env["WORMHOLE_CA"] = webpier::make_path(m_config.repo, peer.owner, peer.pin, "cert.crt");
+
+                    auto pid = std::shared_ptr<bp::detail::posix::pid_t>(0);
+                    bp::child proc(m_io, webpier::get_module_path(webpier::carrier_module).string(),
                         "--purpose=" + std::string(m_service.local ? "export" : "import"),
                         "--service=" + m_service.address,
-                        "--gateway=" + utils::stringify(bind),
-                        "--faraway=" + utils::stringify(peer.endpoint),
-                        "--obscure=" + std::to_string(m_service.obscure ? host.puzzle ^ peer.puzzle : 0),
-                        "--journal=" + (m_config.log.folder.empty() ? "" : m_config.log.folder + "/carrier.%p.log"),
-                        "--logging=" + std::to_string(m_config.log.level)
-#ifdef WIN32
-                    }, boost::process::v2::windows::show_window_hide);
-#else
-                    });
-#endif
-                    int pid = proc.id();
- 
-                    m_service.local
-                        ? _inf_ << "starting " << pid << " export tunnel " << m_config.pier << ":" << m_service.name << " -> " << m_service.pier
-                        : _inf_ << "starting " << pid << " import tunnel " << m_service.pier << ":" << m_service.name << " -> " << m_config.pier;
-
-                    auto signal = std::make_shared<boost::asio::cancellation_signal>();
-                    m_tunnels.emplace(pid, signal);
-
-                    weak_ptr weak = shared_from_this();
-                    boost::process::v2::async_execute(std::move(proc), boost::asio::bind_cancellation_slot(signal->slot(),
-                        [this, weak, signal, pid](const boost::system::error_code& ec, int code)
+                        "--gateway=" + wormhole::endpoint::to_string(term.inner),
+                        "--faraway=" + wormhole::endpoint::to_string(term.alien),
+                        "--criteria=" + wormhole::criteria::to_string(term.qos),
+                        "--journal=" + webpier::make_path(m_config.log.folder, "carrier.%p.log"),
+                        "--logging=" + std::to_string(m_config.log.level),
+                        bp::on_exit = [this, weak = weak_from_this(), pid](int code, const boost::system::error_code& ec)
                         {
                             if (ec && ec != boost::asio::error::operation_aborted)
                                 _err_ << ec.message();
 
-                            _inf_ << "joined " << pid << " tunnel with exit code " << code;
+                            _inf_ << "joined " << *pid << " tunnel with exit code " << code;
 
                             if (auto ptr = weak.lock())
                             {
                                 m_tunnels.erase(pid);
-
                                 if (m_service.local == false)
                                 {
                                     m_error.clear();
                                     m_spawner->startup();
                                 }
                             }
-                        }));
+                        },
+#ifdef WIN32
+                        bp::windows::hide,
+#endif
+                        bp::env = env
+                    );
+
+                    *pid = proc.id();
+                    m_tunnels.emplace(pid, std::move(proc));
+ 
+                    m_service.local
+                        ? _inf_ << "starting " << proc.id() << " export tunnel " << m_config.pier << ":" << m_service.name << " -> " << m_service.pier
+                        : _inf_ << "starting " << proc.id() << " import tunnel " << m_service.pier << ":" << m_service.name << " -> " << m_config.pier;
                 }
 
                 void fallback(const std::string& error)
@@ -268,8 +273,8 @@ namespace slipway
 
                     for(auto& item : m_tunnels)
                     {
-                        _inf_ << "terminate " << item.first << " tunnel";
-                        item.second->emit(boost::asio::cancellation_type::terminal);
+                        _inf_ << "terminate " << item.second.id() << " tunnel";
+                        item.second.terminate();
                     }
                 }
 
@@ -286,14 +291,14 @@ namespace slipway
 
                     weak_ptr weak = shared_from_this();
 
-                    auto connect = [this, weak](const plexus::identity&, const plexus::identity&, const boost::asio::ip::udp::endpoint& bind, const plexus::reference& host, const plexus::reference& peer)
+                    auto connect = [this, weak](const plexus::identity& host, const plexus::identity& peer, const plexus::contract& term)
                     {
                         if(auto ptr = weak.lock())
                         {
-                            boost::asio::post(m_io, [weak, bind, host, peer]()
+                            boost::asio::post(m_io, [weak, term, host, peer]()
                             {
                                 if(auto ptr = weak.lock())
-                                    ptr->connect(bind, host, peer);
+                                    ptr->connect(host, peer, term);
                             });
                         }
                     };
@@ -339,20 +344,20 @@ namespace slipway
                     std::vector<uint32_t> res;
 
                     for(auto& item : m_tunnels)
-                        res.emplace_back(static_cast<uint32_t>(item.first));
+                        res.emplace_back(static_cast<uint32_t>(item.second.id()));
     
                     return std::vector<uint32_t>(std::move(res));
                 }
 
             private:
 
-                boost::asio::io_context&    m_io;
-                boost::asio::deadline_timer m_timer;
-                webpier::config             m_config;
-                webpier::service            m_service;
-                std::unique_ptr<spawner>    m_spawner;
-                std::string                 m_error;
-                std::map<int, signal_ptr>   m_tunnels;
+                boost::asio::io_context&     m_io;
+                boost::asio::deadline_timer  m_timer;
+                webpier::config              m_config;
+                webpier::service             m_service;
+                std::unique_ptr<spawner>     m_spawner;
+                std::string                  m_error;
+                std::map<pid_ptr, bp::child> m_tunnels;
             };
 
         public:
@@ -476,7 +481,7 @@ namespace slipway
                 boost::property_tree::read_json(file.string(), doc);
 
                 auto folder = webpier::utf8_to_locale(doc.get<std::string>("log.folder", ""));
-                auto level = webpier::journal::severity(doc.get<int>("log.level", webpier::journal::info));
+                auto level = wormhole::log::severity(doc.get<int>("log.level", wormhole::log::info));
 
                 wormhole::log::set(wormhole::log::severity(level), utils::make_log_path(folder));
 
@@ -485,7 +490,8 @@ namespace slipway
                     webpier::utf8_to_locale(doc.get<std::string>("repo")),
                     webpier::journal { folder, level },
                     webpier::puncher {
-                        webpier::utf8_to_locale(doc.get<std::string>("nat.stun")),
+                        webpier::utf8_to_locale(doc.get<std::string>("nat.udp.stun", doc.get<std::string>("nat.stun", webpier::default_udp_stun_server))),
+                        webpier::utf8_to_locale(doc.get<std::string>("nat.tcp.stun", doc.get<std::string>("nat.stun", webpier::default_tcp_stun_server))),
                         doc.get<uint8_t>("nat.hops", 7)
                     },
                     webpier::dhtnode {
@@ -518,13 +524,16 @@ namespace slipway
                     {
                         if (webpier::utf8_to_locale(item.second.get<std::string>("name")) == id.service)
                         {
+                            auto local = item.second.get<bool>("local");
                             return webpier::service {
-                                item.second.get<bool>("local"),
+                                local,
                                 webpier::utf8_to_locale(item.second.get<std::string>("name")),
                                 webpier::utf8_to_locale(item.second.get<std::string>("pier")),
                                 webpier::utf8_to_locale(item.second.get<std::string>("address")),
                                 webpier::utf8_to_locale(item.second.get<std::string>("gateway", webpier::default_gateway)),
                                 webpier::utf8_to_locale(item.second.get<std::string>("rendezvous", "")),
+                                wormhole::protocol(item.second.get<int>("proto", wormhole::protocol::udp)),
+                                wormhole::schema(item.second.get<int>("role", local ? wormhole::schema::server : wormhole::schema::client)),
                                 item.second.get<bool>("autostart", false),
                                 item.second.get<bool>("obscure", true),
                             };
@@ -560,13 +569,16 @@ namespace slipway
                         boost::property_tree::ptree array;
                         for (auto& item : doc.get_child("services", array))
                         {
+                            auto local = item.second.get<bool>("local");
                             res[pier].emplace_back(webpier::service {
-                                item.second.get<bool>("local"),
+                                local,
                                 webpier::utf8_to_locale(item.second.get<std::string>("name")),
                                 webpier::utf8_to_locale(item.second.get<std::string>("pier")),
                                 webpier::utf8_to_locale(item.second.get<std::string>("address")),
                                 webpier::utf8_to_locale(item.second.get<std::string>("gateway", webpier::default_gateway)),
                                 webpier::utf8_to_locale(item.second.get<std::string>("rendezvous", "")),
+                                wormhole::protocol(item.second.get<int>("proto", wormhole::protocol::udp)),
+                                wormhole::schema(item.second.get<int>("role", local ? wormhole::schema::server : wormhole::schema::client)),
                                 item.second.get<bool>("autostart", false),
                                 item.second.get<bool>("obscure", true)
                             });

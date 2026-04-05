@@ -51,7 +51,8 @@ BOOST_AUTO_TEST_CASE(context)
     context->get_config(out);
 
     BOOST_CHECK_EQUAL(out.pier, in.pier);
-    BOOST_CHECK_EQUAL(out.nat.stun, in.nat.stun);
+    BOOST_CHECK_EQUAL(out.nat.udp_stun, in.nat.udp_stun);
+    BOOST_CHECK_EQUAL(out.nat.tcp_stun, in.nat.tcp_stun);
     BOOST_CHECK_EQUAL(out.nat.hops, in.nat.hops);
     BOOST_CHECK_EQUAL(out.dht.bootstrap, in.dht.bootstrap);
     BOOST_CHECK_EQUAL(out.dht.port, in.dht.port);
@@ -70,6 +71,8 @@ BOOST_AUTO_TEST_CASE(context)
         "127.0.0.1:1234",
         "127.0.0.1:4321",
         "bootstrap.dht",
+        wormhole::protocol::udp,
+        wormhole::schema::either,
         true,
         false
         };
@@ -122,6 +125,8 @@ BOOST_AUTO_TEST_CASE(context)
     BOOST_CHECK_EQUAL(service.address, locals[0].address);
     BOOST_CHECK_EQUAL(service.gateway, locals[0].gateway);
     BOOST_CHECK_EQUAL(service.rendezvous, locals[0].rendezvous);
+    BOOST_CHECK_EQUAL(service.proto, locals[0].proto);
+    BOOST_CHECK_EQUAL(service.role, locals[0].role);
     BOOST_CHECK_EQUAL(service.autostart, locals[0].autostart);
     BOOST_CHECK_EQUAL(service.obscure, locals[0].obscure);
 
@@ -135,6 +140,8 @@ BOOST_AUTO_TEST_CASE(context)
     BOOST_CHECK_EQUAL(service.address, remotes[0].address);
     BOOST_CHECK_EQUAL(service.gateway, remotes[0].gateway);
     BOOST_CHECK_EQUAL(service.rendezvous, remotes[0].rendezvous);
+    BOOST_CHECK_EQUAL(service.proto, locals[0].proto);
+    BOOST_CHECK_EQUAL(service.role, locals[0].role);
     BOOST_CHECK_EQUAL(service.autostart, remotes[0].autostart);
     BOOST_CHECK_EQUAL(service.obscure, remotes[0].obscure);
 

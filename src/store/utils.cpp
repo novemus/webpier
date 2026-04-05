@@ -24,14 +24,14 @@
         #include <windows.h>
         #include <boost/process/v1/windows.hpp>
     #endif
-    #define boost_process boost::process::v1
+    namespace bp = boost::process::v1;
 #else
     #include <boost/process.hpp>
     #ifdef WIN32
         #include <windows.h>
         #include <boost/process/windows.hpp>
     #endif
-    #define boost_process boost::process
+    namespace bp = boost::process;
 #endif
 
 #ifdef __APPLE__
@@ -318,24 +318,6 @@ namespace webpier
         return ss.str();
     }
 
-    std::filesystem::path search_file(const std::filesystem::path& dir, const std::filesystem::path& name)
-    {
-        for (const auto& item : std::filesystem::directory_iterator(dir))
-        {
-            if (item.is_directory())
-            {
-                auto path = search_file(item.path(), name);
-                if (!path.empty())
-                    return path;
-            }
-
-            if (item.path().filename() == name)
-                return item.path();
-        }
-
-        return std::filesystem::path();
-    }
-
     std::filesystem::path get_absolute_path(const std::string& file) noexcept(false)
     {
         std::filesystem::path path(file);
@@ -349,27 +331,7 @@ namespace webpier
 
     std::filesystem::path get_module_path(const std::string& module) noexcept(false)
     {
-#ifndef WEBPIER_CONFIG
-        static const std::map<std::string, std::string> s_config {
-    #ifdef WIN32
-            { taskxml_config, TASKXML_FILE_NAME },
-    #endif
-            { webpier_module, WEBPIER_FILE_NAME },
-            { slipway_module, SLIPWAY_FILE_NAME },
-            { carrier_module, CARRIER_FILE_NAME }
-        };
-
-        auto iter = s_config.find(module);
-        if (iter == s_config.end())
-            throw std::runtime_error("Unknown module \"" + module + "\" name");
-
-        auto file = search_file(std::filesystem::current_path(), iter->second);
-        if (file.empty())
-            throw std::runtime_error("Can't find module \"" + module + "\" path");
-
-        return file;
-#else
-    #ifdef WIN32
+#ifdef WIN32
         std::string value;
         value.resize(0xFFF);
 
@@ -387,40 +349,37 @@ namespace webpier
 
         value.resize(size / sizeof(char) - 1);
         return std::filesystem::path(value);
-    #else
-        static std::once_flag s_flag;
-        static boost::program_options::variables_map s_config;
-
-        std::call_once(s_flag, [&]()
+#else
+        static const boost::program_options::variables_map s_config = []()
         {
-            std::filesystem::path path(WEBPIER_CONFIG);
-            if (!std::filesystem::exists(path))
+            std::filesystem::path file(WEBPIER_CONFIG);
+            if (!std::filesystem::exists(file))
                 throw std::runtime_error("No configuration file");
 
-            boost::program_options::options_description options;
-            options.add_options()
-                (webpier_module, boost::program_options::value<std::string>())
-                (slipway_module, boost::program_options::value<std::string>())
-                (carrier_module, boost::program_options::value<std::string>());
+            boost::program_options::variables_map map;
+            boost::program_options::options_description desc;
+            desc.add_options()
+                (webpier_module, boost::program_options::value<std::filesystem::path>())
+                (slipway_module, boost::program_options::value<std::filesystem::path>())
+                (carrier_module, boost::program_options::value<std::filesystem::path>());
 
-            boost::program_options::store(boost::program_options::parse_config_file<char>(path.string().c_str(), options, true), s_config);
-        });
+            boost::program_options::store(boost::program_options::parse_config_file<char>(file.string().c_str(), desc, true), map);
+            return map;
+        }();
 
         if (!s_config.count(module))
             throw std::runtime_error("Unknown module \"" + module + "\" name");
 
-        return s_config[module].as<std::string>();
-    #endif
+        return s_config[module].as<std::filesystem::path>();
 #endif
     }
 
 #ifdef WIN32
-
     std::string fetch_task(const std::filesystem::path& exec, const std::filesystem::path& home) noexcept(false)
     {
         std::string name = "\\WebPier\\Task #" + webpier::make_text_hash(exec.string() + home.string());
 
-        boost_process::child query("schtasks /Query /TN \"" + name + "\" /HRESULT", boost_process::windows::hide);
+        bp::child query("schtasks /Query /TN \"" + name + "\" /HRESULT", bp::windows::hide);
         query.wait();
 
         if (query.exit_code() == ERROR_SUCCESS)
@@ -429,7 +388,7 @@ namespace webpier
         // backward compatibility
         name = "\\WebPier\\Task #" + std::to_string(std::hash<std::string>()(exec.string() + "\"" + home.string() + "\" daemon"));
 
-        boost_process::child extra("schtasks /Query /TN \"" + name + "\" /HRESULT", boost_process::windows::hide);
+        bp::child extra("schtasks /Query /TN \"" + name + "\" /HRESULT", bp::windows::hide);
         extra.wait();
 
         if (extra.exit_code() == ERROR_SUCCESS)
@@ -437,15 +396,14 @@ namespace webpier
 
         return "";
     }
-
 #endif
 
     bool verify_autostart(const std::filesystem::path& home) noexcept(false)
     {
         auto exec = webpier::get_module_path(webpier::slipway_module);
 #ifndef WIN32
-        boost_process::ipstream is;
-        boost_process::child read("crontab -l", boost_process::std_out > is);
+        bp::ipstream is;
+        bp::child read("crontab -l", bp::std_out > is);
         read.wait();
 
         std::regex pattern("^@reboot\\s+\"?" + exec.string() + "\"?\\s+\"?" + home.string() + "\"?(\\s+daemon)?$");
@@ -472,10 +430,10 @@ namespace webpier
     {
         auto exec = webpier::get_module_path(webpier::slipway_module);
 #ifndef WIN32
-        boost_process::ipstream is;
-        boost_process::opstream os;
+        bp::ipstream is;
+        bp::opstream os;
 
-        boost_process::child read("crontab -l", boost_process::std_out > is);
+        bp::child read("crontab -l", bp::std_out > is);
         read.wait();
 
         std::regex pattern("^@reboot\\s+\"?" + exec.string() + "\"?\\s+\"?" + home.string() + "\"?(\\s+daemon)?$");
@@ -498,7 +456,7 @@ namespace webpier
         {
             os << "@reboot \"" << exec.string() << "\" \"" << home.string() << "\"" << std::endl;
 
-            boost_process::child write("crontab", boost_process::std_in < os);
+            bp::child write("crontab", bp::std_in < os);
             os.pipe().close();
             write.wait();
         }
@@ -516,7 +474,7 @@ namespace webpier
         boost::property_tree::xml_writer_settings<std::string> settings('\t', 1, "UTF-16");
         boost::property_tree::write_xml(xmlpath.string(), taskxml, locale, settings);
 
-        boost_process::child proc("powershell -Command Start-Process schtasks -ArgumentList '/Create /TN \\\"\\WebPier\\Task #" + id + "\\\" /XML \\\"" + xmlpath.string() + "\\\" /F' -Verb RunAs", boost_process::windows::hide);
+        bp::child proc("powershell -Command Start-Process schtasks -ArgumentList '/Create /TN \\\"\\WebPier\\Task #" + id + "\\\" /XML \\\"" + xmlpath.string() + "\\\" /F' -Verb RunAs", bp::windows::hide);
         proc.wait();
 
         if (proc.exit_code() != ERROR_SUCCESS)
@@ -528,10 +486,10 @@ namespace webpier
     {
         auto exec = webpier::get_module_path(webpier::slipway_module);
 #ifndef WIN32
-        boost_process::ipstream is;
-        boost_process::opstream os;
+        bp::ipstream is;
+        bp::opstream os;
 
-        boost_process::child read("crontab -l", boost_process::std_out > is);
+        bp::child read("crontab -l", bp::std_out > is);
         read.wait();
 
         std::regex pattern("^@reboot\\s+\"?" + exec.string() + "\"?\\s+\"?" + home.string() + "\"?(\\s+daemon)?$");
@@ -549,7 +507,7 @@ namespace webpier
 
         if (seen)
         {
-            boost_process::child write("crontab", boost_process::std_in < os);
+            bp::child write("crontab", bp::std_in < os);
             os.pipe().close();
             write.wait();
         }
@@ -558,7 +516,7 @@ namespace webpier
         if (name.empty())
             return;
 
-        boost_process::child proc("powershell -Command Start-Process schtasks -ArgumentList '/Delete /TN \\\"" + name + "\\\" /F' -Verb RunAs", boost_process::windows::hide);
+        bp::child proc("powershell -Command Start-Process schtasks -ArgumentList '/Delete /TN \\\"" + name + "\\\" /F' -Verb RunAs", bp::windows::hide);
         proc.wait();
 
         if (proc.exit_code() != ERROR_SUCCESS)
@@ -566,8 +524,26 @@ namespace webpier
 #endif
     }
 
+    std::string make_path(const std::string& root, ...) noexcept(false)
+    {
+        std::filesystem::path full(root);
+        va_list args;
+        va_start(args, root);
+
+        while (true)
+        {
+            const char* s = va_arg(args, const char*);
+            if (s == nullptr)
+                break;
+            full /= s;
+        }
+
+        va_end(args);
+        return full.string();
+    }
+
     template<class endpoint>
-    endpoint parse_endpoint(const std::string& url, const std::string& service)
+    endpoint resolve_endpoint(const std::string& url, const std::string& service)
     {
         if (url.empty() && service.empty())
             return endpoint();
@@ -594,13 +570,15 @@ namespace webpier
         return *resolver.resolve(url, service).begin();
     }
 
-    boost::asio::ip::udp::endpoint make_udp_endpoint(const std::string& url, const std::string& service) noexcept(false)
+    wormhole::endpoint resolve_udp_endpoint(const std::string& url, const std::string& service) noexcept(false)
     {
-        return parse_endpoint<boost::asio::ip::udp::endpoint>(url, service);
+        auto ep = resolve_endpoint<boost::asio::ip::udp::endpoint>(url, service);
+        return wormhole::endpoint { ep.address(), ep.port() };
     }
 
-    boost::asio::ip::tcp::endpoint make_tcp_endpoint(const std::string& url, const std::string& service) noexcept(false)
+    wormhole::endpoint resolve_tcp_endpoint(const std::string& url, const std::string& service) noexcept(false)
     {
-        return parse_endpoint<boost::asio::ip::tcp::endpoint>(url, service);
+        auto ep = resolve_endpoint<boost::asio::ip::tcp::endpoint>(url, service);
+        return wormhole::endpoint { ep.address(), ep.port() };
     }
 }

@@ -25,7 +25,7 @@ BOOST_AUTO_TEST_CASE(client)
     BOOST_REQUIRE_NO_THROW(std::filesystem::create_directory(home));
 
     auto context = webpier::open_context(home.string());
-    webpier::config conf { host, repo.string(), { "", webpier::journal::none }, {}, { webpier::default_dht_bootstrap, webpier::default_dht_port, 0 }, {} };
+    webpier::config conf { host, repo.string(), { "", wormhole::log::none }, {}, { webpier::default_dht_bootstrap, webpier::default_dht_port, 0 }, {} };
 
     BOOST_REQUIRE_NO_THROW(context->set_config(conf));
     BOOST_REQUIRE_NO_THROW(context->add_pier(peer, webpier::load_x509_cert(home / repo / host / "cert.crt")));
@@ -36,8 +36,8 @@ BOOST_AUTO_TEST_CASE(client)
 
     auto job = std::async(std::launch::async, [&io] { io.run(); });
 
-    webpier::service foo { true, "foo", peer, "127.0.0.1:1234", webpier::default_gateway, webpier::default_dht_bootstrap, true, false };
-    webpier::service bar { true, "bar", peer, "127.0.0.1:5678", webpier::default_gateway, webpier::default_dht_bootstrap, true, false };
+    webpier::service foo { true, "foo", peer, "127.0.0.1:1234", webpier::default_gateway, webpier::default_dht_bootstrap, wormhole::protocol::udp, wormhole::schema::either, true, false };
+    webpier::service bar { true, "bar", peer, "127.0.0.1:5678", webpier::default_gateway, webpier::default_dht_bootstrap, wormhole::protocol::udp, wormhole::schema::either, true, false };
 
     slipway::handle foo_handle { host, "foo" };
     slipway::health foo_asleep { foo_handle, slipway::health::asleep };

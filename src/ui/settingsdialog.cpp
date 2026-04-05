@@ -128,7 +128,7 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxStr
     stunLabel->Wrap(-1);
     stunGridSizer->Add(stunLabel, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxRIGHT | wxLEFT, 5);
 
-    m_stunCtrl = new wxTextCtrl(m_natPanel, wxID_ANY, m_config->StunServer, wxDefaultPosition, wxDefaultSize, 0);
+    m_stunCtrl = new wxTextCtrl(m_natPanel, wxID_ANY, m_config->UdpStunServer, wxDefaultPosition, wxDefaultSize, 0);
     stunGridSizer->Add(m_stunCtrl, 1, wxTOP | wxRIGHT | wxLEFT | wxEXPAND | wxALIGN_CENTER_VERTICAL, 5);
 
     wxStaticText *punchLabel;
@@ -375,7 +375,7 @@ void CSettingsDialog::onEmailChange(wxCommandEvent& event)
 void CSettingsDialog::onStunTestClick(wxCommandEvent& event)
 {
     std::weak_ptr<CSettingsDialog> weak = shared_from_this();
-    WebPier::Utils::ExploreNat(wxT("0.0.0.0"), m_stunCtrl->GetValue(), [this, weak](const WebPier::Utils::NatState& state)
+    WebPier::Utils::ExploreNat(true, wxT("0.0.0.0"), m_stunCtrl->GetValue(), [this, weak](const WebPier::Utils::NatState& state)
     {
         if(auto ptr = weak.lock())
         {
@@ -518,7 +518,7 @@ void CSettingsDialog::onOkButtonClick(wxCommandEvent& event)
 
     m_config->Pier = pier;
 
-    m_config->StunServer = m_stunCtrl->GetValue();
+    m_config->UdpStunServer = m_stunCtrl->GetValue();
     uint32_t hops = m_config->PunchHops;
     m_punchCtrl->GetValue().ToUInt(&hops);
     m_config->PunchHops = static_cast<uint8_t>(hops);
