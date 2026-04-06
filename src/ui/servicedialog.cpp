@@ -18,6 +18,18 @@ CServiceDialog::CServiceDialog(WebPier::Context::ConfigPtr config, WebPier::Cont
     rendChoice.Add(wxT("Email"));
     rendChoice.Add(wxT("DHT"));
 
+    wxArrayString protoChoice;
+    protoChoice.Add(ToString(WebPier::Context::Service::Any));
+    protoChoice.Add(ToString(WebPier::Context::Service::UDP));
+    protoChoice.Add(ToString(WebPier::Context::Service::TCP));
+    protoChoice.Add(ToString(WebPier::Context::Service::SSL));
+
+    wxArrayString schemaChoice;
+    schemaChoice.Add(ToString(WebPier::Context::Service::Either));
+    schemaChoice.Add(ToString(WebPier::Context::Service::Client));
+    schemaChoice.Add(ToString(WebPier::Context::Service::Server));
+    schemaChoice.Add(ToString(WebPier::Context::Service::Mutual));
+
     auto pierChoice = WebPier::Context::GetPiers();
 
     mainSizer->SetMinSize( wxSize( 400,-1 ) );
@@ -40,20 +52,15 @@ CServiceDialog::CServiceDialog(WebPier::Context::ConfigPtr config, WebPier::Cont
     }
 
     m_addrItem = m_propGrid->Append( new wxStringProperty( _("Address"), wxPG_LABEL, m_service->Address ) );
-    m_gateItem = m_propGrid->Append( new wxStringProperty( _("Gateway"), wxPG_LABEL, m_service->Gateway ) );
-    m_startItem = m_propGrid->Append( new wxBoolProperty( _("Autostart"), wxPG_LABEL, m_service->Autostart ) );
-    m_obsItem = m_propGrid->Append( new wxBoolProperty( _("Obscure"), wxPG_LABEL, m_service->Obscure ) );
-
-    if (m_service->Rendezvous.IsEmpty())
-    {
-        m_rendItem = m_propGrid->Append( new wxEnumProperty( _("Rendezvous"), wxPG_LABEL, rendChoice, wxArrayInt(), 0 ) );
-        m_bootItem = nullptr;
-    }
-    else
-    {
-        m_rendItem = m_propGrid->Append( new wxEnumProperty( _("Rendezvous"), wxPG_LABEL, rendChoice, wxArrayInt(), 1 ) );
-        m_bootItem = m_rendItem->InsertChild( 0, new wxStringProperty( _("Bootstrap"), wxPG_LABEL, m_service->Rendezvous ) );
-    }
+    m_protoItem = m_propGrid->Append( new wxEnumProperty( _("Tunnel"), wxPG_LABEL, protoChoice, wxArrayInt(), static_cast<int>(m_service->Proto) ) );
+    m_gateItem = m_protoItem->InsertChild( 0, new wxStringProperty( _("Gateway"), wxPG_LABEL, m_service->Gateway ) );
+	m_roleItem = m_protoItem->InsertChild( 1, new wxEnumProperty( _("Schema"), wxPG_LABEL, schemaChoice, wxArrayInt(),  static_cast<int>(m_service->Role) ) );
+    m_startItem = m_protoItem->InsertChild( 2, new wxBoolProperty( _("Autostart"), wxPG_LABEL, m_service->Autostart ) );
+    m_obsItem = m_protoItem->InsertChild( 3, new wxBoolProperty( _("Obscure"), wxPG_LABEL, m_service->Obscure ) );
+    m_obsItem->Hide(m_service->Proto == WebPier::Context::Service::SSL);
+    m_rendItem = m_propGrid->Append( new wxEnumProperty( _("Rendezvous"), wxPG_LABEL, rendChoice, wxArrayInt(), m_service->Rendezvous.IsEmpty() ? 0 : 1 ) );
+    m_bootItem = m_rendItem->InsertChild( 0, new wxStringProperty( _("Bootstrap"), wxPG_LABEL, m_service->Rendezvous ) );
+    m_bootItem->Hide(m_service->Rendezvous.IsEmpty());
 
     mainSizer->Add( m_propGrid, 1, wxALL|wxEXPAND, 5 );
 
@@ -89,19 +96,9 @@ void CServiceDialog::onPropertyChanged( wxPropertyGridEvent& event )
 {
     auto* prop = event.GetProperty();
     if (prop == m_rendItem)
-    {
-        int choice = m_rendItem->GetChoiceSelection();
-        if (choice == 1)
-        {
-            auto bootstrap = m_service->Rendezvous.IsEmpty() ? m_config->DhtBootstrap : m_service->Rendezvous;
-            m_bootItem = m_rendItem->InsertChild( 0, new wxStringProperty( _("Bootstrap"), wxPG_LABEL, bootstrap ) );
-        }
-        else
-        {
-            m_rendItem->DeleteChildren();
-            m_bootItem = nullptr;
-        }
-    }
+        m_bootItem->Hide(m_rendItem->GetChoiceSelection() == 0);
+    else if (prop == m_protoItem)
+        m_obsItem->Hide(m_protoItem->GetChoiceSelection() == 3);
 
     this->Layout();
 }
@@ -109,21 +106,20 @@ void CServiceDialog::onPropertyChanged( wxPropertyGridEvent& event )
 void CServiceDialog::onOKButtonClick( wxCommandEvent& event )
 {
     m_service->Name = m_nameItem->GetValueAsString();
-    if (m_service->Local)
-        m_service->Pier = wxJoin(m_pierItem->GetValue().GetArrayString(), ' ');
-    else
-        m_service->Pier = m_pierItem->GetValueAsString();
+    m_service->Pier = m_service->Local ? wxJoin(m_pierItem->GetValue().GetArrayString(), ' ') : m_pierItem->GetValueAsString();
     m_service->Address = m_addrItem->GetValueAsString();
     m_service->Gateway = m_gateItem->GetValueAsString();
+    m_service->Proto = static_cast<WebPier::Context::Service::Protocol>(m_protoItem->GetValue().GetLong());
+    m_service->Role = static_cast<WebPier::Context::Service::Schema>(m_roleItem->GetValue().GetLong());
     m_service->Obscure = m_obsItem->GetValue().GetBool();
     m_service->Autostart = m_startItem->GetValue().GetBool();
-    m_service->Rendezvous = m_bootItem ? m_bootItem->GetValueAsString() : "";
+    m_service->Rendezvous = m_rendItem->GetChoiceSelection() == 1 ? m_bootItem->GetValueAsString() : "";
 
-    if (m_service->Name.IsEmpty() || m_service->Address.IsEmpty() || (!m_service->Local && m_service->Pier.IsEmpty()) || (m_bootItem && m_service->Rendezvous.IsEmpty()))
+    if (m_service->Name.IsEmpty() || m_service->Address.IsEmpty() || (!m_service->Local && m_service->Pier.IsEmpty()) || (m_rendItem->GetChoiceSelection() == 1 && m_service->Rendezvous.IsEmpty()))
     {
         wxString message = m_service->Local 
-            ? (m_bootItem ? _("Define the 'name', 'pier', 'address', 'gateway', 'bootstrap' properties") : _("Define the 'name', 'pier', 'address', 'gateway' properties"))
-            : (m_bootItem ? _("Define the 'name', 'address', 'bootstrap', 'gateway' properties") : _("Define the 'name', 'address', 'gateway' properties"));
+            ? (m_rendItem->GetChoiceSelection() == 1 ? _("Define the 'name', 'pier', 'address', 'gateway', 'bootstrap' properties") : _("Define the 'name', 'pier', 'address', 'gateway' properties"))
+            : (m_rendItem->GetChoiceSelection() == 1 ? _("Define the 'name', 'address', 'bootstrap', 'gateway' properties") : _("Define the 'name', 'address', 'gateway' properties"));
         CMessageDialog dialog(this, message, wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
         dialog.ShowModal();
     }

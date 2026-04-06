@@ -50,7 +50,7 @@ namespace webpier
         std::string bootstrap = default_dht_bootstrap;
         uint16_t port = default_dht_port;
         uint32_t network = 0;
-        
+
         bool operator==(const dhtnode& other)
         {
             return bootstrap == other.bootstrap && port == other.port && network == other.network;
@@ -98,7 +98,7 @@ namespace webpier
         std::string address;
         std::string gateway = default_gateway;
         std::string rendezvous = default_dht_bootstrap;
-        wormhole::protocol proto = wormhole::protocol::udp;
+        wormhole::protocol proto = wormhole::protocol::any;
         wormhole::schema role = wormhole::schema::either;
         bool autostart = false;
         bool obscure = true;

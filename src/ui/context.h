@@ -17,7 +17,7 @@ namespace WebPier
         {
             enum Protocol
             {
-                ANY,
+                Any,
                 UDP,
                 TCP,
                 SSL
@@ -171,7 +171,7 @@ namespace WebPier
 
     namespace Utils
     {
-        struct NatState
+        struct Traverse
         {
             enum Binding
             {
@@ -181,20 +181,31 @@ namespace WebPier
                 AddressAndPortDependent = 3
             };
 
-            wxString Error;
-            bool Nat = false;
-            bool Hairpin = false;
-            bool RandomPort = false;
-            bool VariableAddress = false;
-            Binding Mapping;
-            Binding Filtering;
-            wxString InnerEndpoint;
-            wxString OuterEndpoint;
+            struct Hole
+            {
+                bool Nat = false;
+                bool Hairpin = false;
+                bool RandomPort = false;
+                bool VariableAddress = false;
+                Binding Mapping;
+                Binding Filtering;
+                wxString InnerEndpoint;
+                wxString OuterEndpoint;
+            };
+
+            Hole Udp;
+            Hole Tcp;
         };
 
         wxString MakeTextHash(const wxString& text) noexcept(true);
-        void ExploreNat(bool udp, const wxString& bind, const wxString& stun, const std::function<void(const NatState&)>& callback) noexcept(true);
+        void ExploreNat(Context::Service::Protocol proto, const wxString& bind, const wxString& stun, const std::function<void(const Traverse&, const wxString&)>& callback) noexcept(true);
         void CheckDhtRendezvous(const wxString& bootstrap, wxUint32 network, wxUint16 port, const std::function<void(const wxString&)>& callback) noexcept(true);
         void CheckEmailRendezvous(const wxString& smtp, const wxString& imap, const wxString& login, const wxString& password, const wxString& cert, const wxString& key, const wxString& ca, const std::function<void(const wxString&)>& callback) noexcept(true);
     }
 }
+
+wxString ToString(WebPier::Context::Service::Protocol value);
+wxString ToString(WebPier::Context::Service::Schema value);
+wxString ToString(WebPier::Utils::Traverse::Binding value);
+wxString ToString(WebPier::Backend::Health::Status value);
+wxString ToString(bool value);

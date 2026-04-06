@@ -26,23 +26,6 @@ const wxBitmap& GetStatusBitmap(WebPier::Backend::Health::Status state)
     return ::GetGreyCircleImage();
 }
 
-wxString Stringify(WebPier::Backend::Health::Status state)
-{
-    switch(state)
-    {
-        case WebPier::Backend::Health::Asleep:
-            return _("asleep");
-        case WebPier::Backend::Health::Broken:
-            return _("broken");
-        case WebPier::Backend::Health::Lonely:
-            return _("lonely");
-        default:
-            return _("burden");
-    }
-
-    return _("unknown");
-}
-
 wxVector<wxVariant> CMainFrame::makeListItem(WebPier::Context::ServicePtr service) const
 {
     WebPier::Backend::Health::Status state = service->Autostart ? WebPier::Backend::Health::Lonely : WebPier::Backend::Health::Asleep;
@@ -59,7 +42,8 @@ wxVector<wxVariant> CMainFrame::makeListItem(WebPier::Context::ServicePtr servic
     data.push_back(wxVariant(wxString(service->Pier)));
     data.push_back(wxVariant(wxString(service->Address)));
     data.push_back(wxVariant(wxString(service->Rendezvous.IsEmpty() ? wxT("Email") : wxT("DHT"))));
-    data.push_back(wxVariant(wxString(service->Autostart ? _("yes") : _("no"))));
+    data.push_back(wxVariant(wxString(ToString(service->Proto))));
+    data.push_back(wxVariant(wxString(ToString(service->Autostart))));
     return data;
 }
 
@@ -190,6 +174,7 @@ CMainFrame::CMainFrame(wxTaskBarIcon* taskBar) : wxFrame(nullptr, wxID_ANY, wxT(
     m_serviceList->AppendTextColumn( _("Pier"), wxDATAVIEW_CELL_INERT, 350, static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE|wxDATAVIEW_COL_SORTABLE )->GetRenderer()->EnableEllipsize( wxELLIPSIZE_END );
     m_serviceList->AppendTextColumn( _("Address"), wxDATAVIEW_CELL_INERT, 150, static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE|wxDATAVIEW_COL_SORTABLE )->GetRenderer()->EnableEllipsize( wxELLIPSIZE_END );
     m_serviceList->AppendTextColumn( _("Rendezvous"), wxDATAVIEW_CELL_INERT, 100, static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE|wxDATAVIEW_COL_SORTABLE )->GetRenderer()->EnableEllipsize( wxELLIPSIZE_END );
+	m_serviceList->AppendTextColumn( _("Tunnel"), wxDATAVIEW_CELL_INERT, 100, static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE|wxDATAVIEW_COL_SORTABLE )->GetRenderer()->EnableEllipsize( wxELLIPSIZE_END );
     m_serviceList->AppendTextColumn( _("Autostart"), wxDATAVIEW_CELL_INERT, 100, static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE|wxDATAVIEW_COL_SORTABLE )->GetRenderer()->EnableEllipsize( wxELLIPSIZE_END );
     panelSizer->Add( m_serviceList, 1, wxALL|wxEXPAND, 5 );
 
@@ -279,7 +264,7 @@ void CMainFrame::RefreshStatus(const WebPier::Backend::Handle& handle)
             m_serviceList->SetValue(wxVariant(wxDataViewIconText(service, GetStatusBitmap(health.State))), i, 0);
             if (current == i)
             {
-                m_statusBar->SetStatusText(Stringify(health.State), 0);
+                m_statusBar->SetStatusText(ToString(health.State), 0);
                 m_statusBar->SetStatusText(health.Message, 1);
             }
             break;
@@ -342,7 +327,7 @@ void CMainFrame::RefreshStatus()
         m_serviceList->SetValue(wxVariant(wxDataViewIconText(service, GetStatusBitmap(health.State))), i, 0);
         if (current == i)
         {
-            m_statusBar->SetStatusText(Stringify(health.State), 0);
+            m_statusBar->SetStatusText(ToString(health.State), 0);
             m_statusBar->SetStatusText(health.Message, 1);
         }
     }
@@ -368,7 +353,7 @@ void CMainFrame::onServiceItemSelectionChanged(wxDataViewEvent& event)
     {
         if (item.Pier == pier && item.Service == service)
         {
-            m_statusBar->SetStatusText(Stringify(item.State), 0);
+            m_statusBar->SetStatusText(ToString(item.State), 0);
             m_statusBar->SetStatusText(item.Message, 1);
             break;
         }

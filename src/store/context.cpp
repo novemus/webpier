@@ -103,9 +103,8 @@ namespace webpier
                         m_config.repo = utf8_to_locale(doc.get<std::string>("repo"));
                         m_config.log.folder = utf8_to_locale(doc.get<std::string>("log.folder", ""));
                         m_config.log.level = static_cast<wormhole::log::severity>(doc.get<int>("log.level", wormhole::log::info));
-                        m_config.nat.hops = doc.get<uint8_t>("nat.hops", 7);
                         m_config.nat.udp_stun = utf8_to_locale(doc.get<std::string>("nat.udp.stun", doc.get<std::string>("nat.stun", default_udp_stun_server)));
-                        m_config.nat.tcp_stun = utf8_to_locale(doc.get<std::string>("nat.tcp.stun", doc.get<std::string>("nat.stun", default_tcp_stun_server)));
+                        m_config.nat.tcp_stun = utf8_to_locale(doc.get<std::string>("nat.tcp.stun", default_tcp_stun_server));
                         m_config.nat.hops = doc.get<uint8_t>("nat.hops", 7);
                         m_config.dht.bootstrap = utf8_to_locale(doc.get<std::string>("dht.bootstrap", default_dht_bootstrap));
                         m_config.dht.port = doc.get<uint16_t>("dht.port", default_dht_port);

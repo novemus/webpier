@@ -485,7 +485,7 @@ namespace WebPier
                 item.put("obscure", pair.second->Obscure);
                 item.put("rendezvous", webpier::locale_to_utf8(pair.second->Rendezvous.ToStdString()));
                 item.put("proto", pair.second->Proto);
-                item.put("role", pair.second->Role);
+                item.put("role", pair.second->Role == Service::Client ? Service::Server : pair.second->Role == Service::Server ? Service::Client : pair.second->Role);
                 array.push_back(std::make_pair("", item));
             }
             doc.put_child("services", array);
@@ -647,7 +647,7 @@ namespace WebPier
             return webpier::make_text_hash(text.ToStdString());
         }
 
-        void ExploreNat(bool udp, const wxString& bind, const wxString& stun, const std::function<void(const NatState&)>& callback) noexcept(true)
+        void ExploreNat(Context::Service::Protocol proto, const wxString& bind, const wxString& stun, const std::function<void(const Traverse&, const wxString&)>& callback) noexcept(true)
         {
             std::thread([=]()
             {
@@ -655,34 +655,45 @@ namespace WebPier
                 {
                     boost::asio::io_context io;
 
-                    plexus::explore_network(io,
-                        udp ? webpier::resolve_udp_endpoint(webpier::locale_to_utf8(bind.ToStdString()), webpier::stun_client_default_port) : wormhole::endpoint {},
-                        udp ? wormhole::endpoint {} : webpier::resolve_tcp_endpoint(webpier::locale_to_utf8(bind.ToStdString()), webpier::stun_client_default_port),
-                        udp ? webpier::resolve_udp_endpoint(webpier::locale_to_utf8(stun.ToStdString()), webpier::stun_server_default_port) : wormhole::endpoint {},
-                        udp ? wormhole::endpoint {} : webpier::resolve_tcp_endpoint(webpier::locale_to_utf8(stun.ToStdString()), webpier::stun_server_default_port),
-                        [udp, callback](const plexus::traverse& pass)
+                    plexus::explore_network(io, static_cast<wormhole::protocol>(proto),
+                        webpier::resolve_tcp_endpoint(webpier::locale_to_utf8(bind.ToStdString()), webpier::stun_client_default_port),
+                        webpier::resolve_tcp_endpoint(webpier::locale_to_utf8(stun.ToStdString()), webpier::stun_server_default_port),
+                        [callback](const plexus::traverse& pass)
                         {
-                            callback(NatState {
-                                wxEmptyString,
-                                udp ? pass.udp.force.nat : pass.tcp.force.nat,
-                                udp ? pass.udp.force.hairpin : pass.tcp.force.hairpin,
-                                udp ? pass.udp.force.random_port : pass.tcp.force.random_port,
-                                udp ? pass.udp.force.variable_address : pass.tcp.force.variable_address,
-                                static_cast<NatState::Binding>(udp ? pass.udp.force.mapping : pass.tcp.force.mapping),
-                                static_cast<NatState::Binding>(udp ? pass.udp.force.filtering : pass.tcp.force.filtering),
-                                wxString(webpier::utf8_to_locale(wormhole::endpoint::to_string(udp ? pass.udp.inner : pass.tcp.inner))),
-                                wxString(webpier::utf8_to_locale(wormhole::endpoint::to_string(udp ? pass.udp.outer : pass.tcp.outer)))
-                            });
+                            callback(
+                                Traverse {
+                                    Traverse::Hole {
+                                        pass.udp.force.nat,
+                                        pass.udp.force.hairpin,
+                                        pass.udp.force.random_port,
+                                        pass.udp.force.variable_address,
+                                        static_cast<Traverse::Binding>(pass.udp.force.mapping),
+                                        static_cast<Traverse::Binding>(pass.udp.force.filtering),
+                                        wxString(webpier::utf8_to_locale(wormhole::endpoint::to_string(pass.udp.inner))),
+                                        wxString(webpier::utf8_to_locale(wormhole::endpoint::to_string(pass.udp.outer)))
+                                    },
+                                    Traverse::Hole {
+                                        pass.tcp.force.nat,
+                                        pass.tcp.force.hairpin,
+                                        pass.tcp.force.random_port,
+                                        pass.tcp.force.variable_address,
+                                        static_cast<Traverse::Binding>(pass.tcp.force.mapping),
+                                        static_cast<Traverse::Binding>(pass.tcp.force.filtering),
+                                        wxString(webpier::utf8_to_locale(wormhole::endpoint::to_string(pass.tcp.inner))),
+                                        wxString(webpier::utf8_to_locale(wormhole::endpoint::to_string(pass.tcp.outer)))
+                                    }
+                                }, wxEmptyString
+                            );
                         },
                         [callback](const std::string& error)
                         {
-                            callback(NatState { error });
+                            callback(Traverse { }, wxString(webpier::utf8_to_locale(error)));
                         });
                     io.run();
                 }
                 catch (const std::exception& ex)
                 {
-                    callback(NatState { ex.what() });
+                    callback(Traverse { }, wxString(webpier::utf8_to_locale(ex.what())));
                 }
             }).detach();
         }
@@ -801,4 +812,74 @@ namespace WebPier
             }
         }
     }
+}
+
+wxString ToString(WebPier::Context::Service::Protocol value)
+{
+    switch (value)
+    {
+        case WebPier::Context::Service::UDP:
+            return _("UDP");
+        case WebPier::Context::Service::TCP:
+            return _("TCP");
+        case WebPier::Context::Service::SSL:
+            return _("SSL");
+        default:
+            return _("Auto");
+    }
+    return wxEmptyString;
+}
+
+wxString ToString(WebPier::Context::Service::Schema value)
+{
+    switch (value)
+    {
+        case WebPier::Context::Service::Client:
+            return _("Client");
+        case WebPier::Context::Service::Server:
+            return _("Server");
+        case WebPier::Context::Service::Mutual:
+            return _("Mutual");
+        default:
+            return _("Auto");
+    }
+    return wxEmptyString;
+}
+
+wxString ToString(WebPier::Utils::Traverse::Binding value)
+{
+    switch (value)
+    {
+        case WebPier::Utils::Traverse::PortDependent:
+            return _("Port Dependent");
+        case WebPier::Utils::Traverse::AddressDependent:
+            return _("Address Dependent");
+        case WebPier::Utils::Traverse::AddressAndPortDependent:
+            return _("Address And Port Dependent");
+        default:
+            return _("Independent");
+    }
+    return wxEmptyString;
+}
+
+wxString ToString(WebPier::Backend::Health::Status value)
+{
+    switch(value)
+    {
+        case WebPier::Backend::Health::Asleep:
+            return _("Asleep");
+        case WebPier::Backend::Health::Broken:
+            return _("Broken");
+        case WebPier::Backend::Health::Lonely:
+            return _("Lonely");
+        default:
+            return _("Burden");
+    }
+
+    return _("Unknown");
+}
+
+wxString ToString(bool value)
+{
+    return value ? _("Yes") : _("No");
 }

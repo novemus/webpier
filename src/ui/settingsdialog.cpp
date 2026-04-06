@@ -11,27 +11,6 @@
 #include <Shlobj_core.h>
 #endif
 
-wxString ToString(const WebPier::Utils::NatState::Binding& value)
-{
-    switch (value)
-    {
-        case WebPier::Utils::NatState::PortDependent:
-            return _("port dependent");
-        case WebPier::Utils::NatState::AddressDependent:
-            return _("address dependent");
-        case WebPier::Utils::NatState::AddressAndPortDependent:
-            return _("address and port dependent");
-        default:
-            return _("independent");
-    }
-    return wxEmptyString;
-}
-
-wxString ToString(bool value)
-{
-    return value ? _("yes") : _("no");
-}
-
 CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxString& title, const wxPoint& pos, const wxSize& size, long style)
     : wxDialog(nullptr, wxID_ANY, title, pos, size, style)
     , m_config(config)
@@ -117,38 +96,53 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxStr
     wxBoxSizer* stunSizer;
     stunSizer = new wxBoxSizer( wxVERTICAL );
 
-    wxFlexGridSizer *stunGridSizer;
-    stunGridSizer = new wxFlexGridSizer(0, 2, 5, 5);
-    stunGridSizer->AddGrowableCol(1);
-    stunGridSizer->SetFlexibleDirection(wxHORIZONTAL);
-    stunGridSizer->SetNonFlexibleGrowMode(wxFLEX_GROWMODE_SPECIFIED);
+	wxFlexGridSizer* stunGridSizer;
+	stunGridSizer = new wxFlexGridSizer( 0, 3, 5, 5 );
+	stunGridSizer->AddGrowableCol( 1 );
+	stunGridSizer->SetFlexibleDirection( wxHORIZONTAL );
+	stunGridSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-    wxStaticText *stunLabel;
-    stunLabel = new wxStaticText(m_natPanel, wxID_ANY, _("STUN server"), wxDefaultPosition, wxSize(100, -1), 0);
-    stunLabel->Wrap(-1);
-    stunGridSizer->Add(stunLabel, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxRIGHT | wxLEFT, 5);
+	wxStaticText* udpStunLabel = new wxStaticText( m_natPanel, wxID_ANY, _("UDP STUN"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
+	udpStunLabel->Wrap( -1 );
+	stunGridSizer->Add( udpStunLabel, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
 
-    m_stunCtrl = new wxTextCtrl(m_natPanel, wxID_ANY, m_config->UdpStunServer, wxDefaultPosition, wxDefaultSize, 0);
-    stunGridSizer->Add(m_stunCtrl, 1, wxTOP | wxRIGHT | wxLEFT | wxEXPAND | wxALIGN_CENTER_VERTICAL, 5);
+	m_udpStunCtrl = new wxTextCtrl( m_natPanel, wxID_ANY, m_config->UdpStunServer, wxDefaultPosition, wxDefaultSize, 0 );
+	stunGridSizer->Add( m_udpStunCtrl, 1, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxStaticText *punchLabel;
-    punchLabel = new wxStaticText(m_natPanel, wxID_ANY, _("Punch hops"), wxDefaultPosition, wxSize(100, -1), 0);
-    punchLabel->Wrap(-1);
-    stunGridSizer->Add(punchLabel, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT | wxLEFT, 5);
+	m_udpStunTest = new wxButton( m_natPanel, wxID_ANY, _("Test"), wxDefaultPosition, wxDefaultSize, 0 );
 
-    m_punchCtrl = new wxTextCtrl(m_natPanel, wxID_ANY, wxString::Format(wxT("%d"), (int)m_config->PunchHops), wxDefaultPosition, wxDefaultSize, 0);
-    stunGridSizer->Add(m_punchCtrl, 0, wxALIGN_CENTER_VERTICAL | wxEXPAND | wxRIGHT | wxLEFT, 5);
+	m_udpStunTest->SetBitmap( wxArtProvider::GetBitmap( wxASCII_STR(wxART_REDO), wxASCII_STR(wxART_BUTTON) ) );
+	stunGridSizer->Add( m_udpStunTest, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT, 5 );
 
-    m_stunTest = new wxButton(m_natPanel, wxID_ANY, _("Test"), wxDefaultPosition, wxDefaultSize, 0);
-    m_stunTest->SetBitmap( wxArtProvider::GetBitmap( wxASCII_STR(wxART_REDO), wxASCII_STR(wxART_BUTTON)));
-    stunGridSizer->Add(m_stunTest, 0, wxALIGN_CENTER_VERTICAL, 10);
+	wxStaticText* tcpStunLabel = new wxStaticText( m_natPanel, wxID_ANY, _("TCP STUN"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
+	tcpStunLabel->Wrap( -1 );
+	stunGridSizer->Add( tcpStunLabel, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 
-    m_stunGauge = new wxGauge(m_natPanel, wxID_ANY, 100, wxDefaultPosition, wxDefaultSize, wxGA_HORIZONTAL);
-    m_stunGauge->Hide();
+	m_tcpStunCtrl = new wxTextCtrl( m_natPanel, wxID_ANY, m_config->TcpStunServer, wxDefaultPosition, wxDefaultSize, 0 );
+	stunGridSizer->Add( m_tcpStunCtrl, 1, wxALL|wxEXPAND|wxALIGN_CENTER_VERTICAL, 5 );
 
-    stunGridSizer->Add(m_stunGauge, 0, wxEXPAND | wxALIGN_CENTER_VERTICAL | wxRIGHT | wxLEFT, 5);
+	m_tcpStunTest = new wxButton( m_natPanel, wxID_ANY, _("Test"), wxDefaultPosition, wxDefaultSize, 0 );
 
-    stunSizer->Add(stunGridSizer, 0, wxEXPAND | wxALL, 5);
+	m_tcpStunTest->SetBitmap( wxArtProvider::GetBitmap( wxASCII_STR(wxART_REDO), wxASCII_STR(wxART_BUTTON) ) );
+	stunGridSizer->Add( m_tcpStunTest, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT, 5 );
+
+	wxStaticText* punchLabel = new wxStaticText( m_natPanel, wxID_ANY, _("Punch hops"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
+	punchLabel->Wrap( -1 );
+	stunGridSizer->Add( punchLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
+
+	m_punchCtrl = new wxTextCtrl( m_natPanel, wxID_ANY, wxString::Format(wxT("%d"), (int)m_config->PunchHops), wxDefaultPosition, wxDefaultSize, 0 );
+	stunGridSizer->Add( m_punchCtrl, 0, wxALIGN_CENTER_VERTICAL|wxEXPAND|wxRIGHT|wxLEFT, 5 );
+
+	stunGridSizer->Add( 0, 0, 1, wxEXPAND, 5 );
+
+	stunSizer->Add( stunGridSizer, 0, wxEXPAND|wxALL, 5 );
+
+	stunSizer->Add( 0, 10, 0, wxEXPAND, 0 );
+
+	m_stunGauge = new wxGauge( m_natPanel, wxID_ANY, 100, wxDefaultPosition, wxDefaultSize, wxGA_HORIZONTAL );
+	m_stunGauge->Hide();
+
+	stunSizer->Add( m_stunGauge, 0, wxEXPAND|wxALL, 10 );
 
     m_natPanel->SetSizer( stunSizer );
     m_natPanel->Layout();
@@ -315,8 +309,10 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxStr
     this->Connect( wxEVT_IDLE, wxIdleEventHandler( CSettingsDialog::onIdle ) );
     m_okBtn->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CSettingsDialog::onOkButtonClick ), NULL, this );
 
-    m_stunCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( CSettingsDialog::onStunChange ), NULL, this );
-    m_stunTest->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CSettingsDialog::onStunTestClick ), NULL, this );
+    m_udpStunCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( CSettingsDialog::onUdpStunChange ), NULL, this );
+    m_udpStunTest->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CSettingsDialog::onUdpStunTestClick ), NULL, this );
+    m_tcpStunCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( CSettingsDialog::onTcpStunChange ), NULL, this );
+    m_tcpStunTest->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CSettingsDialog::onTcpStunTestClick ), NULL, this );
     m_dhtBootCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( CSettingsDialog::onDhtChange ), NULL, this );
     m_dhtPortCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( CSettingsDialog::onDhtChange ), NULL, this );
     m_dhtTest->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CSettingsDialog::onDhtTestClick ), NULL, this );
@@ -351,9 +347,16 @@ void CSettingsDialog::onIdle(wxIdleEvent& event)
     event.Skip();
 }
 
-void CSettingsDialog::onStunChange(wxCommandEvent& event)
+void CSettingsDialog::onUdpStunChange(wxCommandEvent& event)
 {
-    m_stunTest->SetBitmap(wxArtProvider::GetBitmap( wxASCII_STR(wxART_REDO), wxASCII_STR(wxART_BUTTON)));
+    m_udpStunTest->SetBitmap(wxArtProvider::GetBitmap( wxASCII_STR(wxART_REDO), wxASCII_STR(wxART_BUTTON)));
+    m_natPanel->SetToolTip(wxEmptyString);
+    event.Skip();
+}
+
+void CSettingsDialog::onTcpStunChange(wxCommandEvent& event)
+{
+    m_tcpStunTest->SetBitmap(wxArtProvider::GetBitmap( wxASCII_STR(wxART_REDO), wxASCII_STR(wxART_BUTTON)));
     m_natPanel->SetToolTip(wxEmptyString);
     event.Skip();
 }
@@ -372,43 +375,98 @@ void CSettingsDialog::onEmailChange(wxCommandEvent& event)
     event.Skip();
 }
 
-void CSettingsDialog::onStunTestClick(wxCommandEvent& event)
+void CSettingsDialog::onUdpStunTestClick(wxCommandEvent& event)
 {
+    if (m_udpStunCtrl->GetValue().IsEmpty())
+    {
+        m_udpStunTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_CROSS_MARK), wxASCII_STR(wxART_BUTTON)));
+        m_natPanel->SetToolTip(_("No UDP STUN server specified!"));
+        return;
+    }
+
     std::weak_ptr<CSettingsDialog> weak = shared_from_this();
-    WebPier::Utils::ExploreNat(true, wxT("0.0.0.0"), m_stunCtrl->GetValue(), [this, weak](const WebPier::Utils::NatState& state)
+    WebPier::Utils::ExploreNat(WebPier::Context::Service::UDP, wxT("0.0.0.0"), m_udpStunCtrl->GetValue(), [this, weak](const WebPier::Utils::Traverse& pass, const wxString& error)
     {
         if(auto ptr = weak.lock())
         {
-            ptr->CallAfter([this, ptr, state]()
+            ptr->CallAfter([this, ptr, pass, error]()
             {
-                m_stunTest->Enable();
+                m_udpStunTest->Enable();
                 m_stunGauge->SetValue(0);
                 m_stunGauge->Hide();
-                if (state.Error.IsEmpty())
+                if (error.IsEmpty())
                 {
-                    m_stunTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(state.Mapping == WebPier::Utils::NatState::Independent ? wxART_TICK_MARK : wxART_WARNING), wxASCII_STR(wxART_BUTTON)));
-                    m_natPanel->SetToolTip(wxString::Format(_("NAT: %s\nHairpin: %s\nRandom port: %s\nVariable IP: %s\nMapping: %s\nFiltering: %s\nInner EP: %s\nMapped EP: %s"),
-                            ToString(state.Nat),
-                            ToString(state.Hairpin),
-                            ToString(state.RandomPort),
-                            ToString(state.VariableAddress),
-                            ToString(state.Mapping),
-                            ToString(state.Filtering),
-                            state.InnerEndpoint,
-                            state.OuterEndpoint
+                    m_udpStunTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(pass.Udp.Mapping == WebPier::Utils::Traverse::Independent ? wxART_TICK_MARK : wxART_WARNING), wxASCII_STR(wxART_BUTTON)));
+                    m_natPanel->SetToolTip(wxString::Format(_("UDP\nNAT: %s\nHairpin: %s\nRandom port: %s\nVariable IP: %s\nMapping: %s\nFiltering: %s\nInner EP: %s\nMapped EP: %s"),
+                            ToString(pass.Udp.Nat),
+                            ToString(pass.Udp.Hairpin),
+                            ToString(pass.Udp.RandomPort),
+                            ToString(pass.Udp.VariableAddress),
+                            ToString(pass.Udp.Mapping),
+                            ToString(pass.Udp.Filtering),
+                            pass.Udp.InnerEndpoint,
+                            pass.Udp.OuterEndpoint
                         ));
                 }
                 else
                 {
-                    m_stunTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_CROSS_MARK), wxASCII_STR(wxART_BUTTON)));
-                    m_natPanel->SetToolTip(wxString::Format(_("STUN request failed!\n\n%s"), state.Error));
+                    m_udpStunTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_CROSS_MARK), wxASCII_STR(wxART_BUTTON)));
+                    m_natPanel->SetToolTip(wxString::Format(_("Error:\n%s"), error));
                 }
             });
         }
     });
     m_stunGauge->Show();
     m_stunGauge->Pulse();
-    m_stunTest->Disable();
+    m_natPanel->Layout();
+    m_udpStunTest->Disable();
+}
+
+void CSettingsDialog::onTcpStunTestClick(wxCommandEvent& event)
+{
+    if (m_tcpStunCtrl->GetValue().IsEmpty())
+    {
+        m_tcpStunTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_CROSS_MARK), wxASCII_STR(wxART_BUTTON)));
+        m_natPanel->SetToolTip(_("No TCP STUN server specified!"));
+        return;
+    }
+
+    std::weak_ptr<CSettingsDialog> weak = shared_from_this();
+    WebPier::Utils::ExploreNat(WebPier::Context::Service::TCP, wxT("0.0.0.0"), m_tcpStunCtrl->GetValue(), [this, weak](const WebPier::Utils::Traverse& pass, const wxString& error)
+    {
+        if(auto ptr = weak.lock())
+        {
+            ptr->CallAfter([this, ptr, pass, error]()
+            {
+                m_tcpStunTest->Enable();
+                m_stunGauge->SetValue(0);
+                m_stunGauge->Hide();
+                if (error.IsEmpty())
+                {
+                    m_tcpStunTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(pass.Tcp.Mapping == WebPier::Utils::Traverse::Independent ? wxART_TICK_MARK : wxART_WARNING), wxASCII_STR(wxART_BUTTON)));
+                    m_natPanel->SetToolTip(wxString::Format(_("TCP\nNAT: %s\nHairpin: %s\nRandom port: %s\nVariable IP: %s\nMapping: %s\nFiltering: %s\nInner EP: %s\nMapped EP: %s"),
+                            ToString(pass.Tcp.Nat),
+                            ToString(pass.Tcp.Hairpin),
+                            ToString(pass.Tcp.RandomPort),
+                            ToString(pass.Tcp.VariableAddress),
+                            ToString(pass.Tcp.Mapping),
+                            ToString(pass.Tcp.Filtering),
+                            pass.Tcp.InnerEndpoint,
+                            pass.Tcp.OuterEndpoint
+                        ));
+                }
+                else
+                {
+                    m_tcpStunTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_CROSS_MARK), wxASCII_STR(wxART_BUTTON)));
+                    m_natPanel->SetToolTip(wxString::Format(_("Error:\n%s"), error));
+                }
+            });
+        }
+    });
+    m_stunGauge->Show();
+    m_stunGauge->Pulse();
+    m_natPanel->Layout();
+    m_tcpStunTest->Disable();
 }
 
 void CSettingsDialog::onDhtTestClick(wxCommandEvent& event)
@@ -484,9 +542,8 @@ void CSettingsDialog::onEmailTestClick(wxCommandEvent& event)
 
 void CSettingsDialog::onOkButtonClick(wxCommandEvent& event)
 {
-    if (m_ownerCtrl->GetValue().IsEmpty() || m_pierCtrl->GetValue().IsEmpty() || m_stunCtrl->GetValue().IsEmpty() 
-        || (m_dhtBootCtrl->GetValue().IsEmpty() && (m_smtpCtrl->GetValue().IsEmpty() || m_imapCtrl->GetValue().IsEmpty() 
-            || m_loginCtrl->GetValue().IsEmpty() || m_passCtrl->GetValue().IsEmpty())))
+    if (m_ownerCtrl->GetValue().IsEmpty() || m_pierCtrl->GetValue().IsEmpty() || (m_udpStunCtrl->GetValue().IsEmpty() && m_tcpStunCtrl->GetValue().IsEmpty())
+        || (m_dhtBootCtrl->GetValue().IsEmpty() && (m_smtpCtrl->GetValue().IsEmpty() || m_imapCtrl->GetValue().IsEmpty() || m_loginCtrl->GetValue().IsEmpty() || m_passCtrl->GetValue().IsEmpty())))
     {
         CMessageDialog dialog(this, _("To use the WebPier you must define the identity, STUN and either DHT or Email rendezvous"), wxDEFAULT_DIALOG_STYLE|wxICON_ERROR);
         dialog.ShowModal();
@@ -518,7 +575,8 @@ void CSettingsDialog::onOkButtonClick(wxCommandEvent& event)
 
     m_config->Pier = pier;
 
-    m_config->UdpStunServer = m_stunCtrl->GetValue();
+    m_config->UdpStunServer = m_udpStunCtrl->GetValue();
+    m_config->TcpStunServer = m_tcpStunCtrl->GetValue();
     uint32_t hops = m_config->PunchHops;
     m_punchCtrl->GetValue().ToUInt(&hops);
     m_config->PunchHops = static_cast<uint8_t>(hops);
