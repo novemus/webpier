@@ -2,7 +2,7 @@
 
 This repository is dedicated to the [WebPier](https://github.com/novemus/webpier) application. This program is still in development and not all planned features have been implemented yet. But it is already in a functional state and can be used for its intended purpose.
 
-The [WebPier](https://github.com/novemus/webpier) app is designed to exchange TCP services with remote hosts, primarily those located behind the NAT. Peers do not need to have public IP addresses and use third-party relay servers. The `WebPier` creates a direct UDP tunnel between the hosts and maps the remote TCP service to the local interface, or forwards the local TCP service to the remote side. UDP-hole-punching technique using STUN server is used to overcome NAT, and EMAIL or DHT services are used as a rendezvous for exchanging endpoints. This program is essentially a graphical shell for the [plexus](https://github.com/novemus/plexus) and [wormhole](https://github.com/novemus/wormhole) utilities and is designed to provide a user-friendly mean for managing the export/import of TCP services.
+The [WebPier](https://github.com/novemus/webpier) app is designed to exchange TCP services with remote hosts, primarily those located behind the NAT. Peers do not need to have public IP addresses and no third-party relay servers are used. The `WebPier` creates a direct UDP/TCP/SSL tunnel between the hosts and maps the remote TCP service to the local interface, or forwards the local TCP service to the remote side. UDP/TCP-hole-punching technique using STUN server is used to overcome NAT, and Email or DHT services are used as a rendezvous for exchanging endpoints. This program is essentially a graphical shell for the [plexus](https://github.com/novemus/plexus) and [wormhole](https://github.com/novemus/wormhole) utilities and is designed to provide a user-friendly mean for managing the export/import of TCP services.
 
 #### What are the benefits of using the WebPier?
 
@@ -10,7 +10,7 @@ First of all, it is safety. Traffic of your services doesn't pass through third-
 
 #### How about reliability?
 
-Of course, we all have to pay for security. Due to the fact that `WebPier` does not use third-party relay servers, the possibility to create a tunnel depends on the presence or settings of NAT. The policy of mapping internal endpoint (address-port) to public NAT endpoint must be *independent*. That is, outgoing packets from some internal endpoint to external one should not change the mapped endpoint when the destination endpoint is changed, but the source endpoint remains unchanged. Fortunately, providers usually implement this policy on their NATs. If both piers are located behind the same NAT, then the *hairpin* policy must be implemented on it so that packets from the internal endpoint can be transmitted back to the internal network. Also, discovering of piers in the local network has not yet been implemented. If the above is not your case, you can successfully use the `WebPier`.
+Of course, we all have to pay for safety. Due to the fact that `WebPier` does not use third-party relay servers, the possibility to create a tunnel depends on the presence or settings of NAT. The policy of mapping internal endpoint to the public NAT interface must be *independent*. That is, outgoing packets from some internal endpoint to external one should not change the mapped endpoint when the destination endpoint is changed, but the source endpoint remains unchanged. Fortunately, providers usually implement this policy on their NATs. If both piers are located behind the same NAT, then the *hairpin* policy must be implemented on it so that packets from the internal endpoint can be transmitted back to the internal network.
 
 ## Using
 
@@ -33,7 +33,9 @@ You must specify accessible STUN server, DHT bootstrap server or(and) your email
 * **Name** - the name of the service to refer it in rendezvous
 * **Pier** - list of remote piers to export to or remote pier to import from the service
 * **Address** - IPv4 address of the exporting service or local IPv4 address to import the remote service in form XXX.XXX.XXX.XXX:PORT
+* **Tunnel** - selector of the tunnel protocol, supported UDP/TCP/SSL value or Auto to negotiate most suitabe one at runtime
 * **Gateway** - local IPv4 address for the transport tunnel in form XXX.XXX.XXX.XXX:PORT
+* **Schema** - selector of the connection schema, supported Client/Server/Mutual value or Auto to negotiate most suitabe one at runtime
 * **Autostart** - should the service forwarding be run with the application startup or manually
 * **Obscure** - should the transport UDP tunnel be obfuscated, must be equal for both sides
 * **Rendezvous** - selector of the preferred rendezvous, must match the remote side
