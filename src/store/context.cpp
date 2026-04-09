@@ -177,7 +177,7 @@ namespace webpier
                             unit.gateway = utf8_to_locale(item.second.get<std::string>("gateway", default_gateway));
                             unit.rendezvous = utf8_to_locale(item.second.get<std::string>("rendezvous", ""));
                             unit.proto = wormhole::protocol(item.second.get<int>("proto", wormhole::protocol::udp));
-                            unit.role = wormhole::schema(item.second.get<int>("role", unit.local ? wormhole::schema::server : wormhole::schema::client));
+                            unit.role = wormhole::schema(item.second.get<int>("role", wormhole::schema::either));
                             unit.autostart = item.second.get<bool>("autostart", false);
                             unit.obscure = item.second.get<bool>("obscure", true);
                             services.emplace(unit.name, unit);

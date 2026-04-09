@@ -191,7 +191,7 @@ namespace slipway
                     env["WORMHOLE_KEY"] = webpier::make_path(m_config.repo, host.owner, host.pin, "private.key");
                     env["WORMHOLE_CA"] = webpier::make_path(m_config.repo, peer.owner, peer.pin, "cert.crt");
 
-                    auto pid = std::shared_ptr<bp::detail::posix::pid_t>(0);
+                    auto pid = std::make_shared<bp::detail::posix::pid_t>(0);
                     bp::child proc(m_io, webpier::get_module_path(webpier::carrier_module).string(),
                         "--purpose=" + std::string(m_service.local ? "export" : "import"),
                         "--service=" + m_service.address,
@@ -200,9 +200,9 @@ namespace slipway
                         "--criteria=" + wormhole::criteria::to_string(term.qos),
                         "--journal=" + webpier::make_path(m_config.log.folder, "carrier.%p.log"),
                         "--logging=" + std::to_string(m_config.log.level),
-                        bp::on_exit = [this, weak = weak_from_this(), pid](int code, const boost::system::error_code& ec)
+                        bp::on_exit = [this, weak = weak_from_this(), pid](int code, const std::error_code& ec)
                         {
-                            if (ec && ec != boost::asio::error::operation_aborted)
+                            if (ec && ec != std::errc::no_child_process)
                                 _err_ << ec.message();
 
                             _inf_ << "joined " << *pid << " tunnel with exit code " << code;
@@ -227,8 +227,8 @@ namespace slipway
                     m_tunnels.emplace(pid, std::move(proc));
  
                     m_service.local
-                        ? _inf_ << "starting " << proc.id() << " export tunnel " << m_config.pier << ":" << m_service.name << " -> " << m_service.pier
-                        : _inf_ << "starting " << proc.id() << " import tunnel " << m_service.pier << ":" << m_service.name << " -> " << m_config.pier;
+                        ? _inf_ << "launch " << *pid << " export tunnel " << m_config.pier << ":" << m_service.name << " -> " << m_service.pier
+                        : _inf_ << "launch " << *pid << " import tunnel " << m_service.pier << ":" << m_service.name << " -> " << m_config.pier;
                 }
 
                 void fallback(const std::string& error)
@@ -239,10 +239,8 @@ namespace slipway
                         ? _err_ << "export service " << m_config.pier << ":" << m_service.name << " -> " << m_service.pier << " failed: " << error
                         : _err_ << "import service " << m_service.pier << ":" << m_service.name << " -> " << m_config.pier << " failed: " << error;
 
-                    weak_ptr weak = shared_from_this();
-
                     m_timer.expires_from_now(utils::get_retry_timeout());
-                    m_timer.async_wait([this, weak](const boost::system::error_code& ec)
+                    m_timer.async_wait([this, weak = weak_from_this()](const boost::system::error_code& ec)
                     {
                         if (ec)
                             return;
@@ -274,7 +272,8 @@ namespace slipway
                     for(auto& item : m_tunnels)
                     {
                         _inf_ << "terminate " << item.second.id() << " tunnel";
-                        item.second.terminate();
+                        std::error_code ec;
+                        item.second.terminate(ec);
                     }
                 }
 
@@ -289,9 +288,7 @@ namespace slipway
                     m_config = config;
                     m_service = service;
 
-                    weak_ptr weak = shared_from_this();
-
-                    auto connect = [this, weak](const plexus::identity& host, const plexus::identity& peer, const plexus::contract& term)
+                    auto connect = [this, weak = weak_from_this()](const plexus::identity& host, const plexus::identity& peer, const plexus::contract& term)
                     {
                         if(auto ptr = weak.lock())
                         {
@@ -303,7 +300,7 @@ namespace slipway
                         }
                     };
 
-                    auto fallback = [this, weak](const plexus::identity&, const plexus::identity&, const std::string& error)
+                    auto fallback = [this, weak = weak_from_this()](const plexus::identity&, const plexus::identity&, const std::string& error)
                     {
                         if(auto ptr = weak.lock())
                         {
@@ -533,7 +530,7 @@ namespace slipway
                                 webpier::utf8_to_locale(item.second.get<std::string>("gateway", webpier::default_gateway)),
                                 webpier::utf8_to_locale(item.second.get<std::string>("rendezvous", "")),
                                 wormhole::protocol(item.second.get<int>("proto", wormhole::protocol::udp)),
-                                wormhole::schema(item.second.get<int>("role", local ? wormhole::schema::server : wormhole::schema::client)),
+                                wormhole::schema(item.second.get<int>("role", wormhole::schema::either)),
                                 item.second.get<bool>("autostart", false),
                                 item.second.get<bool>("obscure", true),
                             };

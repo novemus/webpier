@@ -3,7 +3,6 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
-#include <cwchar>
 #include <codecvt>
 #include <regex>
 #include <openssl/x509v3.h>
@@ -524,21 +523,12 @@ namespace webpier
 #endif
     }
 
-    std::string make_path(const std::string& root, ...) noexcept(false)
+    std::string make_path(const std::string& one, const std::string& two, const std::string& three, const std::string& four) noexcept(false)
     {
-        std::filesystem::path full(root);
-        va_list args;
-        va_start(args, root);
-
-        while (true)
-        {
-            const char* s = va_arg(args, const char*);
-            if (s == nullptr)
-                break;
-            full /= s;
-        }
-
-        va_end(args);
+        std::filesystem::path full(one);
+        if (!two.empty()) full /= two;
+        if (!three.empty()) full /= three;
+        if (!four.empty()) full /= four;
         return full.string();
     }
 
