@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
         ("service,s", boost::program_options::value<wormhole::endpoint>()->required())
         ("gateway,g", boost::program_options::value<wormhole::endpoint>()->required())
         ("faraway,f", boost::program_options::value<wormhole::endpoint>()->required())
-        ("criteria,q", boost::program_options::value<wormhole::criteria>()->default_value(wormhole::criteria()))
+        ("quality,q", boost::program_options::value<wormhole::criteria>()->default_value(wormhole::criteria()))
         ("journal,j", boost::program_options::value<std::string>()->default_value(""))
         ("logging,l", boost::program_options::value<wormhole::log::severity>()->default_value(wormhole::log::info));
 
@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
         auto service = vm["service"].as<wormhole::endpoint>();
         auto gateway = vm["gateway"].as<wormhole::endpoint>();
         auto faraway = vm["faraway"].as<wormhole::endpoint>();
-        auto criteria = vm["criteria"].as<wormhole::criteria>();
+        auto quality = vm["quality"].as<wormhole::criteria>();
 
         wormhole::security guard = { 
             vm["secret"].as<uint64_t>(),
@@ -78,13 +78,13 @@ int main(int argc, char *argv[])
             }
         };
 
-        _inf_ << "starting tunnel for purpose=" << purpose << " service=" << service << " gateway=" << gateway << " faraway=" << faraway << " criteria=" << criteria;
+        _inf_ << "starting tunnel for purpose=" << purpose << " service=" << service << " gateway=" << gateway << " faraway=" << faraway << " quality=" << quality;
 
         boost::asio::io_context io;
 
         auto router = purpose == "import"
-            ? wormhole::create_importer(io, service, gateway, faraway, criteria, guard)
-            : wormhole::create_exporter(io, service, gateway, faraway, criteria, guard);
+            ? wormhole::create_importer(io, service, gateway, faraway, quality, guard)
+            : wormhole::create_exporter(io, service, gateway, faraway, quality, guard);
         router->launch();
 
         io.run();

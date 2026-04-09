@@ -145,6 +145,11 @@ namespace slipway
                         complete();
                     }
 
+                    bool active()
+                    {
+                        return m_io && !m_io->stopped();
+                    }
+
                     void complete()
                     {
                         if (m_io)
@@ -177,6 +182,7 @@ namespace slipway
                             }
                             catch(const std::exception& ex)
                             {
+                                m_io->stop();
                                 m_data.fallback(host, peer, ex.what());
                             }
                         });
@@ -197,7 +203,7 @@ namespace slipway
                         "--service=" + m_service.address,
                         "--gateway=" + wormhole::endpoint::to_string(term.inner),
                         "--faraway=" + wormhole::endpoint::to_string(term.alien),
-                        "--criteria=" + wormhole::criteria::to_string(term.qos),
+                        "--quality=" + wormhole::criteria::to_string(term.qos),
                         "--journal=" + webpier::make_path(m_config.log.folder, "carrier.%p.log"),
                         "--logging=" + std::to_string(m_config.log.level),
                         bp::on_exit = [this, weak = weak_from_this(), pid](int code, const std::error_code& ec)
@@ -248,6 +254,10 @@ namespace slipway
                         if(auto ptr = weak.lock())
                         {
                             m_error.clear();
+
+                            if (m_service.local && m_spawner->active())
+                                return;
+
                             m_spawner->startup();
                         }
                     });
