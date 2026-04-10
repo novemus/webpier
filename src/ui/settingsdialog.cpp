@@ -385,7 +385,7 @@ void CSettingsDialog::onUdpStunTestClick(wxCommandEvent& event)
     }
 
     std::weak_ptr<CSettingsDialog> weak = shared_from_this();
-    WebPier::Utils::ExploreNat(WebPier::Context::Service::UDP, wxT("0.0.0.0"), m_udpStunCtrl->GetValue(), [this, weak](const WebPier::Utils::Traverse& pass, const wxString& error)
+    WebPier::Utils::ExploreNat(WebPier::Context::Service::UDP, m_udpStunCtrl->GetValue(), [this, weak](const WebPier::Utils::Traverse& pass, const wxString& error)
     {
         if(auto ptr = weak.lock())
         {
@@ -432,7 +432,7 @@ void CSettingsDialog::onTcpStunTestClick(wxCommandEvent& event)
     }
 
     std::weak_ptr<CSettingsDialog> weak = shared_from_this();
-    WebPier::Utils::ExploreNat(WebPier::Context::Service::TCP, wxT("0.0.0.0"), m_tcpStunCtrl->GetValue(), [this, weak](const WebPier::Utils::Traverse& pass, const wxString& error)
+    WebPier::Utils::ExploreNat(WebPier::Context::Service::TCP, m_tcpStunCtrl->GetValue(), [this, weak](const WebPier::Utils::Traverse& pass, const wxString& error)
     {
         if(auto ptr = weak.lock())
         {

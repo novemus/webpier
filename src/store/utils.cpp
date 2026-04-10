@@ -562,12 +562,18 @@ namespace webpier
 
     wormhole::endpoint resolve_udp_endpoint(const std::string& url, const std::string& service) noexcept(false)
     {
+        if (url.empty())
+            return wormhole::endpoint {};
+
         auto ep = resolve_endpoint<boost::asio::ip::udp::endpoint>(url, service);
         return wormhole::endpoint { ep.address(), ep.port() };
     }
 
     wormhole::endpoint resolve_tcp_endpoint(const std::string& url, const std::string& service) noexcept(false)
     {
+        if (url.empty())
+            return wormhole::endpoint {};
+
         auto ep = resolve_endpoint<boost::asio::ip::tcp::endpoint>(url, service);
         return wormhole::endpoint { ep.address(), ep.port() };
     }

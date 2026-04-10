@@ -73,12 +73,19 @@ namespace slipway
                 return plexus::options {
                     service.name,
                     config.repo,
-                    service.proto <= wormhole::protocol::udp ? webpier::resolve_udp_endpoint(service.gateway, webpier::stun_client_default_port) : wormhole::endpoint {},
-                    service.proto != wormhole::protocol::udp ? webpier::resolve_tcp_endpoint(service.gateway, webpier::stun_client_default_port) : wormhole::endpoint {},
-                    webpier::resolve_udp_endpoint(config.nat.udp_stun, webpier::stun_server_default_port),
-                    webpier::resolve_tcp_endpoint(config.nat.tcp_stun, webpier::stun_server_default_port),
+                    plexus::location {
+                        webpier::resolve_udp_endpoint(service.gateway, webpier::stun_client_default_port),
+                        webpier::resolve_tcp_endpoint(service.gateway, webpier::stun_client_default_port)
+                    },
+                    plexus::location {
+                        webpier::resolve_udp_endpoint(config.nat.udp_stun, webpier::stun_server_default_port),
+                        webpier::resolve_tcp_endpoint(config.nat.tcp_stun, webpier::stun_server_default_port)
+                    },
                     config.nat.hops,
-                    wormhole::criteria { service.proto, service.role },
+                    wormhole::criteria {
+                        service.proto,
+                        service.role 
+                    },
                     service.rendezvous.empty()
                         ? plexus::rendezvous {
                             plexus::emailer {
@@ -497,8 +504,8 @@ namespace slipway
                     webpier::utf8_to_locale(doc.get<std::string>("repo")),
                     webpier::journal { folder, level },
                     webpier::puncher {
-                        webpier::utf8_to_locale(doc.get<std::string>("nat.udp.stun", doc.get<std::string>("nat.stun", webpier::default_udp_stun_server))),
-                        webpier::utf8_to_locale(doc.get<std::string>("nat.tcp.stun", doc.get<std::string>("nat.stun", webpier::default_tcp_stun_server))),
+                        webpier::utf8_to_locale(doc.get<std::string>("nat.stun.udp", doc.get<std::string>("nat.stun", webpier::default_udp_stun_server))),
+                        webpier::utf8_to_locale(doc.get<std::string>("nat.stun.tcp", doc.get<std::string>("nat.stun", webpier::default_tcp_stun_server))),
                         doc.get<uint8_t>("nat.hops", 7)
                     },
                     webpier::dhtnode {

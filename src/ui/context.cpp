@@ -647,7 +647,7 @@ namespace WebPier
             return webpier::make_text_hash(text.ToStdString());
         }
 
-        void ExploreNat(Context::Service::Protocol proto, const wxString& bind, const wxString& stun, const std::function<void(const Traverse&, const wxString&)>& callback) noexcept(true)
+        void ExploreNat(Context::Service::Protocol proto, const wxString& stun, const std::function<void(const Traverse&, const wxString&)>& callback) noexcept(true)
         {
             std::thread([=]()
             {
@@ -655,9 +655,15 @@ namespace WebPier
                 {
                     boost::asio::io_context io;
 
-                    plexus::explore_network(io, static_cast<wormhole::protocol>(proto),
-                        webpier::resolve_tcp_endpoint(webpier::locale_to_utf8(bind.ToStdString()), webpier::stun_client_default_port),
-                        webpier::resolve_tcp_endpoint(webpier::locale_to_utf8(stun.ToStdString()), webpier::stun_server_default_port),
+                    plexus::explore_network(io,
+                        plexus::location {
+                            wormhole::endpoint {},
+                            wormhole::endpoint {}
+                        },
+                        plexus::location {
+                            proto >= Context::Service::UDP ? webpier::resolve_udp_endpoint(webpier::locale_to_utf8(stun.ToStdString()), webpier::stun_server_default_port) : wormhole::endpoint {},
+                            proto != Context::Service::UDP ? webpier::resolve_tcp_endpoint(webpier::locale_to_utf8(stun.ToStdString()), webpier::stun_server_default_port) : wormhole::endpoint {},
+                        },
                         [callback](const plexus::traverse& pass)
                         {
                             callback(
