@@ -103,24 +103,30 @@ namespace webpier
         std::unique_ptr<X509_EXTENSION, void (*)(X509_EXTENSION*)> ext1(X509V3_EXT_conf_nid(nullptr, &ctx, NID_basic_constraints, "CA:FALSE"), X509_EXTENSION_free);
         if (!ext1)
             throw x509_error(get_openssl_error());
-        
+
         X509_add_ext(cert.get(), ext1.get(), -1);
 
-        std::unique_ptr<X509_EXTENSION, void (*)(X509_EXTENSION*)> ext2(X509V3_EXT_conf_nid(nullptr, &ctx, NID_key_usage, "digitalSignature"), X509_EXTENSION_free);
+        std::unique_ptr<X509_EXTENSION, void (*)(X509_EXTENSION*)> ext2(X509V3_EXT_conf_nid(nullptr, &ctx, NID_key_usage, "critical, digitalSignature, keyEncipherment, dataEncipherment"), X509_EXTENSION_free);
         if (!ext2)
             throw x509_error(get_openssl_error());
 
         X509_add_ext(cert.get(), ext2.get(), -1);
 
+        std::unique_ptr<X509_EXTENSION, void (*)(X509_EXTENSION*)> ext3(X509V3_EXT_conf_nid(nullptr, &ctx, NID_ext_key_usage, "serverAuth, clientAuth"), X509_EXTENSION_free);
+        if (!ext3) 
+            throw x509_error(get_openssl_error());
+
+        X509_add_ext(cert.get(), ext3.get(), -1);
+
         unsigned char digest[SHA_DIGEST_LENGTH];
         calc_digest(pkey.get(), EVP_sha1(), digest, nullptr);
         std::unique_ptr<char, void (*)(char*)> value(OPENSSL_buf2hexstr(digest, SHA_DIGEST_LENGTH), [](char* ptr) { OPENSSL_free(ptr); });
 
-        std::unique_ptr<X509_EXTENSION, void (*)(X509_EXTENSION*)> ext3(X509V3_EXT_conf_nid(nullptr, &ctx, NID_subject_key_identifier, value.get()), X509_EXTENSION_free);
-        if (!ext3)
+        std::unique_ptr<X509_EXTENSION, void (*)(X509_EXTENSION*)> ext4(X509V3_EXT_conf_nid(nullptr, &ctx, NID_subject_key_identifier, value.get()), X509_EXTENSION_free);
+        if (!ext4)
             throw x509_error(get_openssl_error());
 
-        X509_add_ext(cert.get(), ext3.get(), -1);
+        X509_add_ext(cert.get(), ext4.get(), -1);
 
         if (!X509_sign(cert.get(), pkey.get(), EVP_sha256()))
             throw x509_error(get_openssl_error());
