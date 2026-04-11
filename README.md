@@ -30,17 +30,17 @@ You must specify accessible STUN server, DHT bootstrap server or(and) your email
 
 ![service](resources/service.png)
 
-* **Name** - the name of the service to refer it in rendezvous
-* **Pier** - list of remote piers to export to or remote pier to import from the service
+* **Name** - name of the service to refer it in the rendezvous service
+* **Pier** - remote pier to export or import the TCP service
 * **Address** - IPv4 address of the exporting service or local IPv4 address to import the remote service in form XXX.XXX.XXX.XXX:PORT
-* **Tunnel** - selector of the tunnel protocol, supported UDP/TCP/SSL value or Auto to negotiate most suitabe one at runtime
+* **Tunnel** - tunnel protocol, supported UDP/TCP/SSL protocols or Auto to negotiate most suitabe one at runtime
 * **Gateway** - local IPv4 address for the transport tunnel in form XXX.XXX.XXX.XXX:PORT
-* **Schema** - selector of the connection schema, supported Client/Server/Mutual value or Auto to negotiate most suitabe one at runtime
-* **Autostart** - should the service forwarding be run with the application startup or manually
-* **Obscure** - should the transport UDP tunnel be obfuscated, must be equal for both sides
-* **Rendezvous** - selector of the preferred rendezvous, must match the remote side
+* **Schema** - tunnel connection schema for the local pier, supported Client/Server/Mutual schemes or Auto to negotiate most suitabe one at runtime
+* **Autostart** - should the service be run with the application startup or manually
+* **Obscure** - should the transport UDP/TCP tunnel be obfuscated, must be equal for both sides
+* **Rendezvous** - rendezvous service, must match the remote side
 
-After that you have to create the *offer* for your partner. Invoke the dialogs from the *"File -> Create an offer..."* menu, select your services you want to offer and save the *offer* file. The *offer* will also contain public key of your pier. 
+After that you have to create the *offer* for your partner. Invoke the dialogs from the *"File -> Create an offer..."* menu, select your services you want to offer and save the *offer* file. The *offer* will also contain public key of your pier.
 
 ![share](resources/share.png)
 

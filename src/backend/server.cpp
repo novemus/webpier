@@ -26,6 +26,7 @@
         #include <boost/process/v1/windows.hpp>
         #include <boost/process/v1/env.hpp>
         #include <boost/process/v1/args.hpp>
+        #include <boost/process/v1/async.hpp>
     #else
         #include <spawn.h>
         #include <boost/process/v1/extend.hpp>
@@ -35,7 +36,7 @@
     #include <boost/process.hpp>
     #ifdef WIN32
         #include <boost/process/windows.hpp>
-        creation_flags.hpp
+        #include <boost/process/windows/creation_flags.hpp>
     #else
         #include <spawn.h>
         #include <boost/process/extend.hpp>
@@ -119,7 +120,7 @@ namespace slipway
         {
             class connector : public std::enable_shared_from_this<connector>
             {
-                using pid_ptr = std::shared_ptr<bp::detail::posix::pid_t>;
+                using pid_ptr = std::shared_ptr<bp::pid_t>;
                 using weak_ptr = std::weak_ptr<connector>;
                 using signal_ptr = std::shared_ptr<boost::asio::cancellation_signal>;
 
@@ -204,7 +205,7 @@ namespace slipway
                     env["WORMHOLE_KEY"] = webpier::make_path(m_config.repo, host.owner, host.pin, "private.key");
                     env["WORMHOLE_CA"] = webpier::make_path(m_config.repo, peer.owner, peer.pin, "cert.crt");
 
-                    auto pid = std::make_shared<bp::detail::posix::pid_t>(0);
+                    auto pid = std::make_shared<bp::pid_t>(0);
                     bp::child proc(m_io, webpier::get_module_path(webpier::carrier_module).string(),
                         "--purpose=" + std::string(m_service.local ? "export" : "import"),
                         "--service=" + m_service.address,
@@ -495,7 +496,7 @@ namespace slipway
                 boost::property_tree::read_json(file.string(), doc);
 
                 auto folder = webpier::utf8_to_locale(doc.get<std::string>("log.folder", ""));
-                auto level = wormhole::log::severity(doc.get<int>("log.level", wormhole::log::info));
+                auto level = doc.get<wormhole::log::severity>("log.level", wormhole::log::info);
 
                 wormhole::log::set(wormhole::log::severity(level), utils::make_log_path(folder));
 

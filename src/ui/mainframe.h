@@ -63,6 +63,7 @@ protected:
     void onDeleteServiceButtonClick(wxCommandEvent& event);
     void onServiceItemContextMenu(wxDataViewEvent& event);
     void onServiceItemSelectionChanged(wxDataViewEvent& event);
+    void onServiceItemCellActivated(wxDataViewEvent& event);
     void onStatusTimeout(wxTimerEvent& event);
 
 public:

@@ -4,10 +4,10 @@
 #include <wx/iconbndl.h>
 
 const wxIconBundle& GetAppIconBundle();
-const wxBitmap& GetBlueCircleImage();
-const wxBitmap& GetGreenCircleImage();
-const wxBitmap& GetRedCircleImage();
-const wxBitmap& GetGreyCircleImage();
+const wxBitmap& GetBlueBoxImage();
+const wxBitmap& GetGreenBoxImage();
+const wxBitmap& GetRedBoxImage();
+const wxBitmap& GetBlankBoxImage();
 const wxBitmap& GetAddBtnImage();
 const wxBitmap& GetEditBtnImage();
 const wxBitmap& GetDeleteBtnImage();

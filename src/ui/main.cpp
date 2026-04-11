@@ -10,14 +10,130 @@
 
 #ifndef WIN32
 #include <assets/logo.h>
-#include <assets/blue.h>
-#include <assets/green.h>
-#include <assets/red.h>
-#include <assets/grey.h>
 #include <assets/add.h>
 #include <assets/edit.h>
 #include <assets/delete.h>
 #endif
+
+static const char *icon_grey_xpm[] = {
+"24 24 2 1",
+"  c None",
+". c #AAAAAA",
+"                        ",
+"                        ",
+"                        ",
+"                        ",
+"                        ",
+"                        ",
+"       ..........       ",
+"      .          .      ",
+"      .          .      ",
+"      .          .      ",
+"      .          .      ",
+"      .          .      ",
+"      .          .      ",
+"      .          .      ",
+"      .          .      ",
+"      .          .      ",
+"      .          .      ",
+"       ..........       ",
+"                        ",
+"                        ",
+"                        ",
+"                        ",
+"                        ",
+"                        "};
+
+static const char *icon_blue_xpm[] = {
+"24 24 3 1",
+"  c None",
+". c #AAAAAA",
+"+ c #59B4FF",
+"                        ",
+"                        ",
+"                        ",
+"                        ",
+"                        ",
+"                        ",
+"       ..........       ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"       ..........       ",
+"                        ",
+"                        ",
+"                        ",
+"                        ",
+"                        ",
+"                        "};
+
+static const char *icon_red_xpm[] = {
+"24 24 3 1",
+"  c None",
+". c #AAAAAA",
+"+ c #FF0000",
+"                        ",
+"                        ",
+"                        ",
+"                        ",
+"                        ",
+"                        ",
+"       ..........       ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"       ..........       ",
+"                        ",
+"                        ",
+"                        ",
+"                        ",
+"                        ",
+"                        "};
+
+static const char *icon_green_xpm[] = {
+"24 24 3 1",
+"  c None",
+". c #AAAAAA",
+"+ c #00EC00",
+"                        ",
+"                        ",
+"                        ",
+"                        ",
+"                        ",
+"                        ",
+"       ..........       ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"      .++++++++++.      ",
+"       ..........       ",
+"                        ",
+"                        ",
+"                        ",
+"                        ",
+"                        ",
+"                        "};
+
 
 #if defined(__WXOSX__) && wxOSX_USE_COCOA
 extern "C" void DisableDockIcon();
@@ -37,43 +153,27 @@ const wxIconBundle& GetAppIconBundle()
     return s_icon;
 }
 
-const wxBitmap& GetBlueCircleImage()
+const wxBitmap& GetBlueBoxImage()
 {
-#ifdef WIN32
-    static const wxBitmap s_image(wxBITMAP_PNG(IDB_BLUE));
-#else
-    static const wxBitmap s_image(wxBITMAP_PNG_FROM_DATA(blue_circle));
-#endif
+    static const wxBitmap s_image(icon_blue_xpm);
     return s_image;
 }
 
-const wxBitmap& GetGreenCircleImage()
+const wxBitmap& GetGreenBoxImage()
 {
-#ifdef WIN32
-    static const wxBitmap s_image(wxBITMAP_PNG(IDB_GREEN));
-#else
-    static const wxBitmap s_image(wxBITMAP_PNG_FROM_DATA(green_circle));
-#endif
+    static const wxBitmap s_image(icon_green_xpm);
     return s_image;
 }
 
-const wxBitmap& GetRedCircleImage()
+const wxBitmap& GetRedBoxImage()
 {
-#ifdef WIN32
-    static const wxBitmap s_image(wxBITMAP_PNG(IDB_RED));
-#else
-    static const wxBitmap s_image(wxBITMAP_PNG_FROM_DATA(red_circle));
-#endif
+    static const wxBitmap s_image(icon_red_xpm);
     return s_image;
 }
 
-const wxBitmap& GetGreyCircleImage()
+const wxBitmap& GetBlankBoxImage()
 {
-#ifdef WIN32
-    static const wxBitmap s_image(wxBITMAP_PNG(IDB_GREY));
-#else
-    static const wxBitmap s_image(wxBITMAP_PNG_FROM_DATA(grey_circle));
-#endif
+    static const wxBitmap s_image(icon_grey_xpm);
     return s_image;
 }
 

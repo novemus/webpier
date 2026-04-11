@@ -102,7 +102,7 @@ namespace webpier
                         m_config.pier = utf8_to_locale(doc.get<std::string>("pier"));
                         m_config.repo = utf8_to_locale(doc.get<std::string>("repo"));
                         m_config.log.folder = utf8_to_locale(doc.get<std::string>("log.folder", ""));
-                        m_config.log.level = static_cast<wormhole::log::severity>(doc.get<int>("log.level", wormhole::log::info));
+                        m_config.log.level = doc.get<wormhole::log::severity>("log.level", wormhole::log::info);
                         m_config.nat.udp_stun = utf8_to_locale(doc.get<std::string>("nat.stun.udp", doc.get<std::string>("nat.stun", default_udp_stun_server)));
                         m_config.nat.tcp_stun = utf8_to_locale(doc.get<std::string>("nat.stun.tcp", default_tcp_stun_server));
                         m_config.nat.hops = doc.get<uint8_t>("nat.hops", 7);
@@ -133,7 +133,7 @@ namespace webpier
                     doc.put("pier", locale_to_utf8(m_config.pier));
                     doc.put("repo", locale_to_utf8(m_config.repo));
                     doc.put("log.folder", locale_to_utf8(m_config.log.folder));
-                    doc.put("log.level", m_config.log.level);
+                    doc.put("log.level", static_cast<int>(m_config.log.level));
                     doc.put("nat.stun.udp", locale_to_utf8(m_config.nat.udp_stun));
                     doc.put("nat.stun.tcp", locale_to_utf8(m_config.nat.tcp_stun));
                     doc.put("nat.hops", m_config.nat.hops);

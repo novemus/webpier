@@ -32,7 +32,6 @@ CServiceDialog::CServiceDialog(WebPier::Context::ConfigPtr config, WebPier::Cont
 
     auto pierChoice = WebPier::Context::GetPiers();
 
-    mainSizer->SetMinSize( wxSize( 400,-1 ) );
     m_propGrid = new wxPropertyGrid(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPG_BOLD_MODIFIED|wxPG_HIDE_MARGIN);
     m_nameItem = m_propGrid->Append( new wxStringProperty( _("Name"), wxPG_LABEL, m_service->Name ) );
     if (m_service->Local)
@@ -77,6 +76,8 @@ CServiceDialog::CServiceDialog(WebPier::Context::ConfigPtr config, WebPier::Cont
     this->SetSizer( mainSizer );
     this->Layout();
     mainSizer->Fit( this );
+
+    m_propGrid->SetMinSize(wxSize(400, m_propGrid->GetRowHeight() * 10));
     m_propGrid->FitColumns();
 
     this->Centre( wxBOTH );

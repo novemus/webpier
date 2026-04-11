@@ -14,16 +14,16 @@ const wxBitmap& GetStatusBitmap(WebPier::Backend::Health::Status state)
     switch(state)
     {
         case WebPier::Backend::Health::Asleep:
-            return ::GetGreyCircleImage();
+            return ::GetBlankBoxImage();
         case WebPier::Backend::Health::Broken:
-            return ::GetRedCircleImage();
+            return ::GetRedBoxImage();
         case WebPier::Backend::Health::Lonely:
-            return ::GetBlueCircleImage();
+            return ::GetBlueBoxImage();
         default:
-            return ::GetGreenCircleImage();
+            return ::GetGreenBoxImage();
     }
 
-    return ::GetGreyCircleImage();
+    return ::GetBlankBoxImage();
 }
 
 wxVector<wxVariant> CMainFrame::makeListItem(WebPier::Context::ServicePtr service) const
@@ -204,6 +204,7 @@ CMainFrame::CMainFrame(wxTaskBarIcon* taskBar) : wxFrame(nullptr, wxID_ANY, wxT(
     m_deleteBtn->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CMainFrame::onDeleteServiceButtonClick ), NULL, this );
     m_serviceList->Connect( wxEVT_COMMAND_DATAVIEW_ITEM_CONTEXT_MENU, wxDataViewEventHandler( CMainFrame::onServiceItemContextMenu ), NULL, this );
     m_serviceList->Connect( wxEVT_COMMAND_DATAVIEW_SELECTION_CHANGED, wxDataViewEventHandler( CMainFrame::onServiceItemSelectionChanged ), NULL, this );
+    m_serviceList->Connect( wxEVT_DATAVIEW_ITEM_ACTIVATED, wxDataViewEventHandler( CMainFrame::onServiceItemCellActivated ), NULL, this );
 
     m_timer = new wxTimer(this);
     this->Bind( wxEVT_TIMER, wxTimerEventHandler(CMainFrame::onStatusTimeout), this, m_timer->GetId());
@@ -333,6 +334,55 @@ void CMainFrame::RefreshStatus()
     }
 }
 
+void CMainFrame::onServiceItemCellActivated(wxDataViewEvent& event)
+{
+    int row = m_serviceList->ItemToRow(event.GetItem());
+    if (row == wxNOT_FOUND)
+        return;
+
+    if (event.GetColumn() != 0)
+    {
+        wxCommandEvent evt(wxEVT_COMMAND_BUTTON_CLICKED, m_editBtn->GetId());
+        evt.SetEventObject(m_editBtn);
+        m_editBtn->ProcessWindowEvent(evt);
+        return;
+    }
+
+    wxVariant value;
+    m_serviceList->GetValue(value, row, 0);
+
+    wxString service = value.GetAny().As<wxDataViewIconText>().GetText();
+    wxString pier = m_exportBtn->GetValue() ? WebPier::Context::Pier() : m_serviceList->GetTextValue(row, 1);
+
+    bool active = [&]()
+    {
+        for (const auto& item : m_status)
+        {
+            if (item.Pier == pier && item.Service == service)
+                return item.State != WebPier::Backend::Health::Asleep;
+        }
+        return false;
+    }();
+
+    auto info = WebPier::Backend::Handle{ pier, service };
+
+    try
+    {
+        active
+            ? WebPier::Backend::Unplug(info)
+            : WebPier::Backend::Engage(info);
+    }
+    catch(const std::exception& ex)
+    {
+        wxNotificationMessage msg(wxT("WebPier"), _("Can't change state of the service. ") + ex.what(), this, wxICON_ERROR);
+#if defined(__WXMSW__) && defined(wxHAS_NATIVE_NOTIFICATION_MESSAGE)
+        msg.UseTaskBarIcon(m_taskBar);
+#endif
+        msg.Show(10);
+    }
+    RefreshStatus(info);
+}
+
 void CMainFrame::onServiceItemSelectionChanged(wxDataViewEvent& event)
 {
     int row = m_serviceList->ItemToRow(event.GetItem());
@@ -387,7 +437,7 @@ void CMainFrame::onServiceItemContextMenu(wxDataViewEvent& event)
                 }
                 catch(const std::exception& ex)
                 {
-                    wxNotificationMessage msg(wxT("WebPier"), _("Can't start the pier. ") + ex.what(), this, wxICON_ERROR);
+                    wxNotificationMessage msg(wxT("WebPier"), _("Can't start the service. ") + ex.what(), this, wxICON_ERROR);
 #if defined(__WXMSW__) && defined(wxHAS_NATIVE_NOTIFICATION_MESSAGE)
                     msg.UseTaskBarIcon(m_taskBar);
 #endif
@@ -407,7 +457,7 @@ void CMainFrame::onServiceItemContextMenu(wxDataViewEvent& event)
                 }
                 catch(const std::exception& ex)
                 {
-                    wxNotificationMessage msg(wxT("WebPier"), _("Can't stop the pier. ") + ex.what(), this, wxICON_ERROR);
+                    wxNotificationMessage msg(wxT("WebPier"), _("Can't stop the service. ") + ex.what(), this, wxICON_ERROR);
 #if defined(__WXMSW__) && defined(wxHAS_NATIVE_NOTIFICATION_MESSAGE)
                     msg.UseTaskBarIcon(m_taskBar);
 #endif
