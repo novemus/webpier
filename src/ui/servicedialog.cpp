@@ -75,10 +75,11 @@ CServiceDialog::CServiceDialog(WebPier::Context::ConfigPtr config, WebPier::Cont
 
     this->SetSizer( mainSizer );
     this->Layout();
-    mainSizer->Fit( this );
 
     m_propGrid->SetMinSize(wxSize(400, m_propGrid->GetRowHeight() * 10));
     m_propGrid->FitColumns();
+
+    mainSizer->Fit( this );
 
     this->Centre( wxBOTH );
 
@@ -97,9 +98,15 @@ void CServiceDialog::onPropertyChanged( wxPropertyGridEvent& event )
 {
     auto* prop = event.GetProperty();
     if (prop == m_rendItem)
+    {
+        if (m_rendItem->GetChoiceSelection() == 1)
+            m_rendItem->SetValueFromString(m_service->Rendezvous.IsEmpty() ? m_config->DhtBootstrap : m_service->Rendezvous);
         m_bootItem->Hide(m_rendItem->GetChoiceSelection() == 0);
+    }
     else if (prop == m_protoItem)
+    {
         m_obsItem->Hide(m_protoItem->GetChoiceSelection() == 3);
+    }
 
     this->Layout();
 }
