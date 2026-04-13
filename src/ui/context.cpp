@@ -31,9 +31,6 @@ namespace WebPier
 {
     namespace
     {
-        constexpr const char* stun_server_default_port = "3478";
-        constexpr const char* stun_client_default_port = "0";
-
         std::shared_ptr<webpier::context> g_context;
         std::shared_ptr<slipway::client> g_backend;
 

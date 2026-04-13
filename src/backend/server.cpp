@@ -71,16 +71,18 @@ namespace slipway
 
             plexus::options make_options(const webpier::config& config, const webpier::service& service) noexcept(false)
             {
+                plexus::location bind {
+                    webpier::resolve_udp_endpoint(service.gateway, webpier::stun_client_default_port),
+                    webpier::resolve_tcp_endpoint(service.gateway, webpier::stun_client_default_port)
+                };
+
                 return plexus::options {
                     service.name,
                     config.repo,
+                    bind,
                     plexus::location {
-                        webpier::resolve_udp_endpoint(service.gateway, webpier::stun_client_default_port),
-                        webpier::resolve_tcp_endpoint(service.gateway, webpier::stun_client_default_port)
-                    },
-                    plexus::location {
-                        webpier::resolve_udp_endpoint(config.nat.udp_stun, webpier::stun_server_default_port),
-                        webpier::resolve_tcp_endpoint(config.nat.tcp_stun, webpier::stun_server_default_port)
+                        webpier::resolve_udp_endpoint(config.nat.udp_stun, webpier::stun_server_default_port, bind.udp.address.is_v6()),
+                        webpier::resolve_tcp_endpoint(config.nat.tcp_stun, webpier::stun_server_default_port, bind.tcp.address.is_v6())
                     },
                     config.nat.hops,
                     wormhole::criteria {

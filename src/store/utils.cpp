@@ -538,49 +538,85 @@ namespace webpier
         return full.string();
     }
 
-    template<class endpoint>
-    endpoint resolve_endpoint(const std::string& url, const std::string& service)
+    template<class protocol>
+    wormhole::endpoint resolve_some(const std::string& hostname, const std::string& service)
     {
-        if (url.empty() && service.empty())
-            return endpoint();
-
         boost::asio::io_context io;
-        typename endpoint::protocol_type::resolver resolver(io);
+        typename protocol::resolver resolver(io);
+        typename protocol::endpoint ep;
 
-        std::smatch match;
-        if (std::regex_search(url, match, std::regex("^(\\w+://)?\\[([a-zA-Z0-9:]+)\\]:(\\d+).*")))
-            return *resolver.resolve(match[2].str(), match[3].str()).begin();
+        try
+        {
+            std::smatch match;
+            if (std::regex_search(hostname, match, std::regex("^\\[(.+)\\]:(\\d+)$")))
+                ep = *resolver.resolve(match[1].str(), match[2].str()).begin();
+            else if (std::regex_search(hostname, match, std::regex("^(.+):(\\d+)$")))
+                ep = *resolver.resolve(match[1].str(), match[2].str()).begin();
+            else
+                ep = *resolver.resolve(hostname, service).begin();
+        }
+        catch(const std::exception& ex)
+        {
+            throw std::runtime_error("can't resolve '" + hostname + "' endpoint: " + ex.what());
+        }
 
-        if (std::regex_search(url, match, std::regex("^(\\w+)://\\[([a-zA-Z0-9:]+)\\].*")))
-            return *resolver.resolve(match[2].str(), match[1].str()).begin();
-
-        if (std::regex_search(url, match, std::regex("^\\[([a-zA-Z0-9:]+)\\].*")))
-            return *resolver.resolve(match[1].str(), service).begin();
-
-        if (std::regex_search(url, match, std::regex("^(\\w+://)?([\\w\\.]+):(\\d+).*")))
-            return *resolver.resolve(match[2].str(), match[3].str()).begin();
-
-        if (std::regex_search(url, match, std::regex("^(\\w+)://([\\w\\.]+).*")))
-            return *resolver.resolve(match[2].str(), match[1].str()).begin();
-
-        return *resolver.resolve(url, service).begin();
-    }
-
-    wormhole::endpoint resolve_udp_endpoint(const std::string& url, const std::string& service) noexcept(false)
-    {
-        if (url.empty())
-            return wormhole::endpoint {};
-
-        auto ep = resolve_endpoint<boost::asio::ip::udp::endpoint>(url, service);
         return wormhole::endpoint { ep.address(), ep.port() };
     }
 
-    wormhole::endpoint resolve_tcp_endpoint(const std::string& url, const std::string& service) noexcept(false)
+    template<class protocol>
+    wormhole::endpoint resolve_same(const protocol& proto, const std::string& hostname, const std::string& service)
     {
-        if (url.empty())
-            return wormhole::endpoint {};
+        boost::asio::io_context io;
+        typename protocol::resolver resolver(io);
+        typename protocol::endpoint ep;
 
-        auto ep = resolve_endpoint<boost::asio::ip::tcp::endpoint>(url, service);
+        try
+        {
+            std::smatch match;
+            if (proto == protocol::v6() && std::regex_search(hostname, match, std::regex("^\\[(.+)\\]:(\\d+)$")))
+                ep = *resolver.resolve(proto, match[1].str(), match[2].str()).begin();
+            else if(proto == protocol::v4() && std::regex_search(hostname, match, std::regex("^(.+):(\\d+)$")))
+                ep = *resolver.resolve(proto, match[1].str(), match[2].str()).begin();
+            else
+                ep = *resolver.resolve(proto, hostname, service).begin();
+        }
+        catch(const std::exception& ex)
+        {
+            throw std::runtime_error("can't resolve '" + hostname + "' endpoint: " + ex.what());
+        }
+
         return wormhole::endpoint { ep.address(), ep.port() };
+    }
+
+    wormhole::endpoint resolve_udp_endpoint(const std::string& hostname, const std::string& service) noexcept(false)
+    {
+        if (hostname.empty())
+            return wormhole::endpoint { };
+
+        return resolve_some<boost::asio::ip::udp>(hostname, service);
+    }
+
+    wormhole::endpoint resolve_tcp_endpoint(const std::string& hostname, const std::string& service) noexcept(false)
+    {
+        if (hostname.empty())
+            return wormhole::endpoint { };
+
+        return resolve_some<boost::asio::ip::tcp>(hostname, service);
+    }
+
+    wormhole::endpoint resolve_udp_endpoint(const std::string& hostname, const std::string& service, bool v6) noexcept(false)
+    {
+        if (hostname.empty())
+            return wormhole::endpoint { v6 ? boost::asio::ip::address(boost::asio::ip::address_v6()) : boost::asio::ip::address(boost::asio::ip::address_v4()), 0 };
+
+        return resolve_same<boost::asio::ip::udp>(v6 ? boost::asio::ip::udp::v6() : boost::asio::ip::udp::v4(), hostname, service);
+    }
+
+    wormhole::endpoint resolve_tcp_endpoint(const std::string& hostname, const std::string& service, bool v6) noexcept(false)
+    {
+        if (hostname.empty())
+            return wormhole::endpoint { v6 ? boost::asio::ip::address(boost::asio::ip::address_v6()) : boost::asio::ip::address(boost::asio::ip::address_v4()), 0 };
+
+        return resolve_same<boost::asio::ip::tcp>(v6 ? boost::asio::ip::tcp::v6() : boost::asio::ip::tcp::v4(), hostname, service);
     }
 }
