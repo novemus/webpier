@@ -411,7 +411,7 @@ void CSettingsDialog::onUdpStunTestClick(wxCommandEvent& event)
                 else
                 {
                     m_udpStunTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_CROSS_MARK), wxASCII_STR(wxART_BUTTON)));
-                    m_natPanel->SetToolTip(wxString::Format(_("Error:\n%s"), error));
+                    m_natPanel->SetToolTip(wxString::Format(_("UDP\n%s"), error));
                 }
             });
         }
@@ -458,7 +458,7 @@ void CSettingsDialog::onTcpStunTestClick(wxCommandEvent& event)
                 else
                 {
                     m_tcpStunTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_CROSS_MARK), wxASCII_STR(wxART_BUTTON)));
-                    m_natPanel->SetToolTip(wxString::Format(_("Error:\n%s"), error));
+                    m_natPanel->SetToolTip(wxString::Format(_("TCP\n%s"), error));
                 }
             });
         }

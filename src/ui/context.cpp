@@ -674,7 +674,7 @@ namespace WebPier
                             wormhole::endpoint {}
                         },
                         plexus::location {
-                            proto >= Context::Service::UDP ? webpier::resolve_udp_endpoint(webpier::locale_to_utf8(stun.ToStdString()), webpier::stun_server_default_port) : wormhole::endpoint {},
+                            proto <= Context::Service::UDP ? webpier::resolve_udp_endpoint(webpier::locale_to_utf8(stun.ToStdString()), webpier::stun_server_default_port) : wormhole::endpoint {},
                             proto != Context::Service::UDP ? webpier::resolve_tcp_endpoint(webpier::locale_to_utf8(stun.ToStdString()), webpier::stun_server_default_port) : wormhole::endpoint {},
                         },
                         [callback](const plexus::traverse& pass)
@@ -701,18 +701,18 @@ namespace WebPier
                                         wxString(webpier::utf8_to_locale(wormhole::endpoint::to_string(pass.tcp.inner))),
                                         wxString(webpier::utf8_to_locale(wormhole::endpoint::to_string(pass.tcp.outer)))
                                     }
-                                }, wxEmptyString
+                                }, pass.udp.outer == wormhole::endpoint {} && pass.tcp.outer == wormhole::endpoint {} ? _("NAT test failed!") : wxT("")
                             );
                         },
                         [callback](const std::string& error)
                         {
-                            callback(Traverse { }, wxString(webpier::utf8_to_locale(error)));
+                            callback(Traverse {}, wxString(webpier::utf8_to_locale(error)));
                         });
                     io.run();
                 }
                 catch (const std::exception& ex)
                 {
-                    callback(Traverse { }, wxString(webpier::utf8_to_locale(ex.what())));
+                    callback(Traverse {}, wxString(webpier::utf8_to_locale(ex.what())));
                 }
             }).detach();
         }
