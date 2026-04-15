@@ -275,6 +275,20 @@ namespace WebPier
                     || Autostart != m_origin.autostart
                     || Obscure != m_origin.obscure;
             }
+
+            bool IsIPv6() const noexcept(true) override
+            {
+                return m_origin.proto == wormhole::protocol::udp 
+                    ? webpier::resolve_udp_endpoint(Gateway.ToStdString(), webpier::stun_client_default_port).address.is_v6()
+                    : webpier::resolve_tcp_endpoint(Gateway.ToStdString(), webpier::stun_client_default_port).address.is_v6();
+            }
+
+            bool IsIPv4() const noexcept(true) override
+            {
+                return m_origin.proto == wormhole::protocol::udp 
+                    ? webpier::resolve_udp_endpoint(Gateway.ToStdString(), webpier::stun_client_default_port).address.is_v4()
+                    : webpier::resolve_tcp_endpoint(Gateway.ToStdString(), webpier::stun_client_default_port).address.is_v4();
+            }
         };
 
         ServicePtr CreateExportService()
@@ -481,6 +495,7 @@ namespace WebPier
                 item.put("name", webpier::locale_to_utf8(pair.second->Name.ToStdString()));
                 item.put("obscure", pair.second->Obscure);
                 item.put("rendezvous", webpier::locale_to_utf8(pair.second->Rendezvous.ToStdString()));
+                item.put("ip", pair.second->IsIPv6() ? 6 : 4);
                 item.put("proto", pair.second->Proto);
                 item.put("role", pair.second->Role == Service::Client ? Service::Server : pair.second->Role == Service::Server ? Service::Client : pair.second->Role);
                 array.push_back(std::make_pair("", item));
@@ -506,6 +521,7 @@ namespace WebPier
                 service->Pier = offer.Pier;
                 service->Obscure = item.second.get<bool>("obscure");
                 service->Rendezvous = webpier::utf8_to_locale(item.second.get<std::string>("rendezvous", ""));
+                service->Gateway = item.second.get<int>("ip", 4) == 4 ? webpier::default_ip4_gateway : webpier::default_ip6_gateway;
                 service->Proto = Service::Protocol(item.second.get<int>("proto", Service::Protocol::UDP));
                 service->Role = Service::Schema(item.second.get<int>("role", Service::Schema::Server));
                 offer.Services[wxUIntPtr(service.get())] = service;

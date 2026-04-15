@@ -174,7 +174,7 @@ namespace webpier
                             unit.name = utf8_to_locale(item.second.get<std::string>("name", ""));
                             unit.pier = utf8_to_locale(item.second.get<std::string>("pier", ""));
                             unit.address = utf8_to_locale(item.second.get<std::string>("address", ""));
-                            unit.gateway = utf8_to_locale(item.second.get<std::string>("gateway", default_gateway));
+                            unit.gateway = utf8_to_locale(item.second.get<std::string>("gateway", default_ip4_gateway));
                             unit.rendezvous = utf8_to_locale(item.second.get<std::string>("rendezvous", ""));
                             unit.proto = wormhole::protocol(item.second.get<int>("proto", wormhole::protocol::udp));
                             unit.role = wormhole::schema(item.second.get<int>("role", wormhole::schema::either));

@@ -50,6 +50,8 @@ namespace WebPier
             virtual void DelPier(const wxString& pier) noexcept(true) = 0;
             virtual bool HasPier(const wxString& pier) const noexcept(true) = 0;
             virtual bool IsDirty() const noexcept(true) = 0;
+            virtual bool IsIPv6() const noexcept(true) = 0;
+            virtual bool IsIPv4() const noexcept(true) = 0;
         };
 
         using ServicePtr = wxSharedPtr<Service>;

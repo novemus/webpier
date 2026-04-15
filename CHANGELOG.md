@@ -1,9 +1,10 @@
 # Change Log
 
-## 1.1.0 (Apr 8, 2026)
+## 1.1.0 (Apr 15, 2026)
 
-- Support for multiprotocol tunnels
-- Support for various connection schemes
+- Support of IPv6
+- Using multiprotocol tunnels
+- Using various tunnel connection schemes
 - Link with libtubus 1.3.0
 - Link with libwormhole 1.3.0
 - Link with libplexus 3.3.0

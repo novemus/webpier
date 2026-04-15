@@ -15,7 +15,8 @@ namespace webpier
     constexpr const char* default_udp_stun_server = "stun.ekiga.net";
     constexpr const char* default_tcp_stun_server = "stunserver2025.stunprotocol.org";
     constexpr const char* default_dht_bootstrap = "bootstrap.jami.net";
-    constexpr const char* default_gateway = "0.0.0.0:0";
+    constexpr const char* default_ip4_gateway = "0.0.0.0:0";
+    constexpr const char* default_ip6_gateway = "[::]:0";
     constexpr const uint16_t default_dht_port = 0;
 
     struct stale_error : public std::runtime_error { stale_error(const std::string& what) : std::runtime_error(what) {} };
@@ -96,7 +97,7 @@ namespace webpier
         std::string name;
         std::string pier;
         std::string address;
-        std::string gateway = default_gateway;
+        std::string gateway = default_ip4_gateway;
         std::string rendezvous = default_dht_bootstrap;
         wormhole::protocol proto = wormhole::protocol::any;
         wormhole::schema role = wormhole::schema::either;

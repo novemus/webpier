@@ -42,8 +42,8 @@ namespace webpier
     bool verify_autostart(const std::filesystem::path& home) noexcept(false);
     void assign_autostart(const std::filesystem::path& home) noexcept(false);
     void revoke_autostart(const std::filesystem::path& home) noexcept(false);
-    wormhole::endpoint resolve_udp_endpoint(const std::string& url, const std::string& service) noexcept(false);
-    wormhole::endpoint resolve_tcp_endpoint(const std::string& url, const std::string& service) noexcept(false);
-    wormhole::endpoint resolve_udp_endpoint(const std::string& url, const std::string& service, bool v6) noexcept(false);
-    wormhole::endpoint resolve_tcp_endpoint(const std::string& url, const std::string& service, bool v6) noexcept(false);
+    wormhole::endpoint resolve_udp_endpoint(const std::string& hostname, const std::string& service) noexcept(false);
+    wormhole::endpoint resolve_tcp_endpoint(const std::string& hostname, const std::string& service) noexcept(false);
+    wormhole::endpoint resolve_udp_endpoint(const std::string& hostname, const std::string& service, bool v6) noexcept(false);
+    wormhole::endpoint resolve_tcp_endpoint(const std::string& hostname, const std::string& service, bool v6) noexcept(false);
 }

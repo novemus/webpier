@@ -36,8 +36,8 @@ BOOST_AUTO_TEST_CASE(client)
 
     auto job = std::async(std::launch::async, [&io] { io.run(); });
 
-    webpier::service foo { true, "foo", peer, "127.0.0.1:1234", webpier::default_gateway, webpier::default_dht_bootstrap, wormhole::protocol::udp, wormhole::schema::either, true, false };
-    webpier::service bar { true, "bar", peer, "127.0.0.1:5678", webpier::default_gateway, webpier::default_dht_bootstrap, wormhole::protocol::udp, wormhole::schema::either, true, false };
+    webpier::service foo { true, "foo", peer, "127.0.0.1:1234", webpier::default_ip4_gateway, webpier::default_dht_bootstrap, wormhole::protocol::udp, wormhole::schema::either, true, false };
+    webpier::service bar { true, "bar", peer, "127.0.0.1:5678", webpier::default_ip4_gateway, webpier::default_dht_bootstrap, wormhole::protocol::udp, wormhole::schema::either, true, false };
 
     slipway::handle foo_handle { host, "foo" };
     slipway::health foo_asleep { foo_handle, slipway::health::asleep };
