@@ -34,12 +34,15 @@ class CSettingsDialog : public wxDialog, public std::enable_shared_from_this<CSe
     wxTextCtrl* m_pierCtrl;
     wxCheckBox* m_daemonCtrl;
     wxPanel* m_natPanel;
+    wxCheckBox* m_isNat;
+    wxChoice* m_testMode;
+    wxTextCtrl* m_hopsCtrl;
     wxTextCtrl* m_udpStunCtrl;
-    wxButton* m_udpStunTest;
     wxTextCtrl* m_tcpStunCtrl;
+    wxButton* m_udpStunTest;
+    wxGauge* m_udpGauge;
     wxButton* m_tcpStunTest;
-    wxTextCtrl* m_punchCtrl;
-    wxGauge* m_stunGauge;
+    wxGauge* m_tcpGauge;
     wxPanel* m_dhtPanel;
     wxTextCtrl* m_dhtBootCtrl;
     wxTextCtrl* m_dhtPortCtrl;
@@ -60,6 +63,7 @@ class CSettingsDialog : public wxDialog, public std::enable_shared_from_this<CSe
     WebPier::Context::ConfigPtr m_config;
     bool m_daemon;
 
+    void onNatCheckBoxClick(wxCommandEvent& event);
     void onOkButtonClick(wxCommandEvent& event);
     void onUdpStunTestClick(wxCommandEvent& event);
     void onTcpStunTestClick(wxCommandEvent& event);

@@ -87,6 +87,7 @@ namespace slipway
                         webpier::resolve_tcp_endpoint(config.nat.tcp_stun, webpier::stun_server_default_port, bind.tcp.address.is_v6())
                     },
                     config.nat.hops,
+                    config.nat.test,
                     wormhole::criteria {
                         service.proto,
                         service.role 
@@ -511,6 +512,7 @@ namespace slipway
                     webpier::puncher {
                         webpier::utf8_to_locale(doc.get<std::string>("nat.stun.udp", doc.get<std::string>("nat.stun", webpier::default_udp_stun_server))),
                         webpier::utf8_to_locale(doc.get<std::string>("nat.stun.tcp", webpier::default_tcp_stun_server)),
+                        doc.get<plexus::checkup>("nat.test", plexus::checkup::strict),
                         doc.get<uint8_t>("nat.hops", 7)
                     },
                     webpier::dhtnode {

@@ -38,11 +38,12 @@ namespace webpier
     {
         std::string udp_stun = default_udp_stun_server;
         std::string tcp_stun = default_tcp_stun_server;
+        plexus::checkup test = plexus::checkup::strict;
         uint8_t hops = 7;
 
         bool operator==(const puncher& other)
         {
-            return udp_stun == other.udp_stun && tcp_stun == other.tcp_stun && hops == other.hops;
+            return udp_stun == other.udp_stun && tcp_stun == other.tcp_stun && test == other.test && hops == other.hops;
         }
     };
 

@@ -75,13 +75,22 @@ namespace WebPier
                 Trace
             };
 
+            enum Checkup
+            {
+                Noneed,
+                Strict,
+                Faulty,
+                Simple
+            };
+        
             wxString Pier;
             wxString Repo;
             wxString LogFolder;
             Logging LogLevel;
             wxString UdpStunServer;
             wxString TcpStunServer;
-            wxUint8 PunchHops;
+            Checkup NatTest;
+            wxUint8 NatHops;
             wxString DhtBootstrap;
             wxUint16 DhtPort;
             wxString SmtpServer;
@@ -200,7 +209,7 @@ namespace WebPier
         };
 
         wxString MakeTextHash(const wxString& text) noexcept(true);
-        void ExploreNat(Context::Service::Protocol proto, const wxString& bind, const wxString& stun, const std::function<void(const Traverse&, const wxString&)>& callback) noexcept(true);
+        void ExploreNat(Context::Service::Protocol proto, const wxString& bind, const wxString& stun, Context::Config::Checkup mode, const std::function<void(const Traverse&, const wxString&)>& callback) noexcept(true);
         void CheckDhtRendezvous(const wxString& bootstrap, wxUint32 network, wxUint16 port, const std::function<void(const wxString&)>& callback) noexcept(true);
         void CheckEmailRendezvous(const wxString& smtp, const wxString& imap, const wxString& login, const wxString& password, const wxString& cert, const wxString& key, const wxString& ca, const std::function<void(const wxString&)>& callback) noexcept(true);
     }

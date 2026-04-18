@@ -105,6 +105,7 @@ namespace webpier
                         m_config.log.level = doc.get<wormhole::log::severity>("log.level", wormhole::log::info);
                         m_config.nat.udp_stun = utf8_to_locale(doc.get<std::string>("nat.stun.udp", doc.get<std::string>("nat.stun", default_udp_stun_server)));
                         m_config.nat.tcp_stun = utf8_to_locale(doc.get<std::string>("nat.stun.tcp", default_tcp_stun_server));
+                        m_config.nat.test = doc.get<plexus::checkup>("nat.test", plexus::checkup::strict);
                         m_config.nat.hops = doc.get<uint8_t>("nat.hops", 7);
                         m_config.dht.bootstrap = utf8_to_locale(doc.get<std::string>("dht.bootstrap", default_dht_bootstrap));
                         m_config.dht.port = doc.get<uint16_t>("dht.port", default_dht_port);
@@ -136,6 +137,7 @@ namespace webpier
                     doc.put("log.level", static_cast<int>(m_config.log.level));
                     doc.put("nat.stun.udp", locale_to_utf8(m_config.nat.udp_stun));
                     doc.put("nat.stun.tcp", locale_to_utf8(m_config.nat.tcp_stun));
+                    doc.put("nat.test", m_config.nat.test);
                     doc.put("nat.hops", m_config.nat.hops);
                     doc.put("dht.bootstrap", locale_to_utf8(m_config.dht.bootstrap));
                     doc.put("dht.port", m_config.dht.port);

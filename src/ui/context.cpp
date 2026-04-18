@@ -319,7 +319,7 @@ namespace WebPier
                     Pier.ToStdString(),
                     Repo.ToStdString(),
                     { LogFolder.ToStdString(), static_cast<wormhole::log::severity>(LogLevel) },
-                    { UdpStunServer.ToStdString(), TcpStunServer.ToStdString(), PunchHops },
+                    { UdpStunServer.ToStdString(), TcpStunServer.ToStdString(), static_cast<plexus::checkup>(NatTest), NatHops },
                     { DhtBootstrap.ToStdString(), DhtPort },
                     { 
                         SmtpServer.ToStdString(),
@@ -363,7 +363,8 @@ namespace WebPier
                 LogLevel = static_cast<Logging>(m_origin.log.level);
                 UdpStunServer = m_origin.nat.udp_stun;
                 TcpStunServer = m_origin.nat.tcp_stun;
-                PunchHops = m_origin.nat.hops;
+                NatTest = static_cast<Checkup>(m_origin.nat.test);
+                NatHops = m_origin.nat.hops;
                 DhtBootstrap = m_origin.dht.bootstrap;
                 DhtPort = m_origin.dht.port;
                 SmtpServer = m_origin.email.smtp;
@@ -660,25 +661,24 @@ namespace WebPier
             return webpier::make_text_hash(text.ToStdString());
         }
 
-        void ExploreNat(Context::Service::Protocol proto, const wxString& bind, const wxString& stun, const std::function<void(const Traverse&, const wxString&)>& callback) noexcept(true)
+        void ExploreNat(Context::Service::Protocol proto, const wxString& bind, const wxString& stun, Context::Config::Checkup mode, const std::function<void(const Traverse&, const wxString&)>& callback) noexcept(true)
         {
             std::thread([=]()
             {
                 try
                 {
-                    boost::asio::io_context io;
-
                     plexus::location client {
-                        proto <= Context::Service::UDP ? webpier::resolve_udp_endpoint(webpier::locale_to_utf8(bind.ToStdString()), webpier::stun_client_default_port) : wormhole::endpoint {},
-                        proto != Context::Service::UDP ? webpier::resolve_tcp_endpoint(webpier::locale_to_utf8(bind.ToStdString()), webpier::stun_client_default_port) : wormhole::endpoint {},
+                        proto <= Context::Service::UDP ? webpier::resolve_udp_endpoint(bind.ToStdString(), webpier::stun_client_default_port) : wormhole::endpoint {},
+                        proto != Context::Service::UDP ? webpier::resolve_tcp_endpoint(bind.ToStdString(), webpier::stun_client_default_port) : wormhole::endpoint {},
                     };
 
                     plexus::location server {
-                        proto <= Context::Service::UDP ? webpier::resolve_udp_endpoint(webpier::locale_to_utf8(stun.ToStdString()), webpier::stun_server_default_port, client.udp.address.is_v6()) : wormhole::endpoint {},
-                        proto != Context::Service::UDP ? webpier::resolve_tcp_endpoint(webpier::locale_to_utf8(stun.ToStdString()), webpier::stun_server_default_port, client.udp.address.is_v6()) : wormhole::endpoint {},
+                        proto <= Context::Service::UDP ? webpier::resolve_udp_endpoint(stun.ToStdString(), webpier::stun_server_default_port, client.udp.address.is_v6()) : wormhole::endpoint {},
+                        proto != Context::Service::UDP ? webpier::resolve_tcp_endpoint(stun.ToStdString(), webpier::stun_server_default_port, client.tcp.address.is_v6()) : wormhole::endpoint {},
                     };
 
-                    plexus::explore_network(io, client, server,
+                    boost::asio::io_context io;
+                    plexus::explore_network(io, client, server, static_cast<plexus::checkup>(mode),
                         [callback](const plexus::traverse& pass)
                         {
                             callback(
@@ -690,8 +690,8 @@ namespace WebPier
                                         pass.udp.force.variable_address,
                                         static_cast<Traverse::Binding>(pass.udp.force.mapping),
                                         static_cast<Traverse::Binding>(pass.udp.force.filtering),
-                                        wxString(webpier::utf8_to_locale(wormhole::endpoint::to_string(pass.udp.inner))),
-                                        wxString(webpier::utf8_to_locale(wormhole::endpoint::to_string(pass.udp.outer)))
+                                        wxString(wormhole::endpoint::to_string(pass.udp.inner)),
+                                        wxString(wormhole::endpoint::to_string(pass.udp.outer))
                                     },
                                     Traverse::Hole {
                                         pass.tcp.force.nat,
@@ -700,21 +700,22 @@ namespace WebPier
                                         pass.tcp.force.variable_address,
                                         static_cast<Traverse::Binding>(pass.tcp.force.mapping),
                                         static_cast<Traverse::Binding>(pass.tcp.force.filtering),
-                                        wxString(webpier::utf8_to_locale(wormhole::endpoint::to_string(pass.tcp.inner))),
-                                        wxString(webpier::utf8_to_locale(wormhole::endpoint::to_string(pass.tcp.outer)))
+                                        wxString(wormhole::endpoint::to_string(pass.tcp.inner)),
+                                        wxString(wormhole::endpoint::to_string(pass.tcp.outer))
                                     }
-                                }, pass.udp.outer == wormhole::endpoint {} && pass.tcp.outer == wormhole::endpoint {} ? _("NAT test failed!") : wxT("")
+                                }, pass.udp.outer.address.is_unspecified() && pass.tcp.outer.address.is_unspecified() ? _("NAT test failed!") : wxT("")
                             );
                         },
                         [callback](const std::string& error)
                         {
-                            callback(Traverse {}, wxString(webpier::utf8_to_locale(error)));
+                            callback(Traverse {}, wxString(error));
                         });
+
                     io.run();
                 }
                 catch (const std::exception& ex)
                 {
-                    callback(Traverse {}, wxString(webpier::utf8_to_locale(ex.what())));
+                    callback(Traverse {}, wxString(ex.what()));
                 }
             }).detach();
         }
@@ -795,7 +796,7 @@ namespace WebPier
             {
                 plexus::rendezvous mediator {
                     plexus::dhtnode {
-                        webpier::locale_to_utf8(bootstrap.ToStdString()),
+                        bootstrap.ToStdString(),
                         port,
                         network
                     } 
@@ -815,13 +816,13 @@ namespace WebPier
             {
                 plexus::rendezvous mediator {
                     plexus::emailer { 
-                        webpier::resolve_tcp_endpoint(webpier::locale_to_utf8(smtp.ToStdString()), webpier::smtp_server_default_port),
-                        webpier::resolve_tcp_endpoint(webpier::locale_to_utf8(imap.ToStdString()), webpier::imap_server_default_port),
-                        webpier::locale_to_utf8(login.ToStdString()),
-                        webpier::locale_to_utf8(password.ToStdString()),
-                        webpier::locale_to_utf8(cert.ToStdString()),
-                        webpier::locale_to_utf8(key.ToStdString()),
-                        webpier::locale_to_utf8(ca.ToStdString())
+                        webpier::resolve_tcp_endpoint(smtp.ToStdString(), webpier::smtp_server_default_port),
+                        webpier::resolve_tcp_endpoint(imap.ToStdString(), webpier::imap_server_default_port),
+                        login.ToStdString(),
+                        password.ToStdString(),
+                        cert.ToStdString(),
+                        key.ToStdString(),
+                        ca.ToStdString()
                     } 
                 };
 

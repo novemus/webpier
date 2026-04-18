@@ -30,6 +30,7 @@
         "argon2",
         "jsoncpp",
         "libwebp",
+        "pcre2",
         "wxwidgets"
     ]
 }
