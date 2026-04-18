@@ -70,6 +70,7 @@ class CSettingsDialog : public wxDialog, public std::enable_shared_from_this<CSe
     void onTcpStunChange(wxCommandEvent& event);
     void onDhtChange(wxCommandEvent& event);
     void onEmailChange(wxCommandEvent& event);
+    void doExploreNat(WebPier::Context::Service::Protocol proto, wxString bind);
 
 public:
 

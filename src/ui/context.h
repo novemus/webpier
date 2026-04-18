@@ -200,7 +200,7 @@ namespace WebPier
         };
 
         wxString MakeTextHash(const wxString& text) noexcept(true);
-        void ExploreNat(Context::Service::Protocol proto, const wxString& stun, const std::function<void(const Traverse&, const wxString&)>& callback) noexcept(true);
+        void ExploreNat(Context::Service::Protocol proto, const wxString& bind, const wxString& stun, const std::function<void(const Traverse&, const wxString&)>& callback) noexcept(true);
         void CheckDhtRendezvous(const wxString& bootstrap, wxUint32 network, wxUint16 port, const std::function<void(const wxString&)>& callback) noexcept(true);
         void CheckEmailRendezvous(const wxString& smtp, const wxString& imap, const wxString& login, const wxString& password, const wxString& cert, const wxString& key, const wxString& ca, const std::function<void(const wxString&)>& callback) noexcept(true);
     }

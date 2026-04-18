@@ -4,7 +4,9 @@
 #include <wx/msgdlg.h> 
 #include <wx/valnum.h>
 #include <wx/datetime.h>
+#include <wx/menu.h>
 #include <wx/notifmsg.h>
+#include <wx/regex.h>
 #include <cstdint>
 
 #ifdef WIN32
@@ -375,6 +377,54 @@ void CSettingsDialog::onEmailChange(wxCommandEvent& event)
     event.Skip();
 }
 
+void CSettingsDialog::doExploreNat(WebPier::Context::Service::Protocol proto, wxString bind)
+{
+    wxString stun = proto == WebPier::Context::Service::UDP ? m_udpStunCtrl->GetValue() : m_tcpStunCtrl->GetValue();
+    wxButton* button = proto == WebPier::Context::Service::UDP ? m_udpStunTest : m_tcpStunTest;
+
+    std::weak_ptr<CSettingsDialog> weak = shared_from_this();
+    WebPier::Utils::ExploreNat(WebPier::Context::Service::UDP, bind, stun, [this, weak, proto, button](const WebPier::Utils::Traverse& pass, const wxString& error)
+    {
+        if(auto ptr = weak.lock())
+        {
+            ptr->CallAfter([this, ptr, proto, button, pass, error]()
+            {
+                button->Enable();
+                m_stunGauge->SetValue(0);
+                m_stunGauge->Hide();
+
+                wxString label = proto == WebPier::Context::Service::UDP ? wxT("UDP") : wxT("TCP");
+                if (error.IsEmpty())
+                {
+                    auto& hole = proto == WebPier::Context::Service::UDP ? pass.Udp : pass.Tcp;
+                    button->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(hole.Mapping == WebPier::Utils::Traverse::Independent ? wxART_TICK_MARK : wxART_WARNING), wxASCII_STR(wxART_BUTTON)));
+                    m_natPanel->SetToolTip(wxString::Format(_("%s\nNAT: %s\nHairpin: %s\nRandom port: %s\nVariable IP: %s\nMapping: %s\nFiltering: %s\nInner EP: %s\nMapped EP: %s"),
+                            label,
+                            ToString(hole.Nat),
+                            ToString(hole.Hairpin),
+                            ToString(hole.RandomPort),
+                            ToString(hole.VariableAddress),
+                            ToString(hole.Mapping),
+                            ToString(hole.Filtering),
+                            hole.InnerEndpoint,
+                            hole.OuterEndpoint
+                        ));
+                }
+                else
+                {
+                    button->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_CROSS_MARK), wxASCII_STR(wxART_BUTTON)));
+                    m_natPanel->SetToolTip(wxString::Format(_("%s\n%s"), label, error));
+                }
+            });
+        }
+    });
+
+    m_stunGauge->Show();
+    m_stunGauge->Pulse();
+    m_natPanel->Layout();
+    button->Disable();
+}
+
 void CSettingsDialog::onUdpStunTestClick(wxCommandEvent& event)
 {
     if (m_udpStunCtrl->GetValue().IsEmpty())
@@ -384,42 +434,28 @@ void CSettingsDialog::onUdpStunTestClick(wxCommandEvent& event)
         return;
     }
 
-    std::weak_ptr<CSettingsDialog> weak = shared_from_this();
-    WebPier::Utils::ExploreNat(WebPier::Context::Service::UDP, m_udpStunCtrl->GetValue(), [this, weak](const WebPier::Utils::Traverse& pass, const wxString& error)
+    bool isIPv4 = wxRegEx("^((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))(?::\\d+)?$").Matches(m_udpStunCtrl->GetValue());
+    bool isIPv6 = wxRegEx("^(\\[([a-fA-F0-9:]+)\\](?::\\d+)?|(?<!\\[)([a-fA-F0-9:]+)(?!\\]))$").Matches(m_udpStunCtrl->GetValue());
+
+    if (!isIPv4 && !isIPv6)
     {
-        if(auto ptr = weak.lock())
+        wxMenu* menu = new wxMenu();
+        menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [this](wxCommandEvent&)
         {
-            ptr->CallAfter([this, ptr, pass, error]()
-            {
-                m_udpStunTest->Enable();
-                m_stunGauge->SetValue(0);
-                m_stunGauge->Hide();
-                if (error.IsEmpty())
-                {
-                    m_udpStunTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(pass.Udp.Mapping == WebPier::Utils::Traverse::Independent ? wxART_TICK_MARK : wxART_WARNING), wxASCII_STR(wxART_BUTTON)));
-                    m_natPanel->SetToolTip(wxString::Format(_("UDP\nNAT: %s\nHairpin: %s\nRandom port: %s\nVariable IP: %s\nMapping: %s\nFiltering: %s\nInner EP: %s\nMapped EP: %s"),
-                            ToString(pass.Udp.Nat),
-                            ToString(pass.Udp.Hairpin),
-                            ToString(pass.Udp.RandomPort),
-                            ToString(pass.Udp.VariableAddress),
-                            ToString(pass.Udp.Mapping),
-                            ToString(pass.Udp.Filtering),
-                            pass.Udp.InnerEndpoint,
-                            pass.Udp.OuterEndpoint
-                        ));
-                }
-                else
-                {
-                    m_udpStunTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_CROSS_MARK), wxASCII_STR(wxART_BUTTON)));
-                    m_natPanel->SetToolTip(wxString::Format(_("UDP\n%s"), error));
-                }
-            });
-        }
-    });
-    m_stunGauge->Show();
-    m_stunGauge->Pulse();
-    m_natPanel->Layout();
-    m_udpStunTest->Disable();
+            doExploreNat(WebPier::Context::Service::UDP, wxT("0.0.0.0:0"));
+        }, menu->Append(wxID_ANY, _("IPv&4"))->GetId());
+
+        menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [this](wxCommandEvent&)
+        {
+            doExploreNat(WebPier::Context::Service::UDP, wxT("[::]:0"));
+        }, menu->Append(wxID_ANY, _("IPv&6"))->GetId());
+
+        PopupMenu(menu);
+    }
+    else
+    {
+        doExploreNat(WebPier::Context::Service::UDP, isIPv4 ? wxT("0.0.0.0:0") : wxT("[::]:0"));
+    }
 }
 
 void CSettingsDialog::onTcpStunTestClick(wxCommandEvent& event)
@@ -431,42 +467,28 @@ void CSettingsDialog::onTcpStunTestClick(wxCommandEvent& event)
         return;
     }
 
-    std::weak_ptr<CSettingsDialog> weak = shared_from_this();
-    WebPier::Utils::ExploreNat(WebPier::Context::Service::TCP, m_tcpStunCtrl->GetValue(), [this, weak](const WebPier::Utils::Traverse& pass, const wxString& error)
+    bool isIPv4 = wxRegEx("^((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))(?::\\d+)?$").Matches(m_tcpStunCtrl->GetValue());
+    bool isIPv6 = wxRegEx("^(\\[([a-fA-F0-9:]+)\\](?::\\d+)?|(?<!\\[)([a-fA-F0-9:]+)(?!\\]))$").Matches(m_tcpStunCtrl->GetValue());
+
+    if (!isIPv4 && !isIPv6)
     {
-        if(auto ptr = weak.lock())
+        wxMenu* menu = new wxMenu();
+        menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [this](wxCommandEvent&)
         {
-            ptr->CallAfter([this, ptr, pass, error]()
-            {
-                m_tcpStunTest->Enable();
-                m_stunGauge->SetValue(0);
-                m_stunGauge->Hide();
-                if (error.IsEmpty())
-                {
-                    m_tcpStunTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(pass.Tcp.Mapping == WebPier::Utils::Traverse::Independent ? wxART_TICK_MARK : wxART_WARNING), wxASCII_STR(wxART_BUTTON)));
-                    m_natPanel->SetToolTip(wxString::Format(_("TCP\nNAT: %s\nHairpin: %s\nRandom port: %s\nVariable IP: %s\nMapping: %s\nFiltering: %s\nInner EP: %s\nMapped EP: %s"),
-                            ToString(pass.Tcp.Nat),
-                            ToString(pass.Tcp.Hairpin),
-                            ToString(pass.Tcp.RandomPort),
-                            ToString(pass.Tcp.VariableAddress),
-                            ToString(pass.Tcp.Mapping),
-                            ToString(pass.Tcp.Filtering),
-                            pass.Tcp.InnerEndpoint,
-                            pass.Tcp.OuterEndpoint
-                        ));
-                }
-                else
-                {
-                    m_tcpStunTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_CROSS_MARK), wxASCII_STR(wxART_BUTTON)));
-                    m_natPanel->SetToolTip(wxString::Format(_("TCP\n%s"), error));
-                }
-            });
-        }
-    });
-    m_stunGauge->Show();
-    m_stunGauge->Pulse();
-    m_natPanel->Layout();
-    m_tcpStunTest->Disable();
+            doExploreNat(WebPier::Context::Service::TCP, wxT("0.0.0.0:0"));
+        }, menu->Append(wxID_ANY, _("IPv&4"))->GetId());
+
+        menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [this](wxCommandEvent&)
+        {
+            doExploreNat(WebPier::Context::Service::TCP, wxT("[::]:0"));
+        }, menu->Append(wxID_ANY, _("IPv&6"))->GetId());
+
+        PopupMenu(menu);
+    }
+    else
+    {
+        doExploreNat(WebPier::Context::Service::TCP, isIPv4 ? wxT("0.0.0.0:0") : wxT("[::]:0"));
+    }
 }
 
 void CSettingsDialog::onDhtTestClick(wxCommandEvent& event)
