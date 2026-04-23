@@ -12,7 +12,7 @@
 
 namespace webpier
 {
-    constexpr const char* default_udp_stun_server = "stun.ekiga.net";
+    constexpr const char* default_udp_stun_server = "stunserver2025.stunprotocol.org";
     constexpr const char* default_tcp_stun_server = "stunserver2025.stunprotocol.org";
     constexpr const char* default_dht_bootstrap = "bootstrap.jami.net";
     constexpr const char* default_ip4_gateway = "0.0.0.0:0";
