@@ -116,6 +116,10 @@ namespace webpier
                         m_config.email.cert = utf8_to_locale(doc.get<std::string>("email.cert", ""));
                         m_config.email.key = utf8_to_locale(doc.get<std::string>("email.key", ""));
                         m_config.email.ca = utf8_to_locale(doc.get<std::string>("email.ca", ""));
+                        m_config.relay.server = utf8_to_locale(doc.get<std::string>("relay.server", ""));
+                        m_config.relay.cert = utf8_to_locale(doc.get<std::string>("relay.cert", ""));
+                        m_config.relay.key = utf8_to_locale(doc.get<std::string>("relay.key", ""));
+                        m_config.relay.ca = utf8_to_locale(doc.get<std::string>("relay.ca", ""));
                     }
                 }
                 catch(const std::exception& e)
@@ -148,6 +152,10 @@ namespace webpier
                     doc.put("email.cert", locale_to_utf8(m_config.email.cert));
                     doc.put("email.key", locale_to_utf8(m_config.email.key));
                     doc.put("email.ca", locale_to_utf8(m_config.email.ca));
+                    doc.put("relay.server", locale_to_utf8(m_config.relay.server));
+                    doc.put("relay.cert", locale_to_utf8(m_config.relay.cert));
+                    doc.put("relay.key", locale_to_utf8(m_config.relay.key));
+                    doc.put("relay.ca", locale_to_utf8(m_config.relay.ca));
                     boost::property_tree::write_json(file.string(), doc);
                 }
                 catch(const std::exception& e)
@@ -180,6 +188,7 @@ namespace webpier
                             unit.rendezvous = utf8_to_locale(item.second.get<std::string>("rendezvous", ""));
                             unit.proto = wormhole::protocol(item.second.get<int>("proto", wormhole::protocol::udp));
                             unit.role = wormhole::schema(item.second.get<int>("role", wormhole::schema::either));
+                            unit.route = plexus::routing::favour(item.second.get<int>("route", plexus::routing::direct));
                             unit.autostart = item.second.get<bool>("autostart", false);
                             unit.obscure = item.second.get<bool>("obscure", true);
                             services.emplace(unit.name, unit);
@@ -211,6 +220,7 @@ namespace webpier
                         item.put("rendezvous", locale_to_utf8(unit.second.rendezvous));
                         item.put("proto", unit.second.proto);
                         item.put("role", unit.second.role);
+                        item.put("route", unit.second.route);
                         item.put("autostart", unit.second.autostart);
                         item.put("obscure", unit.second.obscure);
                         array.push_back(std::make_pair("", item));

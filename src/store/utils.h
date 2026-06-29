@@ -17,6 +17,7 @@ namespace webpier
     constexpr const char* taskxml_config = "taskxml";
 #endif
 
+    constexpr const char* rico_server_default_port = "7411";
     constexpr const char* stun_server_default_port = "3478";
     constexpr const char* stun_client_default_port = "0";
     constexpr const char* smtp_server_default_port = "smtps";

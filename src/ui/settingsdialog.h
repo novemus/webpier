@@ -58,6 +58,13 @@ class CSettingsDialog : public wxDialog, public std::enable_shared_from_this<CSe
     wxFilePickerCtrl* m_caPicker;
     wxButton* m_emailTest;
     wxGauge* m_emailGauge;
+    wxPanel* m_relayPanel;
+    wxTextCtrl* m_ricoCtrl;
+    wxFilePickerCtrl* m_ricoCertPicker;
+	wxFilePickerCtrl* m_ricoKeyPicker;
+	wxFilePickerCtrl* m_ricoCaPicker;
+    wxButton* m_ricoTest;
+    wxGauge* m_ricoGauge;
     wxButton* m_cancelBtn;
     wxButton* m_okBtn;
     WebPier::Context::ConfigPtr m_config;
@@ -69,11 +76,13 @@ class CSettingsDialog : public wxDialog, public std::enable_shared_from_this<CSe
     void onTcpStunTestClick(wxCommandEvent& event);
     void onDhtTestClick(wxCommandEvent& event);
     void onEmailTestClick(wxCommandEvent& event);
+    void onRicoTestClick(wxCommandEvent& event);
     void onIdle(wxIdleEvent& event);
     void onUdpStunChange(wxCommandEvent& event);
     void onTcpStunChange(wxCommandEvent& event);
     void onDhtChange(wxCommandEvent& event);
     void onEmailChange(wxCommandEvent& event);
+    void onRicoChange(wxCommandEvent& event);
     void doExploreNat(WebPier::Context::Service::Protocol proto, wxString bind);
 
 public:

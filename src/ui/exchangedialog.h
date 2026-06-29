@@ -35,6 +35,8 @@ class CImportPage : public wxPanel
     wxStaticText* m_protoValue;
     wxStaticText* m_schemaLabel;
     wxStaticText* m_schemaValue;
+    wxStaticText* m_routeLabel;
+    wxStaticText* m_routeValue;
     wxStaticText* m_startLabel;
     wxCheckBox* m_startCtrl;
     wxStaticText* m_obscureLabel;
@@ -71,6 +73,8 @@ class CExportPage : public wxPanel
     wxStaticText* m_protoValue;
     wxStaticText* m_schemaLabel;
     wxStaticText* m_schemaValue;
+    wxStaticText* m_routeLabel;
+    wxStaticText* m_routeValue;
     wxStaticText* m_startLabel;
     wxStaticText* m_startValue;
     wxStaticText* m_obscureLabel;

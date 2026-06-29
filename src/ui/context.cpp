@@ -5,6 +5,7 @@
 #include <store/utils.h>
 #include <backend/client.h>
 #include <plexus/plexus.h>
+#include <ricochet/agent.h>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/scope_exit.hpp>
 #include <wx/stdpaths.h>
@@ -29,6 +30,8 @@
 
 namespace WebPier
 {
+    namespace rico = ricochet;
+
     namespace
     {
         std::shared_ptr<webpier::context> g_context;
@@ -121,6 +124,7 @@ namespace WebPier
                 && lhs->Rendezvous == rhs->Rendezvous
                 && lhs->Proto == rhs->Proto
                 && lhs->Role == rhs->Role
+                && lhs->Route == rhs->Route
                 && lhs->Autostart == rhs->Autostart
                 && lhs->Obscure == rhs->Obscure;
         }
@@ -151,6 +155,7 @@ namespace WebPier
                     Rendezvous.ToStdString(),
                     static_cast<wormhole::protocol>(Proto),
                     static_cast<wormhole::schema>(Role),
+                    static_cast<plexus::routing::favour>(Route),
                     Autostart,
                     Obscure
                 };
@@ -221,8 +226,9 @@ namespace WebPier
                 Address = m_origin.address;
                 Gateway = m_origin.gateway;
                 Rendezvous = m_origin.rendezvous;
-                Proto = static_cast<Service::Protocol>(m_origin.proto);
-                Role = static_cast<Service::Schema>(m_origin.role);
+                Proto = static_cast<Protocol>(m_origin.proto);
+                Role = static_cast<Schema>(m_origin.role);
+                Route = static_cast<Routing>(m_origin.route);
                 Autostart = m_origin.autostart;
                 Obscure = m_origin.obscure;
             }
@@ -272,6 +278,7 @@ namespace WebPier
                     || Rendezvous.ToStdString() != m_origin.rendezvous
                     || Proto != static_cast<Protocol>(m_origin.proto)
                     || Role != static_cast<Schema>(m_origin.role)
+                    || Route != static_cast<Routing>(m_origin.route)
                     || Autostart != m_origin.autostart
                     || Obscure != m_origin.obscure;
             }
@@ -329,6 +336,12 @@ namespace WebPier
                         EmailX509Cert.ToStdString(), 
                         EmailX509Key.ToStdString(), 
                         EmailX509Ca.ToStdString() 
+                    },
+                    { 
+                        RicoServer.ToStdString(),
+                        RicoX509Cert.ToStdString(), 
+                        RicoX509Key.ToStdString(), 
+                        RicoX509Ca.ToStdString() 
                     }
                 };
 
@@ -374,6 +387,10 @@ namespace WebPier
                 EmailX509Cert = m_origin.email.cert;
                 EmailX509Key = m_origin.email.key;
                 EmailX509Ca = m_origin.email.ca;
+                RicoServer = m_origin.relay.server;
+                RicoX509Cert = m_origin.relay.cert;
+                RicoX509Key = m_origin.relay.key;
+                RicoX509Ca = m_origin.relay.ca;
             }
         };
 
@@ -499,6 +516,7 @@ namespace WebPier
                 item.put("ip", pair.second->IsIPv6() ? 6 : 4);
                 item.put("proto", pair.second->Proto);
                 item.put("role", pair.second->Role == Service::Client ? Service::Server : pair.second->Role == Service::Server ? Service::Client : pair.second->Role);
+                item.put("route", pair.second->Route);
                 array.push_back(std::make_pair("", item));
             }
             doc.put_child("services", array);
@@ -525,6 +543,7 @@ namespace WebPier
                 service->Gateway = item.second.get<int>("ip", 4) == 4 ? webpier::default_ip4_gateway : webpier::default_ip6_gateway;
                 service->Proto = Service::Protocol(item.second.get<int>("proto", Service::Protocol::UDP));
                 service->Role = Service::Schema(item.second.get<int>("role", Service::Schema::Server));
+                service->Route = Service::Routing(item.second.get<int>("route", Service::Routing::Direct));
                 offer.Services[wxUIntPtr(service.get())] = service;
             }
         }
@@ -729,7 +748,7 @@ namespace WebPier
                     webpier::config config;
                     g_context->get_config(config);
 
-                    plexus::identity host = plexus::identity::from_string(config.pier);
+                    plexus::identity host { config.pier.substr(0, config.pier.find('/') + 1), config.pier.substr(config.pier.find('/') + 1) };
 
                     boost::asio::io_context io;
 
@@ -833,6 +852,45 @@ namespace WebPier
                 callback(ex.what());
             }
         }
+
+        void CheckRicochetRelay(const wxString& server, const wxString& cert, const wxString& key, const wxString& ca, bool tcp, bool v4, const std::function<void(const wxString&, const wxString&)>& callback) noexcept(true)
+        {
+            std::thread([server, cert, key, ca, tcp, v4, callback]()
+            {
+                try
+                {
+                    boost::asio::io_context io;
+                    boost::asio::spawn(io, [server, cert, key, ca, tcp, v4, callback](boost::asio::yield_context yield)
+                    {
+                        try
+                        {
+                            auto agent = rico::create_agent(
+                                webpier::resolve_tcp_endpoint(server.ToStdString(), webpier::rico_server_default_port),
+                                cert.ToStdString(),
+                                key.ToStdString(),
+                                ca.ToStdString()
+                            );
+                            auto proto = tcp && v4 ? rico::protocol::tcp4 : tcp && !v4 ? rico::protocol::tcp6 : !tcp && v4 ? rico::protocol::udp4 : rico::protocol::udp6;
+
+                            rico::endpoint out;
+                            agent->assign_relay(yield, proto, out);
+
+                            callback(wormhole::endpoint::to_string(wormhole::endpoint{ out.address(), out.port() }), "");
+                        }
+                        catch (const std::exception& ex)
+                        {
+                            callback("", ex.what());
+                        }
+                    }, boost::asio::detached);
+
+                    io.run();
+                }
+                catch (const std::exception& ex)
+                {
+                    callback("", ex.what());
+                }
+            }).detach();
+        }
     }
 }
 
@@ -864,6 +922,20 @@ wxString ToString(WebPier::Context::Service::Schema value)
             return _("Mutual");
         default:
             return _("Auto");
+    }
+    return wxEmptyString;
+}
+
+wxString ToString(WebPier::Context::Service::Routing value)
+{
+    switch (value)
+    {
+        case WebPier::Context::Service::Direct:
+            return _("Direct");
+        case WebPier::Context::Service::Bridge:
+            return _("Bridge");
+        default:
+            return _("Either");
     }
     return wxEmptyString;
 }

@@ -76,6 +76,14 @@ CImportPage::CImportPage(const wxString& pier, const WebPier::Context::ServiceLi
 	m_schemaValue->Wrap( -1 );
 	serviceSizer->Add( m_schemaValue, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 
+    m_routeLabel = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _("Route"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_routeLabel->Wrap( -1 );
+	serviceSizer->Add( m_routeLabel, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+
+	m_routeValue = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, 0 );
+	m_routeValue->Wrap( -1 );
+	serviceSizer->Add( m_routeValue, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+
     m_startLabel = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _("Autostart"), wxDefaultPosition, wxDefaultSize, 0 );
     m_startLabel->Wrap( -1 );
     serviceSizer->Add( m_startLabel, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
@@ -135,6 +143,8 @@ CImportPage::~CImportPage()
     delete m_protoValue;
     delete m_schemaLabel;
     delete m_schemaValue;
+    delete m_routeLabel;
+    delete m_routeValue;
     delete m_startLabel;
     delete m_startCtrl;
     delete m_obscureLabel;
@@ -155,6 +165,7 @@ void CImportPage::populate(int line)
     m_gatewayCtrl->SetValue(service->Gateway);
     m_protoValue->SetLabel(ToString(service->Proto));
     m_schemaValue->SetLabel(ToString(service->Role));
+    m_routeValue->SetLabel(ToString(service->Route));
     m_startCtrl->SetValue(service->Autostart);
     m_obscureValue->SetLabel(service->Proto == WebPier::Context::Service::SSL ? _("-") : ToString(service->Obscure));
     m_rendValue->SetLabel(service->Rendezvous.IsEmpty() ? _("Email") : _("DHT"));
@@ -312,6 +323,14 @@ CExportPage::CExportPage(const wxString& pier, const WebPier::Context::ServiceLi
 	m_schemaValue->Wrap( -1 );
 	serviceSizer->Add( m_schemaValue, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
+    m_routeLabel = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _("Route"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_routeLabel->Wrap( -1 );
+	serviceSizer->Add( m_routeLabel, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+	m_routeValue = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, 0 );
+	m_routeValue->Wrap( -1 );
+	serviceSizer->Add( m_routeValue, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
     m_startLabel = new wxStaticText( pierSizer->GetStaticBox(), wxID_ANY, _("Autostart"), wxDefaultPosition, wxDefaultSize, 0 );
     m_startLabel->Wrap( -1 );
     serviceSizer->Add( m_startLabel, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
@@ -370,6 +389,8 @@ CExportPage::~CExportPage()
     delete m_protoValue;
     delete m_schemaLabel;
     delete m_schemaValue;
+    delete m_routeLabel;
+    delete m_routeValue;
     delete m_startLabel;
     delete m_startValue;
     delete m_obscureLabel;
@@ -390,6 +411,7 @@ void CExportPage::populate(int line)
     m_gatewayValue->SetLabel(service->Gateway);
     m_protoValue->SetLabel(ToString(service->Proto));
     m_schemaValue->SetLabel(ToString(service->Role));
+    m_routeValue->SetLabel(ToString(service->Route));
     m_startValue->SetLabel(ToString(service->Autostart));
     m_obscureValue->SetLabel(service->Proto == WebPier::Context::Service::SSL ? _("-") : ToString(service->Obscure));
     m_rendValue->SetLabel(service->Rendezvous.IsEmpty() ? _("Email") : _("DHT"));

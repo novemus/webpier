@@ -92,6 +92,16 @@ namespace slipway
                         service.proto,
                         service.role 
                     },
+                    plexus::ricochet {
+                        webpier::resolve_tcp_endpoint(config.relay.server, webpier::rico_server_default_port),
+                        config.relay.cert,
+                        config.relay.key,
+                        config.relay.ca
+                    },
+                    plexus::routing {
+                        service.route,
+                        service.route
+                    },
                     service.rendezvous.empty()
                         ? plexus::rendezvous {
                             plexus::emailer {
@@ -180,8 +190,8 @@ namespace slipway
 
                         m_thread = std::make_unique<std::thread>([this]()
                         {
-                            auto host = plexus::identity::from_string(m_data.config.pier);
-                            auto peer = plexus::identity::from_string(m_data.service.pier);
+                            plexus::identity host { m_data.config.pier.substr(0, m_data.config.pier.find('/') + 1), m_data.config.pier.substr(m_data.config.pier.find('/') + 1) };
+                            plexus::identity peer { m_data.service.pier.substr(0, m_data.service.pier.find('/') + 1), m_data.service.pier.substr(m_data.service.pier.find('/') + 1) };
 
                             try
                             {
@@ -528,6 +538,12 @@ namespace slipway
                         webpier::utf8_to_locale(doc.get<std::string>("email.cert", "")),
                         webpier::utf8_to_locale(doc.get<std::string>("email.key", "")),
                         webpier::utf8_to_locale(doc.get<std::string>("email.ca", ""))
+                    },
+                    webpier::ricochet {
+                        webpier::utf8_to_locale(doc.get<std::string>("relay.server", "")),
+                        webpier::utf8_to_locale(doc.get<std::string>("relay.cert", "")),
+                        webpier::utf8_to_locale(doc.get<std::string>("relay.key", "")),
+                        webpier::utf8_to_locale(doc.get<std::string>("relay.ca", ""))
                     }
                 };
             }
@@ -555,6 +571,7 @@ namespace slipway
                                 webpier::utf8_to_locale(item.second.get<std::string>("rendezvous", "")),
                                 wormhole::protocol(item.second.get<int>("proto", wormhole::protocol::udp)),
                                 wormhole::schema(item.second.get<int>("role", wormhole::schema::either)),
+                                plexus::routing::favour(item.second.get<int>("route", plexus::routing::direct)),
                                 item.second.get<bool>("autostart", false),
                                 item.second.get<bool>("obscure", true),
                             };
@@ -600,6 +617,7 @@ namespace slipway
                                 webpier::utf8_to_locale(item.second.get<std::string>("rendezvous", "")),
                                 wormhole::protocol(item.second.get<int>("proto", wormhole::protocol::udp)),
                                 wormhole::schema(item.second.get<int>("role", local ? wormhole::schema::server : wormhole::schema::client)),
+                                plexus::routing::favour(item.second.get<int>("route", plexus::routing::direct)),
                                 item.second.get<bool>("autostart", false),
                                 item.second.get<bool>("obscure", true)
                             });

@@ -30,6 +30,11 @@ CServiceDialog::CServiceDialog(WebPier::Context::ConfigPtr config, WebPier::Cont
     schemaChoice.Add(ToString(WebPier::Context::Service::Server));
     schemaChoice.Add(ToString(WebPier::Context::Service::Mutual));
 
+    wxArrayString routeChoice;
+    routeChoice.Add(ToString(WebPier::Context::Service::Direct));
+    routeChoice.Add(ToString(WebPier::Context::Service::Bridge));
+    routeChoice.Add(ToString(WebPier::Context::Service::Anyhow));
+
     auto pierChoice = WebPier::Context::GetPiers();
 
     m_propGrid = new wxPropertyGrid(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPG_BOLD_MODIFIED|wxPG_HIDE_MARGIN);
@@ -54,8 +59,9 @@ CServiceDialog::CServiceDialog(WebPier::Context::ConfigPtr config, WebPier::Cont
     m_protoItem = m_propGrid->Append( new wxEnumProperty( _("Tunnel"), wxPG_LABEL, protoChoice, wxArrayInt(), static_cast<int>(m_service->Proto) ) );
     m_gateItem = m_protoItem->InsertChild( 0, new wxStringProperty( _("Gateway"), wxPG_LABEL, m_service->Gateway ) );
 	m_roleItem = m_protoItem->InsertChild( 1, new wxEnumProperty( _("Schema"), wxPG_LABEL, schemaChoice, wxArrayInt(),  static_cast<int>(m_service->Role) ) );
-    m_startItem = m_protoItem->InsertChild( 2, new wxBoolProperty( _("Autostart"), wxPG_LABEL, m_service->Autostart ) );
-    m_obsItem = m_protoItem->InsertChild( 3, new wxBoolProperty( _("Obscure"), wxPG_LABEL, m_service->Obscure ) );
+    m_routeItem = m_protoItem->InsertChild( 2, new wxEnumProperty( _("Route"), wxPG_LABEL, routeChoice, wxArrayInt(),  static_cast<int>(m_service->Route) ) );
+    m_startItem = m_protoItem->InsertChild( 3, new wxBoolProperty( _("Autostart"), wxPG_LABEL, m_service->Autostart ) );
+    m_obsItem = m_protoItem->InsertChild( 4, new wxBoolProperty( _("Obscure"), wxPG_LABEL, m_service->Obscure ) );
     m_obsItem->Hide(m_service->Proto == WebPier::Context::Service::SSL);
     m_rendItem = m_propGrid->Append( new wxEnumProperty( _("Rendezvous"), wxPG_LABEL, rendChoice, wxArrayInt(), m_service->Rendezvous.IsEmpty() ? 0 : 1 ) );
     m_bootItem = m_rendItem->InsertChild( 0, new wxStringProperty( _("Bootstrap"), wxPG_LABEL, m_service->Rendezvous ) );
@@ -119,6 +125,7 @@ void CServiceDialog::onOKButtonClick( wxCommandEvent& event )
     m_service->Gateway = m_gateItem->GetValueAsString();
     m_service->Proto = static_cast<WebPier::Context::Service::Protocol>(m_protoItem->GetValue().GetLong());
     m_service->Role = static_cast<WebPier::Context::Service::Schema>(m_roleItem->GetValue().GetLong());
+    m_service->Route = static_cast<WebPier::Context::Service::Routing>(m_routeItem->GetValue().GetLong());
     m_service->Obscure = m_obsItem->GetValue().GetBool();
     m_service->Autostart = m_startItem->GetValue().GetBool();
     m_service->Rendezvous = m_rendItem->GetChoiceSelection() == 1 ? m_bootItem->GetValueAsString() : "";

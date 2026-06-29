@@ -273,6 +273,7 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxStr
     emailGridSizer->Add(certLabel, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT | wxLEFT, 5);
 
     m_certPicker = new wxFilePickerCtrl(m_emailPanel, wxID_ANY, m_config->EmailX509Cert, _("Select a file"), _("*.*"), wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE);
+    m_certPicker->SetPath(m_config->EmailX509Cert);
     emailGridSizer->Add(m_certPicker, 0, wxEXPAND | wxALIGN_CENTER_VERTICAL | wxRIGHT | wxLEFT, 5);
 
     wxStaticText *keyLabel;
@@ -281,6 +282,7 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxStr
     emailGridSizer->Add(keyLabel, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT | wxLEFT, 5);
 
     m_keyPicker = new wxFilePickerCtrl(m_emailPanel, wxID_ANY, m_config->EmailX509Key, _("Select a file"), _("*.*"), wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE);
+    m_keyPicker->SetPath(m_config->EmailX509Key);
     emailGridSizer->Add(m_keyPicker, 0, wxEXPAND | wxALIGN_CENTER_VERTICAL | wxRIGHT | wxLEFT, 5);
 
     wxStaticText *caLabel;
@@ -289,6 +291,7 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxStr
     emailGridSizer->Add(caLabel, 0, wxALIGN_CENTER_VERTICAL | wxBOTTOM | wxRIGHT | wxLEFT, 5);
 
     m_caPicker = new wxFilePickerCtrl(m_emailPanel, wxID_ANY, m_config->EmailX509Ca, _("Select a file"), _("*.*"), wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE);
+    m_caPicker->SetPath(m_config->EmailX509Ca);
     emailGridSizer->Add(m_caPicker, 0, wxEXPAND | wxALIGN_CENTER_VERTICAL | wxBOTTOM | wxRIGHT | wxLEFT, 5);
 
     m_emailTest = new wxButton(m_emailPanel, wxID_ANY, _("Test"), wxDefaultPosition, wxDefaultSize, 0);
@@ -306,6 +309,62 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxStr
     m_emailPanel->Layout();
     emailSizer->Fit(m_emailPanel);
     m_notebook->AddPage(m_emailPanel, _("Email"), false);
+
+    m_relayPanel = new wxPanel( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	wxBoxSizer* relaySizer = new wxBoxSizer( wxVERTICAL );
+
+	wxFlexGridSizer* relayGridSizer = new wxFlexGridSizer( 0, 2, 5, 5 );
+	relayGridSizer->AddGrowableCol( 1 );
+	relayGridSizer->SetFlexibleDirection( wxBOTH );
+	relayGridSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+
+	wxStaticText* ricoLabel = new wxStaticText( m_relayPanel, wxID_ANY, _("Ricochet server"), wxDefaultPosition, wxDefaultSize, 0 );
+	ricoLabel->Wrap( -1 );
+	ricoLabel->SetMinSize( wxSize( 100,-1 ) );
+
+	relayGridSizer->Add( ricoLabel, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
+
+	m_ricoCtrl = new wxTextCtrl( m_relayPanel, wxID_ANY, m_config->RicoServer, wxDefaultPosition, wxDefaultSize, 0 );
+	relayGridSizer->Add( m_ricoCtrl, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxTOP|wxRIGHT|wxLEFT, 5 );
+
+	wxStaticText* ricoCertLabel = new wxStaticText( m_relayPanel, wxID_ANY, _("Certificate"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
+	ricoCertLabel->Wrap( -1 );
+	relayGridSizer->Add( ricoCertLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
+
+	m_ricoCertPicker = new wxFilePickerCtrl( m_relayPanel, wxID_ANY, m_config->RicoX509Cert, _("Select a file"), _("*.*"), wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE );
+	m_ricoCertPicker->SetPath(m_config->RicoX509Cert);
+    relayGridSizer->Add( m_ricoCertPicker, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
+
+	wxStaticText* ricoKeyLabel = new wxStaticText( m_relayPanel, wxID_ANY, _("Key"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
+	ricoKeyLabel->Wrap( -1 );
+	relayGridSizer->Add( ricoKeyLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
+
+	m_ricoKeyPicker = new wxFilePickerCtrl( m_relayPanel, wxID_ANY, m_config->RicoX509Key, _("Select a file"), _("*.*"), wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE );
+	m_ricoKeyPicker->SetPath(m_config->RicoX509Key);
+    relayGridSizer->Add( m_ricoKeyPicker, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
+
+	wxStaticText* ricoCaLabel = new wxStaticText( m_relayPanel, wxID_ANY, _("CA"), wxDefaultPosition, wxSize( 100,-1 ), 0 );
+	ricoCaLabel->Wrap( -1 );
+	relayGridSizer->Add( ricoCaLabel, 0, wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
+
+	m_ricoCaPicker = new wxFilePickerCtrl( m_relayPanel, wxID_ANY, m_config->RicoX509Ca, _("Select a file"), _("*.*"), wxDefaultPosition, wxDefaultSize, wxFLP_DEFAULT_STYLE );
+	m_ricoCaPicker->SetPath(m_config->RicoX509Ca);
+    relayGridSizer->Add( m_ricoCaPicker, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
+
+    m_ricoTest = new wxButton(m_relayPanel, wxID_ANY, _("Test"), wxDefaultPosition, wxDefaultSize, 0);
+    m_ricoTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_REDO), wxASCII_STR(wxART_BUTTON)));
+    relayGridSizer->Add(m_ricoTest, 0, wxALIGN_CENTER_VERTICAL, 10);
+
+    m_ricoGauge = new wxGauge(m_relayPanel, wxID_ANY, 100, wxDefaultPosition, wxDefaultSize, wxGA_HORIZONTAL);
+    m_ricoGauge->Hide();
+
+    relayGridSizer->Add(m_ricoGauge, 0, wxEXPAND | wxALIGN_CENTER_VERTICAL | wxRIGHT | wxLEFT, 5);
+	relaySizer->Add( relayGridSizer, 1, wxEXPAND|wxTOP|wxRIGHT|wxLEFT, 5 );
+
+	m_relayPanel->SetSizer( relaySizer );
+	m_relayPanel->Layout();
+	relaySizer->Fit( m_relayPanel );
+	m_notebook->AddPage( m_relayPanel, _("Relay"), true );
 
     mainSizer->Add(m_notebook, 1, wxEXPAND | wxALL, 5);
 
@@ -351,6 +410,11 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxStr
     m_keyPicker->Connect(wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(CSettingsDialog::onEmailChange), NULL, this);
     m_caPicker->Connect(wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(CSettingsDialog::onEmailChange), NULL, this);
     m_emailTest->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(CSettingsDialog::onEmailTestClick), NULL, this);
+    m_ricoCtrl->Connect(wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(CSettingsDialog::onRicoChange), NULL, this);
+    m_ricoCertPicker->Connect(wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(CSettingsDialog::onRicoChange), NULL, this);
+    m_ricoKeyPicker->Connect(wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(CSettingsDialog::onRicoChange), NULL, this);
+    m_ricoCaPicker->Connect(wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(CSettingsDialog::onRicoChange), NULL, this);
+    m_ricoTest->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(CSettingsDialog::onRicoTestClick), NULL, this);
 }
 
 CSettingsDialog::~CSettingsDialog()
@@ -373,6 +437,9 @@ void CSettingsDialog::onIdle(wxIdleEvent &event)
 
     if (m_emailGauge->IsShown())
         m_emailGauge->Pulse();
+
+    if (m_ricoGauge->IsShown())
+        m_ricoGauge->Pulse();
 
     event.Skip();
 }
@@ -414,6 +481,13 @@ void CSettingsDialog::onEmailChange(wxCommandEvent &event)
 {
     m_emailTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_REDO), wxASCII_STR(wxART_BUTTON)));
     m_emailPanel->SetToolTip(wxEmptyString);
+    event.Skip();
+}
+
+void CSettingsDialog::onRicoChange(wxCommandEvent &event)
+{
+    m_ricoTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_REDO), wxASCII_STR(wxART_BUTTON)));
+    m_relayPanel->SetToolTip(wxEmptyString);
     event.Skip();
 }
 
@@ -598,6 +672,52 @@ void CSettingsDialog::onEmailTestClick(wxCommandEvent &event)
     m_emailTest->Disable();
 }
 
+void CSettingsDialog::onRicoTestClick(wxCommandEvent& event)
+{
+    auto doCheckRicochetRelay = [this](bool tcp, bool v4)
+    {
+        wxString label = tcp && v4 ? wxT("TCP4") : tcp && !v4 ? wxT("TCP6") : !tcp && v4 ? wxT("UDP4") : wxT("UDP6");
+
+        std::weak_ptr<CSettingsDialog> weak = shared_from_this();
+        WebPier::Utils::CheckRicochetRelay(m_ricoCtrl->GetValue(), m_ricoCertPicker->GetPath(), m_ricoKeyPicker->GetPath(), m_ricoCaPicker->GetPath(), tcp, v4, [this, weak, label](const wxString& relay, const wxString& error)
+        {
+            if(auto ptr = weak.lock())
+            {
+                ptr->CallAfter([this, ptr, label, relay, error]()
+                {
+                    m_ricoTest->Enable();
+                    m_ricoGauge->SetValue(0);
+                    m_ricoGauge->Hide();
+                    if (error.IsEmpty())
+                    {
+                        m_ricoTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_TICK_MARK), wxASCII_STR(wxART_BUTTON)));
+                        m_relayPanel->SetToolTip(wxString::Format(_("%s relay: %s"), label, relay));
+                    }
+                    else
+                    {
+                        m_ricoTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_CROSS_MARK), wxASCII_STR(wxART_BUTTON)));
+                        m_relayPanel->SetToolTip(wxString::Format(_("Can't get %s relay!\n%s"), label, error));
+                    }
+                });
+            } 
+        });
+        m_ricoGauge->Show();
+        m_ricoGauge->Pulse();
+        m_ricoTest->Disable();
+    };
+
+    wxMenu *menu = new wxMenu();
+    menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [&](wxCommandEvent&)
+                { doCheckRicochetRelay(false, true); }, menu->Append(wxID_ANY, _("&UDP4"))->GetId());
+    menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [&](wxCommandEvent&)
+                { doCheckRicochetRelay(false, false); }, menu->Append(wxID_ANY, _("U&DP6"))->GetId());
+    menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [&](wxCommandEvent&)
+                { doCheckRicochetRelay(true, true); }, menu->Append(wxID_ANY, _("TC&P4"))->GetId());
+    menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [&](wxCommandEvent&)
+                { doCheckRicochetRelay(true, false); }, menu->Append(wxID_ANY, _("TCP&6"))->GetId());
+    PopupMenu(menu);
+}
+
 void CSettingsDialog::onOkButtonClick(wxCommandEvent &event)
 {
     if (m_ownerCtrl->GetValue().IsEmpty() || m_pierCtrl->GetValue().IsEmpty() || (m_udpStunCtrl->GetValue().IsEmpty() && m_tcpStunCtrl->GetValue().IsEmpty()) || (m_dhtBootCtrl->GetValue().IsEmpty() && (m_smtpCtrl->GetValue().IsEmpty() || m_imapCtrl->GetValue().IsEmpty() || m_loginCtrl->GetValue().IsEmpty() || m_passCtrl->GetValue().IsEmpty())))
@@ -653,6 +773,11 @@ void CSettingsDialog::onOkButtonClick(wxCommandEvent &event)
     m_config->EmailX509Cert = m_certPicker->GetPath();
     m_config->EmailX509Key = m_keyPicker->GetPath();
     m_config->EmailX509Ca = m_caPicker->GetPath();
+
+    m_config->RicoServer = m_ricoCtrl->GetValue();
+    m_config->RicoX509Cert = m_ricoCertPicker->GetPath();
+    m_config->RicoX509Key = m_ricoKeyPicker->GetPath();
+    m_config->RicoX509Ca = m_ricoCaPicker->GetPath();
 
     event.Skip();
 }

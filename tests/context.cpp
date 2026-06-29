@@ -38,6 +38,12 @@ BOOST_AUTO_TEST_CASE(context)
             "/some/path/cert.pem",
             "/some/path/private.pem",
             "/some/path/ca.pem"
+        },
+        {
+            "127.0.0.1",
+            "/some/path/cert.pem",
+            "/some/path/private.pem",
+            "/some/path/cert.pem"
         }};
 
     BOOST_REQUIRE_NO_THROW(context->set_config(in));
@@ -63,6 +69,10 @@ BOOST_AUTO_TEST_CASE(context)
     BOOST_CHECK_EQUAL(out.email.cert, in.email.cert);
     BOOST_CHECK_EQUAL(out.email.key, in.email.key);
     BOOST_CHECK_EQUAL(out.email.ca, in.email.ca);
+    BOOST_CHECK_EQUAL(out.relay.server, in.relay.server);
+    BOOST_CHECK_EQUAL(out.relay.cert, in.relay.cert);
+    BOOST_CHECK_EQUAL(out.relay.key, in.relay.key);
+    BOOST_CHECK_EQUAL(out.relay.ca, in.relay.ca);
 
     webpier::service service {
         true,
@@ -73,6 +83,7 @@ BOOST_AUTO_TEST_CASE(context)
         "bootstrap.dht",
         wormhole::protocol::udp,
         wormhole::schema::either,
+        plexus::routing::either,
         true,
         false
         };
@@ -127,6 +138,7 @@ BOOST_AUTO_TEST_CASE(context)
     BOOST_CHECK_EQUAL(service.rendezvous, locals[0].rendezvous);
     BOOST_CHECK_EQUAL(service.proto, locals[0].proto);
     BOOST_CHECK_EQUAL(service.role, locals[0].role);
+    BOOST_CHECK_EQUAL(service.route, locals[0].route);
     BOOST_CHECK_EQUAL(service.autostart, locals[0].autostart);
     BOOST_CHECK_EQUAL(service.obscure, locals[0].obscure);
 
@@ -142,6 +154,7 @@ BOOST_AUTO_TEST_CASE(context)
     BOOST_CHECK_EQUAL(service.rendezvous, remotes[0].rendezvous);
     BOOST_CHECK_EQUAL(service.proto, locals[0].proto);
     BOOST_CHECK_EQUAL(service.role, locals[0].role);
+    BOOST_CHECK_EQUAL(service.route, locals[0].route);
     BOOST_CHECK_EQUAL(service.autostart, remotes[0].autostart);
     BOOST_CHECK_EQUAL(service.obscure, remotes[0].obscure);
 

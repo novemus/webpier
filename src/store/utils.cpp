@@ -568,7 +568,7 @@ namespace webpier
     {
         boost::asio::io_context io;
         typename protocol::resolver resolver(io);
-        typename protocol::endpoint ep;
+        typename protocol::endpoint ep(proto, 0);
 
         try
         {

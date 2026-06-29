@@ -76,6 +76,19 @@ namespace webpier
         }
     };
 
+    struct ricochet
+    {
+        std::string server;
+        std::string cert;
+        std::string key;
+        std::string ca;
+
+        bool operator==(const ricochet& other)
+        {
+            return server == other.server && cert == other.cert && key == other.key && ca == other.ca;
+        }
+    };
+
     struct config
     {
         std::string pier;
@@ -84,11 +97,12 @@ namespace webpier
         puncher nat;
         dhtnode dht;
         emailer email;
+        ricochet relay;
 
         bool operator==(const config& other)
         {
-            return pier == other.pier && repo == other.repo && log == other.log
-                && nat == other.nat && dht == other.dht && email == other.email;
+            return pier == other.pier && repo == other.repo && log == other.log && nat == other.nat 
+                        && dht == other.dht && email == other.email && relay == other.relay;
         }
     };
 
@@ -102,13 +116,17 @@ namespace webpier
         std::string rendezvous = default_dht_bootstrap;
         wormhole::protocol proto = wormhole::protocol::any;
         wormhole::schema role = wormhole::schema::either;
+        plexus::routing::favour route = plexus::routing::direct;
+
         bool autostart = false;
         bool obscure = true;
 
         bool operator==(const service& other)
         {
-            return local == other.local && name == other.name && pier == other.pier && address == other.address && gateway == other.gateway
-                && rendezvous == other.rendezvous && proto == other.proto && role == other.role && autostart == other.autostart && obscure == other.obscure;
+            return local == other.local && name == other.name && pier == other.pier
+                && address == other.address && gateway == other.gateway && rendezvous == other.rendezvous
+                && proto == other.proto && role == other.role && route == other.route
+                && autostart == other.autostart && obscure == other.obscure;
         }
     };
 

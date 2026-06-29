@@ -31,6 +31,13 @@ namespace WebPier
                 Mutual
             };
 
+            enum Routing
+            {
+                Direct,
+                Bridge,
+                Anyhow
+            };
+
             bool Local;
             wxString Name;
             wxString Pier;
@@ -39,6 +46,7 @@ namespace WebPier
             wxString Rendezvous;
             Protocol Proto;
             Schema Role;
+            Routing Route;
             bool Autostart;
             bool Obscure;
 
@@ -82,7 +90,7 @@ namespace WebPier
                 Faulty,
                 Simple
             };
-        
+
             wxString Pier;
             wxString Repo;
             wxString LogFolder;
@@ -100,6 +108,10 @@ namespace WebPier
             wxString EmailX509Cert;
             wxString EmailX509Key;
             wxString EmailX509Ca;
+            wxString RicoServer;
+            wxString RicoX509Cert;
+            wxString RicoX509Key;
+            wxString RicoX509Ca;
 
             virtual ~Config() {}
             virtual void Store() noexcept(false) = 0;
@@ -212,11 +224,13 @@ namespace WebPier
         void ExploreNat(Context::Service::Protocol proto, const wxString& bind, const wxString& stun, Context::Config::Checkup mode, const std::function<void(const Traverse&, const wxString&)>& callback) noexcept(true);
         void CheckDhtRendezvous(const wxString& bootstrap, wxUint32 network, wxUint16 port, const std::function<void(const wxString&)>& callback) noexcept(true);
         void CheckEmailRendezvous(const wxString& smtp, const wxString& imap, const wxString& login, const wxString& password, const wxString& cert, const wxString& key, const wxString& ca, const std::function<void(const wxString&)>& callback) noexcept(true);
+        void CheckRicochetRelay(const wxString& server, const wxString& cert, const wxString& key, const wxString& ca, bool tcp, bool v4, const std::function<void(const wxString&, const wxString&)>& callback) noexcept(true);
     }
 }
 
 wxString ToString(WebPier::Context::Service::Protocol value);
 wxString ToString(WebPier::Context::Service::Schema value);
+wxString ToString(WebPier::Context::Service::Routing value);
 wxString ToString(WebPier::Utils::Traverse::Binding value);
 wxString ToString(WebPier::Backend::Health::Status value);
 wxString ToString(bool value);
