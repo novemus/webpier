@@ -4,7 +4,7 @@ message("***** webpier ***** ")
 
 cmake_minimum_required(VERSION 3.21)
 
-project(webpier VERSION 1.1.0 DESCRIPTION "The program for sharing private TCP applications" LANGUAGES CXX)
+project(webpier VERSION 1.2.0 DESCRIPTION "The program for sharing private TCP applications" LANGUAGES CXX)
 
 option(WEBPIER_SKIP_TEST_RULES "Don't generate test rules" ON)
 option(WEBPIER_SKIP_INSTALL_RULES "Don't generate install rules" OFF)
@@ -79,6 +79,12 @@ message("*** tubus Version: ${tubus_VERSION}")
 message("*** tubus Include: ${tubus_INCLUDE_DIRS}")
 message("*** tubus Library: ${tubus_LIBRARY}")
 
+find_package(ricochet 1.0.0 REQUIRED COMPONENTS libricochet)
+
+message("* ricochet Version: ${ricochet_VERSION}")
+message("* ricochet Include Dirs: ${ricochet_INCLUDE_DIRS}")
+message("* ricochet Library: ${ricochet_LIBRARY}")
+
 find_package(opendht 3.2 REQUIRED)
 find_package(fmt REQUIRED)
 
@@ -110,12 +116,6 @@ pkg_search_module(Jsoncpp REQUIRED IMPORTED_TARGET jsoncpp)
 
 message("* Jsoncpp Include Dir: ${Jsoncpp_INCLUDEDIR}")
 message("* Jsoncpp Lib Dir: ${Jsoncpp_LIBDIR}")
-
-find_package(ricochet 1.0.0 REQUIRED COMPONENTS libricochet)
-
-message("* ricochet Version: ${ricochet_VERSION}")
-message("* ricochet Include Dirs: ${ricochet_INCLUDE_DIRS}")
-message("* ricochet Library: ${ricochet_LIBRARY}")
 
 ########## build ##########
 
@@ -198,7 +198,7 @@ target_sources(${CARRIER} PRIVATE
     src/backend/tunnel.cpp
     )
 
-target_link_libraries(${WEBPIER} PRIVATE ${wxWidgets_LIBRARIES} "$<$<BOOL:${MSVC}>:WebP::webp>" "$<$<BOOL:${MSVC}>:PCRE2::16BIT>" "$<$<BOOL:${MSVC}>:WebP::webpdemux>" "$<$<BOOL:${APPLE}>:-framework Cocoa>" Boost::coroutine Boost::filesystem Boost::program_options "$<$<BOOL:${MSVC}>:Boost::property_tree>" "$<$<BOOL:${MSVC}>:Crypt32>" plexus::libplexus wormhole::libwormhole OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(${WEBPIER} PRIVATE ${wxWidgets_LIBRARIES} "$<$<BOOL:${MSVC}>:WebP::webp>" "$<$<BOOL:${MSVC}>:PCRE2::16BIT>" "$<$<BOOL:${MSVC}>:WebP::webpdemux>" "$<$<BOOL:${APPLE}>:-framework Cocoa>" Boost::coroutine Boost::filesystem Boost::program_options "$<$<BOOL:${MSVC}>:Boost::property_tree>" "$<$<BOOL:${MSVC}>:Crypt32>" plexus::libplexus wormhole::libwormhole ricochet::libricochet OpenSSL::SSL OpenSSL::Crypto)
 target_link_libraries(${SLIPWAY} PRIVATE Boost::coroutine Boost::filesystem Boost::program_options "$<$<BOOL:${MSVC}>:Boost::property_tree>" "$<$<BOOL:${MSVC}>:Crypt32>" plexus::libplexus wormhole::libwormhole tubus::libtubus opendht fmt::fmt msgpack-cxx PkgConfig::GnuTLS PkgConfig::argon2 PkgConfig::Nettle PkgConfig::Jsoncpp OpenSSL::SSL OpenSSL::Crypto)
 target_link_libraries(${CARRIER} PRIVATE Boost::filesystem Boost::program_options "$<$<BOOL:${MSVC}>:Crypt32>" wormhole::libwormhole tubus::libtubus OpenSSL::SSL OpenSSL::Crypto)
 
