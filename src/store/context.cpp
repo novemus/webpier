@@ -218,9 +218,9 @@ namespace webpier
                         item.put("address", locale_to_utf8(unit.second.address));
                         item.put("gateway", locale_to_utf8(unit.second.gateway));
                         item.put("rendezvous", locale_to_utf8(unit.second.rendezvous));
-                        item.put("proto", unit.second.proto);
-                        item.put("role", unit.second.role);
-                        item.put("route", unit.second.route);
+                        item.put("proto", static_cast<int>(unit.second.proto));
+                        item.put("role", static_cast<int>(unit.second.role));
+                        item.put("route", static_cast<int>(unit.second.route));
                         item.put("autostart", unit.second.autostart);
                         item.put("obscure", unit.second.obscure);
                         array.push_back(std::make_pair("", item));
