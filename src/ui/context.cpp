@@ -748,10 +748,9 @@ namespace WebPier
                     webpier::config config;
                     g_context->get_config(config);
 
-                    plexus::identity host { config.pier.substr(0, config.pier.find('/') + 1), config.pier.substr(config.pier.find('/') + 1) };
+                    plexus::identity host { config.pier.substr(0, config.pier.find('/')), config.pier.substr(config.pier.find('/') + 1) };
 
                     boost::asio::io_context io;
-
                     boost::asio::deadline_timer timer(io);
                     timer.expires_from_now(boost::posix_time::seconds(60));
                     timer.async_wait([&](const boost::system::error_code& error)

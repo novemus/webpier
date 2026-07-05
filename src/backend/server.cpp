@@ -190,8 +190,8 @@ namespace slipway
 
                         m_thread = std::make_unique<std::thread>([this]()
                         {
-                            plexus::identity host { m_data.config.pier.substr(0, m_data.config.pier.find('/') + 1), m_data.config.pier.substr(m_data.config.pier.find('/') + 1) };
-                            plexus::identity peer { m_data.service.pier.substr(0, m_data.service.pier.find('/') + 1), m_data.service.pier.substr(m_data.service.pier.find('/') + 1) };
+                            plexus::identity host { m_data.config.pier.substr(0, m_data.config.pier.find('/')), m_data.config.pier.substr(m_data.config.pier.find('/') + 1) };
+                            plexus::identity peer { m_data.service.pier.substr(0, m_data.service.pier.find('/')), m_data.service.pier.substr(m_data.service.pier.find('/') + 1) };
 
                             try
                             {
