@@ -24,7 +24,7 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxStr
     wxBoxSizer *mainSizer;
     mainSizer = new wxBoxSizer(wxVERTICAL);
 
-    mainSizer->SetMinSize(wxSize(450, -1));
+    mainSizer->SetMinSize(wxSize(500, -1));
     m_notebook = new wxNotebook(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_FIXEDWIDTH);
     wxPanel *basicPanel;
     basicPanel = new wxPanel(m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
@@ -364,7 +364,7 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxStr
 	m_relayPanel->SetSizer( relaySizer );
 	m_relayPanel->Layout();
 	relaySizer->Fit( m_relayPanel );
-	m_notebook->AddPage( m_relayPanel, _("Relay"), true );
+	m_notebook->AddPage( m_relayPanel, _("Relay"), false );
 
     mainSizer->Add(m_notebook, 1, wxEXPAND | wxALL, 5);
 

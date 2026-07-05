@@ -43,6 +43,7 @@ wxVector<wxVariant> CMainFrame::makeListItem(WebPier::Context::ServicePtr servic
     data.push_back(wxVariant(wxString(service->Address)));
     data.push_back(wxVariant(wxString(service->Rendezvous.IsEmpty() ? wxT("Email") : wxT("DHT"))));
     data.push_back(wxVariant(wxString(ToString(service->Proto))));
+    data.push_back(wxVariant(wxString(ToString(service->Route))));
     data.push_back(wxVariant(wxString(ToString(service->Autostart))));
     return data;
 }
@@ -102,7 +103,7 @@ void CMainFrame::notify(const WebPier::Backend::Health& curr, const WebPier::Bac
     }
 }
 
-CMainFrame::CMainFrame(wxTaskBarIcon* taskBar) : wxFrame(nullptr, wxID_ANY, wxT("WebPier"), wxDefaultPosition, wxSize(950, 500), wxDEFAULT_FRAME_STYLE | wxTAB_TRAVERSAL), m_taskBar(taskBar)
+CMainFrame::CMainFrame(wxTaskBarIcon* taskBar) : wxFrame(nullptr, wxID_ANY, wxT("WebPier"), wxDefaultPosition, wxSize(1000, 500), wxDEFAULT_FRAME_STYLE | wxTAB_TRAVERSAL), m_taskBar(taskBar)
 {
     this->SetIcon(::GetAppIconBundle().GetIcon());
     this->SetSizeHints( wxDefaultSize, wxDefaultSize );
@@ -175,6 +176,7 @@ CMainFrame::CMainFrame(wxTaskBarIcon* taskBar) : wxFrame(nullptr, wxID_ANY, wxT(
     m_serviceList->AppendTextColumn( _("Address"), wxDATAVIEW_CELL_INERT, 150, static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE|wxDATAVIEW_COL_SORTABLE )->GetRenderer()->EnableEllipsize( wxELLIPSIZE_END );
     m_serviceList->AppendTextColumn( _("Rendezvous"), wxDATAVIEW_CELL_INERT, 100, static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE|wxDATAVIEW_COL_SORTABLE )->GetRenderer()->EnableEllipsize( wxELLIPSIZE_END );
 	m_serviceList->AppendTextColumn( _("Tunnel"), wxDATAVIEW_CELL_INERT, 100, static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE|wxDATAVIEW_COL_SORTABLE )->GetRenderer()->EnableEllipsize( wxELLIPSIZE_END );
+    m_serviceList->AppendTextColumn( _("Route"), wxDATAVIEW_CELL_INERT, 100, static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE|wxDATAVIEW_COL_SORTABLE )->GetRenderer()->EnableEllipsize( wxELLIPSIZE_END );
     m_serviceList->AppendTextColumn( _("Autostart"), wxDATAVIEW_CELL_INERT, 100, static_cast<wxAlignment>(wxALIGN_LEFT), wxDATAVIEW_COL_RESIZABLE|wxDATAVIEW_COL_SORTABLE )->GetRenderer()->EnableEllipsize( wxELLIPSIZE_END );
     panelSizer->Add( m_serviceList, 1, wxALL|wxEXPAND, 5 );
 

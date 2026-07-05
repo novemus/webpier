@@ -82,7 +82,7 @@ CServiceDialog::CServiceDialog(WebPier::Context::ConfigPtr config, WebPier::Cont
     this->SetSizer( mainSizer );
     this->Layout();
 
-    m_propGrid->SetMinSize(wxSize(400, m_propGrid->GetRowHeight() * 10));
+    m_propGrid->SetMinSize(wxSize(400, m_propGrid->GetRowHeight() * 11));
     m_propGrid->FitColumns();
 
     mainSizer->Fit( this );
