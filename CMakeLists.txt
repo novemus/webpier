@@ -61,19 +61,19 @@ message("*** OpenSSL Version: ${OPENSSL_VERSION}")
 message("*** OpenSSL Include: ${OPENSSL_INCLUDE_DIR}")
 message("*** OpenSSL Libraries: ${OPENSSL_LIBRARIES}")
 
-find_package(plexus 3.3.0 REQUIRED)
+find_package(plexus 3.4.1 REQUIRED)
 
 message("*** plexus Version: ${plexus_VERSION}")
 message("*** plexus Include: ${plexus_INCLUDE_DIRS}")
 message("*** plexus Library: ${plexus_LIBRARY}")
 
-find_package(wormhole 1.3.0 REQUIRED)
+find_package(wormhole 1.3.1 REQUIRED)
 
 message("*** wormhole Version: ${wormhole_VERSION}")
 message("*** wormhole Include: ${wormhole_INCLUDE_DIRS}")
 message("*** wormhole Library: ${wormhole_LIBRARY}")
 
-find_package(tubus 1.3.0 REQUIRED DEBUG)
+find_package(tubus 1.3.1 REQUIRED DEBUG)
 
 message("*** tubus Version: ${tubus_VERSION}")
 message("*** tubus Include: ${tubus_INCLUDE_DIRS}")
