@@ -43,9 +43,9 @@ jobs:
           curl -sL -o /tmp/libwormhole-dev.deb ${{ env.WORMHOLE_DEV_PACKAGE }} && apt-get install -y /tmp/libwormhole-dev.deb
           curl -sL -o /tmp/libopendht.deb ${{ env.OPENDHT_LIB_PACKAGE }} && apt-get install -y /tmp/libopendht.deb
           curl -sL -o /tmp/libopendht-dev.deb ${{ env.OPENDHT_DEV_PACKAGE }} && apt-get install -y /tmp/libopendht-dev.deb
+          curl -sL -o /tmp/ricochet-client.deb ${{ env.RICOCHET_DEV_PACKAGE }} && apt-get install -y /tmp/ricochet-client.deb
           curl -sL -o /tmp/libplexus.deb ${{ env.PLEXUS_LIB_PACKAGE }} && apt-get install -y /tmp/libplexus.deb
           curl -sL -o /tmp/libplexus-dev.deb ${{ env.PLEXUS_DEV_PACKAGE }} && apt-get install -y /tmp/libplexus-dev.deb
-          curl -sL -o /tmp/ricochet-client.deb ${{ env.RICOCHET_DEV_PACKAGE }} && apt-get install -y /tmp/ricochet-client.deb
 
       - name: Build static
         run: |
@@ -99,9 +99,9 @@ jobs:
           curl -sL -o /tmp/libwormhole-devel.rpm ${{ env.WORMHOLE_DEV_PACKAGE }} && dnf -y install /tmp/libwormhole-devel.rpm
           curl -sL -o /tmp/libopendht.rpm ${{ env.OPENDHT_LIB_PACKAGE }} && dnf -y install /tmp/libopendht.rpm
           curl -sL -o /tmp/libopendht-devel.rpm ${{ env.OPENDHT_DEV_PACKAGE }} && dnf -y install /tmp/libopendht-devel.rpm
+          curl -sL -o /tmp/ricochet-client.rpm ${{ env.RICOCHET_DEV_PACKAGE }} && dnf -y install /tmp/ricochet-client.rpm
           curl -sL -o /tmp/libplexus.rpm ${{ env.PLEXUS_LIB_PACKAGE }} && dnf -y install /tmp/libplexus.rpm
           curl -sL -o /tmp/libplexus-devel.rpm ${{ env.PLEXUS_DEV_PACKAGE }} && dnf -y install /tmp/libplexus-devel.rpm
-          curl -sL -o /tmp/ricochet-client.rpm ${{ env.RICOCHET_DEV_PACKAGE }} && dnf -y install /tmp/ricochet-client.rpm
 
       - name: Build static
         run: |
