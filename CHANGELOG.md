@@ -2,7 +2,7 @@
 
 ## 1.2.0 (Jul 4, 2026)
 
-- Ability to connnect services via Ricochet relay server
+- Ability to connect services via Ricochet relay server
 
 ## 1.1.0 (Apr 15, 2026)
 

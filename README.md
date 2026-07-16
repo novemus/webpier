@@ -1,14 +1,14 @@
 # README
 
-The [WebPier](https://github.com/novemus/webpier) app is designed to exchange TCP services with remote hosts, primarily those located behind the NAT. Peers do not need to have public IP addresses and no third-party relay servers are used. The `WebPier` creates a direct UDP/TCP/SSL tunnel between the hosts and maps the remote TCP service to the local interface, or forwards the local TCP service to the remote side. The UDP/TCP-hole-punching technique using STUN server is used to overcome NAT, and Email or DHT services are used as a rendezvous for exchanging endpoints. This program is essentially a graphical shell for the [plexus](https://github.com/novemus/plexus) and [wormhole](https://github.com/novemus/wormhole) utilities and is designed to provide a user-friendly mean for managing the export/import of TCP services.
+The [WebPier](https://github.com/novemus/webpier) app is designed to exchange TCP services with remote hosts, primarily those located behind the NAT. Peers do not need to have public IP addresses. The `WebPier` creates a direct UDP/TCP/SSL tunnel between the hosts and maps the remote TCP service to the local interface, or forwards the local TCP service to the remote side. The UDP/TCP-hole-punching technique using STUN server is used to overcome NAT, and Email or DHT services are used as a rendezvous for exchanging endpoints. The `WebPier` also supports indirect connection via the [Ricochet](https://github.com/novemus/ricochet) relay server. This program is essentially a graphical shell for the [plexus](https://github.com/novemus/plexus) and [wormhole](https://github.com/novemus/wormhole) utilities and is designed to provide a user-friendly mean for managing the export/import of TCP services.
 
 ## What are the benefits of using the WebPier?
 
-First of all, it is safety. Traffic of your services doesn't pass through third-party servers. There is no need to make your services public. You only open them to whom you wish and verify with the public key on the stage of tunnel creation. The obscuration feature protects the TCP/UDP tunnels from protocol stack detection. Using `WebPier` as alternative to VPN gives a better throughput because of minimal packet route and absence of packet processing on the intermediate server. This is a convenient mean to provide individual access to remote non-public servers.
+First of all, it is safety. You can choose whether to use only direct connections or allow to use a trusted `Ricochet` relay server. There is no need to make your services public. You only open them to whom you wish and verify with the public key on the stage of tunnel creation. The obscuration feature protects the TCP/UDP tunnels from protocol stack detection. Using `WebPier` as alternative to VPN gives a better throughput because of minimal packet route and absence of packet processing on the intermediate server. This is a convenient mean to provide individual access to remote non-public servers.
 
 ## How about reliability?
 
-Due to the fact that `WebPier` does not use third-party relay servers, the possibility to create a tunnel depends on the settings of NAT or firewall. The NAT should realize *Full Cone* mapping of the internal endpoint to the public NAT interface. Fortunately, providers usually implement this policy on their NATs. If both piers are located behind the same NAT, then the *hairpin* policy must be implemented on it so that packets from the internal endpoint can be transmitted back to the internal network. If there is no NAT and strict firewall on one side, then strict NAT settings on the other side are not a problem. In future releases, it is planned to introduce the use of custom TURN server to cover the cases of bad NATs, but in practice this happens infrequently.
+The possibility to create a direct tunnel depends on the settings of NAT or firewall. The NAT should realize *Full Cone* mapping of the internal endpoint to the public NAT interface. Fortunately, providers usually implement this policy on their NATs. If both piers are located behind the same NAT, then the *hairpin* policy must be implemented on it so that packets from the internal endpoint can be transmitted back to the internal network. If there is no NAT and strict firewall on one side, then strict NAT settings on the other side are not a problem. In other cases you should use a `Ricochet` relay server.
 
 ## Using
 
@@ -34,6 +34,7 @@ You should specify accessible STUN servers if NAT traverse is needed, DHT bootst
 * **Tunnel** - tunnel protocol, supported UDP/TCP/SSL protocols or Auto to negotiate most suitable one at runtime
 * **Gateway** - local address:port pair for the transport tunnel
 * **Schema** - tunnel connection schema for the local pier, supported Client/Server/Mutual schemes or Auto to negotiate most suitable one at runtime
+* **Route** - routing policy, supported Direct/Bridge/Either values
 * **Autostart** - should the service be run with the application startup or manually
 * **Obscure** - should the transport UDP/TCP tunnel be obfuscated, must be equal for both sides
 * **Rendezvous** - rendezvous service, must match the remote side
