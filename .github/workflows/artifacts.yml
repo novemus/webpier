@@ -206,7 +206,7 @@ jobs:
 
   macos:
     name: MacOS packages
-    runs-on: macos-latest
+    runs-on: macos-15
     env:
       TARGET_OS: macos
       TARGET_ARCH: arm64
