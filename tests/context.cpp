@@ -85,8 +85,9 @@ BOOST_AUTO_TEST_CASE(context)
         wormhole::schema::either,
         plexus::routing::either,
         true,
-        false
-        };
+        false,
+        ""
+    };
 
     webpier::generate_x509_pair(dest / "cert.crt", dest / "private.key", peer);
     auto peer_certificate = webpier::load_x509_cert(dest / "cert.crt");

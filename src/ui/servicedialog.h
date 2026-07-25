@@ -24,6 +24,7 @@ class CServiceDialog : public wxDialog
     wxPGProperty* m_nameItem;
     wxPGProperty* m_pierItem;
     wxPGProperty* m_addrItem;
+    wxPGProperty* m_cmdItem;
     wxPGProperty* m_gateItem;
     wxPGProperty* m_protoItem;
 	wxPGProperty* m_roleItem;

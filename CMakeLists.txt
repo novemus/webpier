@@ -4,7 +4,7 @@ message("***** webpier ***** ")
 
 cmake_minimum_required(VERSION 3.21)
 
-project(webpier VERSION 1.2.0 DESCRIPTION "The program for sharing private TCP applications" LANGUAGES CXX)
+project(webpier VERSION 1.2.1 DESCRIPTION "The program for sharing private TCP applications" LANGUAGES CXX)
 
 option(WEBPIER_SKIP_TEST_RULES "Don't generate test rules" ON)
 option(WEBPIER_SKIP_INSTALL_RULES "Don't generate install rules" OFF)
@@ -67,7 +67,7 @@ message("*** plexus Version: ${plexus_VERSION}")
 message("*** plexus Include: ${plexus_INCLUDE_DIRS}")
 message("*** plexus Library: ${plexus_LIBRARY}")
 
-find_package(wormhole 1.3.1 REQUIRED)
+find_package(wormhole 1.3.2 REQUIRED)
 
 message("*** wormhole Version: ${wormhole_VERSION}")
 message("*** wormhole Include: ${wormhole_INCLUDE_DIRS}")

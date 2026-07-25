@@ -66,6 +66,7 @@ CServiceDialog::CServiceDialog(WebPier::Context::ConfigPtr config, WebPier::Cont
     m_rendItem = m_propGrid->Append( new wxEnumProperty( _("Rendezvous"), wxPG_LABEL, rendChoice, wxArrayInt(), m_service->Rendezvous.IsEmpty() ? 0 : 1 ) );
     m_bootItem = m_rendItem->InsertChild( 0, new wxStringProperty( _("Bootstrap"), wxPG_LABEL, m_service->Rendezvous ) );
     m_bootItem->Hide(m_service->Rendezvous.IsEmpty());
+    m_cmdItem = m_propGrid->Append( new wxStringProperty( _("Command"), wxPG_LABEL, m_service->Command ) );
 
     mainSizer->Add( m_propGrid, 1, wxALL|wxEXPAND, 5 );
 
@@ -82,7 +83,7 @@ CServiceDialog::CServiceDialog(WebPier::Context::ConfigPtr config, WebPier::Cont
     this->SetSizer( mainSizer );
     this->Layout();
 
-    m_propGrid->SetMinSize(wxSize(400, m_propGrid->GetRowHeight() * 11));
+    m_propGrid->SetMinSize(wxSize(400, m_propGrid->GetRowHeight() * 12));
     m_propGrid->FitColumns();
 
     mainSizer->Fit( this );
@@ -122,6 +123,7 @@ void CServiceDialog::onOKButtonClick( wxCommandEvent& event )
     m_service->Name = m_nameItem->GetValueAsString();
     m_service->Pier = m_service->Local ? wxJoin(m_pierItem->GetValue().GetArrayString(), ' ') : m_pierItem->GetValueAsString();
     m_service->Address = m_addrItem->GetValueAsString();
+    m_service->Command = m_cmdItem->GetValueAsString();
     m_service->Gateway = m_gateItem->GetValueAsString();
     m_service->Proto = static_cast<WebPier::Context::Service::Protocol>(m_protoItem->GetValue().GetLong());
     m_service->Role = static_cast<WebPier::Context::Service::Schema>(m_roleItem->GetValue().GetLong());

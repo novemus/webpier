@@ -191,6 +191,7 @@ namespace webpier
                             unit.route = plexus::routing::favour(item.second.get<int>("route", plexus::routing::direct));
                             unit.autostart = item.second.get<bool>("autostart", false);
                             unit.obscure = item.second.get<bool>("obscure", true);
+                            unit.command = utf8_to_locale(item.second.get<std::string>("command", ""));
                             services.emplace(unit.name, unit);
                         }
                     }
@@ -223,6 +224,7 @@ namespace webpier
                         item.put("route", static_cast<int>(unit.second.route));
                         item.put("autostart", unit.second.autostart);
                         item.put("obscure", unit.second.obscure);
+                        item.put("command", locale_to_utf8(unit.second.command));
                         array.push_back(std::make_pair("", item));
                     }
 

@@ -126,7 +126,8 @@ namespace WebPier
                 && lhs->Role == rhs->Role
                 && lhs->Route == rhs->Route
                 && lhs->Autostart == rhs->Autostart
-                && lhs->Obscure == rhs->Obscure;
+                && lhs->Obscure == rhs->Obscure
+                && lhs->Command == rhs->Command;
         }
 
         class ServiceImpl : public Service
@@ -157,7 +158,8 @@ namespace WebPier
                     static_cast<wormhole::schema>(Role),
                     static_cast<plexus::routing::favour>(Route),
                     Autostart,
-                    Obscure
+                    Obscure,
+                    Command.ToStdString()
                 };
 
                 try
@@ -231,6 +233,7 @@ namespace WebPier
                 Route = static_cast<Routing>(m_origin.route);
                 Autostart = m_origin.autostart;
                 Obscure = m_origin.obscure;
+                Command = m_origin.command;
             }
 
             void AddPier(const wxString& pier) noexcept(true) override
@@ -280,7 +283,8 @@ namespace WebPier
                     || Role != static_cast<Schema>(m_origin.role)
                     || Route != static_cast<Routing>(m_origin.route)
                     || Autostart != m_origin.autostart
-                    || Obscure != m_origin.obscure;
+                    || Obscure != m_origin.obscure
+                    || Command.ToStdString() != m_origin.command;
             }
 
             bool IsIPv6() const noexcept(true) override

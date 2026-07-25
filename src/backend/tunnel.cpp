@@ -28,6 +28,7 @@ int main(int argc, char *argv[])
         ("gateway,g", boost::program_options::value<wormhole::endpoint>()->required())
         ("faraway,f", boost::program_options::value<wormhole::endpoint>()->required())
         ("quality,q", boost::program_options::value<wormhole::criteria>()->default_value(wormhole::criteria()))
+        ("autorun,a", boost::program_options::value<std::string>()->default_value(""))
         ("journal,j", boost::program_options::value<std::string>()->default_value(""))
         ("logging,l", boost::program_options::value<wormhole::log::severity>()->default_value(wormhole::log::info));
 
@@ -68,6 +69,7 @@ int main(int argc, char *argv[])
         auto gateway = vm["gateway"].as<wormhole::endpoint>();
         auto faraway = vm["faraway"].as<wormhole::endpoint>();
         auto quality = vm["quality"].as<wormhole::criteria>();
+        auto autorun = vm["autorun"].as<std::string>();
 
         wormhole::security guard = { 
             vm["secret"].as<uint64_t>(),
@@ -83,8 +85,8 @@ int main(int argc, char *argv[])
         boost::asio::io_context io;
 
         auto router = purpose == "import"
-            ? wormhole::create_importer(io, service, gateway, faraway, quality, guard)
-            : wormhole::create_exporter(io, service, gateway, faraway, quality, guard);
+            ? wormhole::create_importer(io, service, gateway, faraway, quality, guard, autorun)
+            : wormhole::create_exporter(io, service, gateway, faraway, quality, guard, autorun);
         router->launch();
 
         io.run();

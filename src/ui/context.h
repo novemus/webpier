@@ -49,6 +49,7 @@ namespace WebPier
             Routing Route;
             bool Autostart;
             bool Obscure;
+            wxString Command;
 
             virtual ~Service() {}
             virtual void Store() noexcept(false) = 0;

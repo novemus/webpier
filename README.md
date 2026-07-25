@@ -38,6 +38,7 @@ You should specify accessible STUN servers if NAT traverse is needed, DHT bootst
 * **Autostart** - should the service be run with the application startup or manually
 * **Obscure** - should the transport UDP/TCP tunnel be obfuscated, must be equal for both sides
 * **Rendezvous** - rendezvous service, must match the remote side
+* **Command** - command to pre-launch on export or post-launch on import
 
 After that you have to create the *offer* for your partner. Invoke the dialogs from the *"File -> Create an offer..."* menu, select your services you want to offer and save the *offer* file. The *offer* will also contain public key of your pier.
 

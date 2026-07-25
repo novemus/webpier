@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.2.1 (Jul 25, 2026)
+
+- Run a custom command before starting the export or after starting the import
+
 ## 1.2.0 (Jul 4, 2026)
 
 - Ability to connect services via Ricochet relay server

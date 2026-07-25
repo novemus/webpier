@@ -229,6 +229,7 @@ namespace slipway
                         "--quality=" + wormhole::criteria::to_string(term.qos),
                         "--journal=" + webpier::make_path(m_config.log.folder, "carrier.%p.log"),
                         "--logging=" + std::to_string(m_config.log.level),
+                        "--autorun=" + std::string(m_service.command.empty() ? "\"\"" : m_service.command),
                         bp::on_exit = [this, weak = weak_from_this(), pid](int code, const std::error_code& ec)
                         {
                             if (ec && ec != std::errc::no_child_process)
@@ -574,6 +575,7 @@ namespace slipway
                                 plexus::routing::favour(item.second.get<int>("route", plexus::routing::direct)),
                                 item.second.get<bool>("autostart", false),
                                 item.second.get<bool>("obscure", true),
+                                webpier::utf8_to_locale(item.second.get<std::string>("command", ""))
                             };
                         }
                     }
@@ -619,7 +621,8 @@ namespace slipway
                                 wormhole::schema(item.second.get<int>("role", local ? wormhole::schema::server : wormhole::schema::client)),
                                 plexus::routing::favour(item.second.get<int>("route", plexus::routing::direct)),
                                 item.second.get<bool>("autostart", false),
-                                item.second.get<bool>("obscure", true)
+                                item.second.get<bool>("obscure", true),
+                                webpier::utf8_to_locale(item.second.get<std::string>("command", ""))
                             });
                         }
                     }

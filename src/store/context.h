@@ -117,16 +117,16 @@ namespace webpier
         wormhole::protocol proto = wormhole::protocol::any;
         wormhole::schema role = wormhole::schema::either;
         plexus::routing::favour route = plexus::routing::direct;
-
         bool autostart = false;
         bool obscure = true;
+        std::string command;
 
         bool operator==(const service& other)
         {
-            return local == other.local && name == other.name && pier == other.pier
-                && address == other.address && gateway == other.gateway && rendezvous == other.rendezvous
+            return local == other.local && name == other.name && pier == other.pier && address == other.address
+                && gateway == other.gateway && rendezvous == other.rendezvous
                 && proto == other.proto && role == other.role && route == other.route
-                && autostart == other.autostart && obscure == other.obscure;
+                && autostart == other.autostart && obscure == other.obscure && command == other.command;
         }
     };
 
