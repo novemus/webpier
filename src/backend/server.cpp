@@ -222,14 +222,14 @@ namespace slipway
 
                     auto pid = std::make_shared<bp::pid_t>(0);
                     bp::child proc(m_io, webpier::get_module_path(webpier::carrier_module).string(),
-                        "--purpose=" + std::string(m_service.local ? "export" : "import"),
-                        "--service=" + m_service.address,
-                        "--gateway=" + wormhole::endpoint::to_string(term.inner),
-                        "--faraway=" + wormhole::endpoint::to_string(term.alien),
-                        "--quality=" + wormhole::criteria::to_string(term.qos),
-                        "--journal=" + webpier::make_path(m_config.log.folder, "carrier.%p.log"),
-                        "--logging=" + std::to_string(m_config.log.level),
-                        "--autorun=" + std::string(m_service.command.empty() ? "\"\"" : m_service.command),
+                        "--purpose", std::string(m_service.local ? "export" : "import"),
+                        "--service", m_service.address,
+                        "--gateway", wormhole::endpoint::to_string(term.inner),
+                        "--faraway", wormhole::endpoint::to_string(term.alien),
+                        "--quality", wormhole::criteria::to_string(term.qos),
+                        "--journal", webpier::make_path(m_config.log.folder, "carrier.%p.log"),
+                        "--logging", std::to_string(m_config.log.level),
+                        "--autorun", m_service.command,
                         bp::on_exit = [this, weak = weak_from_this(), pid](int code, const std::error_code& ec)
                         {
                             if (ec && ec != std::errc::no_child_process)
