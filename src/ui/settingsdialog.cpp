@@ -7,6 +7,7 @@
 #include <wx/menu.h>
 #include <wx/notifmsg.h>
 #include <wx/regex.h>
+#include <wx/tokenzr.h>
 #include <cstdint>
 
 #ifdef WIN32
@@ -128,14 +129,14 @@ CSettingsDialog::CSettingsDialog(WebPier::Context::ConfigPtr config, const wxStr
     m_hopsCtrl = new wxTextCtrl(m_natPanel, wxID_ANY, wxString::Format(wxT("%d"), (int)m_config->NatHops), wxDefaultPosition, wxDefaultSize, 0);
     stunGridSizer->Add(m_hopsCtrl, 0, wxALIGN_CENTER_VERTICAL | wxEXPAND | wxBOTTOM | wxRIGHT | wxLEFT, 5);
 
-    wxStaticText *udpStunLabel = new wxStaticText(m_natPanel, wxID_ANY, _("UDP STUN"), wxDefaultPosition, wxSize(100, -1), 0);
+    wxStaticText *udpStunLabel = new wxStaticText(m_natPanel, wxID_ANY, _("UDP STUNs"), wxDefaultPosition, wxSize(100, -1), 0);
     udpStunLabel->Wrap(-1);
     stunGridSizer->Add(udpStunLabel, 0, wxALIGN_CENTER_VERTICAL | wxBOTTOM | wxRIGHT | wxLEFT, 5);
 
     m_udpStunCtrl = new wxTextCtrl(m_natPanel, wxID_ANY, m_config->UdpStunServer, wxDefaultPosition, wxDefaultSize, 0);
     stunGridSizer->Add(m_udpStunCtrl, 1, wxEXPAND | wxALIGN_CENTER_VERTICAL | wxBOTTOM | wxRIGHT | wxLEFT, 5);
 
-    wxStaticText *tcpStunLabel = new wxStaticText(m_natPanel, wxID_ANY, _("TCP STUN"), wxDefaultPosition, wxSize(100, -1), 0);
+    wxStaticText *tcpStunLabel = new wxStaticText(m_natPanel, wxID_ANY, _("TCP STUNs"), wxDefaultPosition, wxSize(100, -1), 0);
     tcpStunLabel->Wrap(-1);
     stunGridSizer->Add(tcpStunLabel, 0, wxALIGN_CENTER_VERTICAL | wxBOTTOM | wxRIGHT | wxLEFT, 5);
 
@@ -491,9 +492,8 @@ void CSettingsDialog::onRicoChange(wxCommandEvent &event)
     event.Skip();
 }
 
-void CSettingsDialog::doExploreNat(WebPier::Context::Service::Protocol proto, wxString bind)
+void CSettingsDialog::doExploreNat(WebPier::Context::Service::Protocol proto, wxString bind, wxString stun)
 {
-    wxString stun = proto == WebPier::Context::Service::UDP ? m_udpStunCtrl->GetValue() : m_tcpStunCtrl->GetValue();
     wxButton *button = proto == WebPier::Context::Service::UDP ? m_udpStunTest : m_tcpStunTest;
     wxGauge* gauge = proto == WebPier::Context::Service::UDP ? m_udpGauge : m_tcpGauge;
     WebPier::Context::Config::Checkup mode = m_isNat->GetValue() 
@@ -543,62 +543,67 @@ void CSettingsDialog::doExploreNat(WebPier::Context::Service::Protocol proto, wx
     button->Disable();
 }
 
-void CSettingsDialog::onUdpStunTestClick(wxCommandEvent &event)
+void CSettingsDialog::doStunTest(WebPier::Context::Service::Protocol proto)
 {
-    if (m_udpStunCtrl->GetValue().IsEmpty())
+    wxString line = proto == WebPier::Context::Service::UDP ? m_udpStunCtrl->GetValue() : m_tcpStunCtrl->GetValue();
+    if (line.IsEmpty())
     {
-        m_udpStunTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_CROSS_MARK), wxASCII_STR(wxART_BUTTON)));
-        m_natPanel->SetToolTip(_("No UDP STUN server specified!"));
+        wxButton* testButton = proto == WebPier::Context::Service::UDP ? m_udpStunTest : m_tcpStunTest;
+        testButton->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_CROSS_MARK), wxASCII_STR(wxART_BUTTON)));
+        m_natPanel->SetToolTip(_("No STUN server specified!"));
         return;
     }
 
-    bool isIPv4 = wxRegEx("^((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))(?::\\d+)?$").Matches(m_udpStunCtrl->GetValue());
-    bool isIPv6 = wxRegEx("^(\\[([a-fA-F0-9:]+)\\](?::\\d+)?|(?<!\\[)([a-fA-F0-9:]+)(?!\\]))$").Matches(m_udpStunCtrl->GetValue());
+    wxMenu* menu = nullptr;
 
-    if (!isIPv4 && !isIPv6)
+    wxArrayString list = wxStringTokenize(line, wxT(",;"));
+    for (auto& stun : list)
     {
-        wxMenu *menu = new wxMenu();
-        menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [this](wxCommandEvent &)
-                   { doExploreNat(WebPier::Context::Service::UDP, wxT("0.0.0.0:0")); }, menu->Append(wxID_ANY, _("IPv&4"))->GetId());
+        bool isIPv4 = wxRegEx("^((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))(?::\\d+)?$").Matches(stun);
+        bool isIPv6 = wxRegEx("^(\\[([a-fA-F0-9:]+)\\](?::\\d+)?|(?<!\\[)([a-fA-F0-9:]+)(?!\\]))$").Matches(stun);
 
-        menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [this](wxCommandEvent &)
-                   { doExploreNat(WebPier::Context::Service::UDP, wxT("[::]:0")); }, menu->Append(wxID_ANY, _("IPv&6"))->GetId());
+        if (!isIPv4 && !isIPv6)
+        {
+            if (!menu)
+                menu = new wxMenu();
 
+            menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [this, proto, stun](wxCommandEvent &)
+                    { doExploreNat(proto, wxT("0.0.0.0:0"), stun); }, menu->Append(wxID_ANY, stun + _(" (IPv4)"))->GetId());
+
+            menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [this, proto, stun](wxCommandEvent &)
+                    { doExploreNat(proto, wxT("[::]:0"), stun); }, menu->Append(wxID_ANY, stun + _(" (IPv6)"))->GetId());
+        }
+        else
+        {
+            wxString bind = isIPv4 ? wxT("0.0.0.0:0") : wxT("[::]:0");
+            if (list.size() > 1)
+            {
+                if (!menu)
+                    menu = new wxMenu();
+
+                menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [this, proto, bind, stun](wxCommandEvent &)
+                        { doExploreNat(proto, bind, stun); }, menu->Append(wxID_ANY, stun)->GetId());
+            }
+            else
+            {
+                doExploreNat(proto, bind, stun);
+                return;
+            }
+        }
+    }
+
+    if (menu)
         PopupMenu(menu);
-    }
-    else
-    {
-        doExploreNat(WebPier::Context::Service::UDP, isIPv4 ? wxT("0.0.0.0:0") : wxT("[::]:0"));
-    }
+}
+
+void CSettingsDialog::onUdpStunTestClick(wxCommandEvent &event)
+{
+    doStunTest(WebPier::Context::Service::UDP);
 }
 
 void CSettingsDialog::onTcpStunTestClick(wxCommandEvent &event)
 {
-    if (m_tcpStunCtrl->GetValue().IsEmpty())
-    {
-        m_tcpStunTest->SetBitmap(wxArtProvider::GetBitmap(wxASCII_STR(wxART_CROSS_MARK), wxASCII_STR(wxART_BUTTON)));
-        m_natPanel->SetToolTip(_("No TCP STUN server specified!"));
-        return;
-    }
-
-    bool isIPv4 = wxRegEx("^((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))(?::\\d+)?$").Matches(m_tcpStunCtrl->GetValue());
-    bool isIPv6 = wxRegEx("^(\\[([a-fA-F0-9:]+)\\](?::\\d+)?|(?<!\\[)([a-fA-F0-9:]+)(?!\\]))$").Matches(m_tcpStunCtrl->GetValue());
-
-    if (!isIPv4 && !isIPv6)
-    {
-        wxMenu *menu = new wxMenu();
-        menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [this](wxCommandEvent &)
-                   { doExploreNat(WebPier::Context::Service::TCP, wxT("0.0.0.0:0")); }, menu->Append(wxID_ANY, _("IPv&4"))->GetId());
-
-        menu->Bind(wxEVT_COMMAND_MENU_SELECTED, [this](wxCommandEvent &)
-                   { doExploreNat(WebPier::Context::Service::TCP, wxT("[::]:0")); }, menu->Append(wxID_ANY, _("IPv&6"))->GetId());
-
-        PopupMenu(menu);
-    }
-    else
-    {
-        doExploreNat(WebPier::Context::Service::TCP, isIPv4 ? wxT("0.0.0.0:0") : wxT("[::]:0"));
-    }
+    doStunTest(WebPier::Context::Service::TCP);
 }
 
 void CSettingsDialog::onDhtTestClick(wxCommandEvent &event)

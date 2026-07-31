@@ -78,14 +78,23 @@ namespace slipway
                     webpier::resolve_tcp_endpoint(service.gateway, webpier::stun_client_default_port)
                 };
 
+                plexus::stunlist stun {};
+
+                std::vector<std::string> udp_stuns;
+                boost::split(udp_stuns, config.nat.udp_stun, boost::is_any_of(",;"));
+                for (auto& serv : udp_stuns)
+                    stun.udp.push_back(webpier::resolve_udp_endpoint(serv, webpier::stun_server_default_port, bind.udp.address.is_v6()));
+
+                std::vector<std::string> tcp_stuns;
+                boost::split(tcp_stuns, config.nat.tcp_stun, boost::is_any_of(",;"));
+                for (auto& serv : tcp_stuns)
+                    stun.tcp.push_back(webpier::resolve_tcp_endpoint(serv, webpier::stun_server_default_port, bind.tcp.address.is_v6()));
+
                 return plexus::options {
                     service.name,
                     config.repo,
                     bind,
-                    plexus::location {
-                        webpier::resolve_udp_endpoint(config.nat.udp_stun, webpier::stun_server_default_port, bind.udp.address.is_v6()),
-                        webpier::resolve_tcp_endpoint(config.nat.tcp_stun, webpier::stun_server_default_port, bind.tcp.address.is_v6())
-                    },
+                    stun,
                     config.nat.hops,
                     config.nat.test,
                     wormhole::criteria {
