@@ -13,6 +13,34 @@
 #include <wormhole/logger.h>
 #include <boost/program_options.hpp>
 
+#include <boost/version.hpp>
+
+#if BOOST_VERSION >= 108800
+    #include <boost/process/v1/child.hpp>
+    #ifdef WIN32
+        #include <boost/process/v1/windows.hpp>
+    #endif
+    #if defined WIN32 || __APPLE__
+        #include <boost/process/v1/env.hpp>
+        #include <boost/process/v1/args.hpp>
+        #include <boost/process/v1/async.hpp>
+    #else
+        #include <spawn.h>
+        #include <boost/process/v1/extend.hpp>
+    #endif
+    namespace bp = boost::process::v1;
+#else
+    #include <boost/process.hpp>
+    #ifdef WIN32
+        #include <boost/process/windows.hpp>
+        #include <boost/process/windows/creation_flags.hpp>
+    #else
+        #include <spawn.h>
+        #include <boost/process/extend.hpp>
+    #endif
+    namespace bp = boost::process;
+#endif
+
 int main(int argc, char *argv[])
 {
     if(webpier::get_module_path(webpier::carrier_module) != webpier::get_absolute_path(argv[0]))
@@ -69,7 +97,29 @@ int main(int argc, char *argv[])
         auto gateway = vm["gateway"].as<wormhole::endpoint>();
         auto faraway = vm["faraway"].as<wormhole::endpoint>();
         auto quality = vm["quality"].as<wormhole::criteria>();
-        auto autorun = vm["autorun"].as<std::string>();
+
+        boost::asio::io_context io;
+
+        auto autorun = [&]()
+        {
+            auto command = vm["autorun"].as<std::string>();
+
+            if (command.empty())
+                return;
+
+            try
+            {
+                auto child = bp::child(io, command);
+
+                _inf_ << "launch child (" << command << ") process " << child.id();
+
+                child.detach();
+            }
+            catch (const std::exception& ex)
+            {
+                _err_ << "can't launch child (" << command << ") process: " << ex.what();
+            }
+        };
 
         wormhole::security guard = { 
             vm["secret"].as<uint64_t>(),
@@ -81,8 +131,6 @@ int main(int argc, char *argv[])
         };
 
         _inf_ << "starting tunnel for purpose=" << purpose << " service=" << service << " gateway=" << gateway << " faraway=" << faraway << " quality=" << quality;
-
-        boost::asio::io_context io;
 
         auto router = purpose == "import"
             ? wormhole::create_importer(io, service, gateway, faraway, quality, guard, autorun)
