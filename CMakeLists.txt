@@ -4,7 +4,7 @@ message("***** webpier ***** ")
 
 cmake_minimum_required(VERSION 3.21)
 
-project(webpier VERSION 1.2.2 DESCRIPTION "The program for sharing private TCP applications" LANGUAGES CXX)
+project(webpier VERSION 1.2.3 DESCRIPTION "The program for sharing private TCP applications" LANGUAGES CXX)
 
 option(WEBPIER_SKIP_TEST_RULES "Don't generate test rules" ON)
 option(WEBPIER_SKIP_INSTALL_RULES "Don't generate install rules" OFF)
@@ -61,13 +61,13 @@ message("*** OpenSSL Version: ${OPENSSL_VERSION}")
 message("*** OpenSSL Include: ${OPENSSL_INCLUDE_DIR}")
 message("*** OpenSSL Libraries: ${OPENSSL_LIBRARIES}")
 
-find_package(plexus 3.4.1 REQUIRED)
+find_package(plexus 3.4.3 REQUIRED)
 
 message("*** plexus Version: ${plexus_VERSION}")
 message("*** plexus Include: ${plexus_INCLUDE_DIRS}")
 message("*** plexus Library: ${plexus_LIBRARY}")
 
-find_package(wormhole 1.3.2 REQUIRED)
+find_package(wormhole 1.3.3 REQUIRED)
 
 message("*** wormhole Version: ${wormhole_VERSION}")
 message("*** wormhole Include: ${wormhole_INCLUDE_DIRS}")
@@ -85,8 +85,9 @@ message("* ricochet Version: ${ricochet_VERSION}")
 message("* ricochet Include Dirs: ${ricochet_INCLUDE_DIRS}")
 message("* ricochet Library: ${ricochet_LIBRARY}")
 
-find_package(opendht 3.2 REQUIRED)
+find_package(opendht 4.4 REQUIRED)
 find_package(fmt REQUIRED)
+find_package(simdutf CONFIG REQUIRED)
 
 find_package(msgpackc-cxx QUIET CONFIG NAMES msgpackc-cxx msgpack)
 if(msgpackc-cxx_FOUND)

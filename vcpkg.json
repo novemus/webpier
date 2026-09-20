@@ -11,6 +11,7 @@
         "boost-interprocess",
         "boost-scope-exit",
         "fmt",
+        "simdutf",
         {
           "name": "pkgconf",
           "platform": "!android"
