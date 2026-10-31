@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.2.3 (Oct 31, 2026)
+
+- Upgrade of the opendht dependency to version 4.4.0
+- Upgrade of the wormhole dependency to version 1.3.3
+- Upgrade of the plexus dependency to version 3.4.3
+
 ## 1.2.2 (Jul 31, 2026)
 
 - Ability to configure list of stun servers

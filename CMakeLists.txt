@@ -79,7 +79,7 @@ message("*** tubus Version: ${tubus_VERSION}")
 message("*** tubus Include: ${tubus_INCLUDE_DIRS}")
 message("*** tubus Library: ${tubus_LIBRARY}")
 
-find_package(ricochet 1.0.0 REQUIRED COMPONENTS libricochet)
+find_package(ricochet 1.0.1 REQUIRED COMPONENTS libricochet)
 
 message("* ricochet Version: ${ricochet_VERSION}")
 message("* ricochet Include Dirs: ${ricochet_INCLUDE_DIRS}")
