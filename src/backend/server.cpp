@@ -214,6 +214,8 @@ namespace slipway
                             }
                             catch(const std::exception& ex)
                             {
+                                _err_ << ex.what();
+
                                 m_io->stop();
                                 m_data.fallback(host, peer, ex.what());
                             }

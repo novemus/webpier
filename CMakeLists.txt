@@ -61,7 +61,7 @@ message("*** OpenSSL Version: ${OPENSSL_VERSION}")
 message("*** OpenSSL Include: ${OPENSSL_INCLUDE_DIR}")
 message("*** OpenSSL Libraries: ${OPENSSL_LIBRARIES}")
 
-find_package(plexus 3.4.3 REQUIRED)
+find_package(plexus 3.4.4 REQUIRED)
 
 message("*** plexus Version: ${plexus_VERSION}")
 message("*** plexus Include: ${plexus_INCLUDE_DIRS}")

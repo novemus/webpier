@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.2.4 (Nov 11, 2026)
+
+- Upgrade of the plexus dependency to version 3.4.4
+
 ## 1.2.3 (Oct 31, 2026)
 
 - Upgrade of the opendht dependency to version 4.4.0
