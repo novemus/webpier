@@ -4,7 +4,7 @@ message("***** webpier ***** ")
 
 cmake_minimum_required(VERSION 3.21)
 
-project(webpier VERSION 1.2.3 DESCRIPTION "The program for sharing private TCP applications" LANGUAGES CXX)
+project(webpier VERSION 1.2.4 DESCRIPTION "The program for sharing private TCP applications" LANGUAGES CXX)
 
 option(WEBPIER_SKIP_TEST_RULES "Don't generate test rules" ON)
 option(WEBPIER_SKIP_INSTALL_RULES "Don't generate install rules" OFF)
